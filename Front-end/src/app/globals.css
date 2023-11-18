@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+
+body {
+  text-decoration: none;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to top,
+      transparent,
+      rgb(255, 255, 255)) rgb(180, 180, 180);
+    
+  
+  
+
+}
+
+.marginNavBar{
+  margin:20px 0 0 0 
+}

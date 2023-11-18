@@ -1,0 +1,62 @@
+.blogPageCont {}
+
+.blogAndTopicsContainer {
+  min-height: 100vh;
+  display: flex;
+
+}
+
+.blogContainer {
+  width: 85%;
+  margin: 0 auto;
+}
+
+.topicsContainer {
+  width: 15%;
+  max-height: 100vh;
+  position: sticky;
+  position: -webkit-sticky;
+  top:0;
+}
+
+.gridTables {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  justify-content: center;
+}
+
+/*Should have a hover feature*/
+.gridItem {
+  margin: 1rem;
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+  justify-self: center;
+  gap: 1rem;
+}
+
+
+
+
+/* Flex 1 will cause some issues as blog will be longer than topics */
+@media (max-width:767px) {
+  .blogAndTopicsContainer {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .topicsContainer {
+    width: 100%;
+    flex: 1;
+  }
+
+  .blogContainer {
+    width: 100%;
+    flex: 1
+  }
+  .gridTables {
+    grid-template-columns: 1fr;
+  }
+  .topicsContainer{
+    position: relative;
+    top: 0;
+  }
+}
