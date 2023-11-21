@@ -12,7 +12,7 @@ import StdReturn from '../types/baseTypes';
 import mysql from "mysql2";
 
 import { UserType } from '../types/userType';
-import { ItemsType, RentalsType, PaymentDetailsType } from '../types/rentalType';
+import { ItemsType, RentalsType, PaymentDetailsType, RentalsDetailsType } from '../types/rentalType';
 import { coordiantes } from '../types/baseTypes';
 
 /**
@@ -90,6 +90,21 @@ export class PaymentDetails extends Model<PaymentDetailsType> implements Payment
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
+export class RentalsDetails extends Model<RentalsDetailsType> implements RentalsDetailsType {
+    public rentalDetailId!: number;
+    public itemId!: number;
+    public rentalId!: number;
+    public price!: number;
+    public total!: number;
+    public discount!: number;
+    public paymentDetails!: string;
+    public billDate!: Date;
+    public quantity!: number;
+    public orderNumber!: number;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
 
 const initUserModel = (sequelize: Sequelize) => { // so why does this not all the other definitions but the others do
     User.init(
@@ -119,7 +134,6 @@ const initItems = (sequelize: Sequelize) => {
             itemId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
             itemName: { type: DataTypes.STRING, allowNull: false },
             description: { type: DataTypes.STRING, allowNull: false },
-            ownerId: { type: DataTypes.INTEGER, allowNull: false },
             thumbnail: { type: DataTypes.STRING, allowNull: false },
             pricePerDay: { type: DataTypes.INTEGER, allowNull: false },
             itemLocation: { type: DataTypes.JSON, allowNull: false },
@@ -136,8 +150,6 @@ const initRentals = (sequelize: Sequelize) => {
     Rentals.init(
         {
             rentalId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            renterId: { type: DataTypes.INTEGER, allowNull: false },
-            letterId: { type: DataTypes.INTEGER, allowNull: false },
             rentalStartDate: { type: DataTypes.DATE, allowNull: false },
             rentalEndDate: { type: DataTypes.DATE, allowNull: false },
             rentalStatus: { type: DataTypes.STRING, allowNull: false },
@@ -166,86 +178,88 @@ const initPaymentDetails = (sequelize: Sequelize) => {
         });
 };
 
+const initRentalsDetails = (sequelize: Sequelize) => {
+    RentalsDetails.init(
+        {
+            rentalDetailId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+            price: { type: DataTypes.INTEGER, allowNull: false },
+            total: { type: DataTypes.INTEGER, allowNull: false },
+            discount: { type: DataTypes.INTEGER, allowNull: false },
+            paymentDetails: { type: DataTypes.STRING, allowNull: false },
+            billDate: { type: DataTypes.DATE, allowNull: false },
+            quantity: { type: DataTypes.INTEGER, allowNull: false },
+            orderNumber: { type: DataTypes.INTEGER, allowNull: false },
+        },
+        {
+            sequelize,
+            modelName: "RentalsDetails"
+        });
+}
+
 export const initialize = async () => {
     try {
         initUserModel(sequelize);
         initItems(sequelize);
         initRentals(sequelize);
         initPaymentDetails(sequelize);
+        initRentalsDetails(sequelize);
 
-        // Assossiations
-
-        // user has many excerises
-
-        
+        //i think async skipping to creating assostiations before the models are created
         User.hasMany(Items, {
             foreignKey: "ownerId",
-            onDelete: "CASCADE" // will delete all items that belong to user if user is deleted
+            onDelete: "CASCADE",// will delete all items that belong to user if user is deleted
+
         })
-        Items.belongsTo(User)
+        Items.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' })
 
+        //User has many Rentals
+        User.hasMany(Rentals, {
+            foreignKey: "renterId",
+            as: "renter"
+        })
+        User.hasMany(Rentals, {
+            foreignKey: "letterId",
+            as: "letter"
+        })
+        Rentals.belongsTo(User, { foreignKey: 'renterId', as: 'renter' })
+        Rentals.belongsTo(User, { foreignKey: 'letterId', as: 'letter' })
 
+        //Rental has one payment
+        Rentals.hasOne(PaymentDetails, {
+            foreignKey: "rental",
+        })
+        PaymentDetails.belongsTo(Rentals, { as: "rentalPayment", foreignKey: "rental" })
 
-        //ANY USERLOGS ASSOCIATIONS WILL NOT WORK ANYMORE
+        //items has many Rental details
+        Items.hasMany(RentalsDetails, {
+            foreignKey: "itemId"
+        })
+        RentalsDetails.belongsTo(Items, { as: "item", foreignKey: "itemId" })
 
-        //RETRY ASSOCIATIONS, NOW YOU HAVE A NORMALISED DATABASE
-
-        // // foodData has many UserLogs
-        // FoodData.hasMany(UserLogs, {
-        //     foreignKey: 'foodId',
-        //     sourceKey: 'id',
-        //     as: 'userLogs'
-        // });
-        // UserLogs.belongsTo(FoodData, {
-        //     foreignKey: 'foodId',
-        //     targetKey: 'id',
-        //     as: 'foodData'
-        // });
-
-        // // Users has one UserLogs ?? shouldn't they have many
-        // User.hasOne(UserLogs, {
-        //     foreignKey: 'email',
-        //     sourceKey: 'id',
-        //     as: 'userLogs'
-        // });
-        // UserLogs.belongsTo(User, {
-        //     foreignKey: 'email',
-        //     targetKey: 'id',
-        //     as: 'user'
-        // });
-
-        // // Excerises has many UserLogs
-        // Excerises.hasMany(UserLogs, {
-        //     foreignKey: 'excerideId',
-        //     sourceKey: 'id',
-        //     as: 'userLogs'
-        // });
-        // UserLogs.belongsTo(Excerises, {
-        //     foreignKey: 'excerideId',
-        //     targetKey: 'id',
-        //     as: 'excerises'
-        // });
-
-        // // CustomFoodData has many UserLogs
-        // CustomFoodData.hasMany(UserLogs, {
-        //     foreignKey: 'customFoodId',
-        //     sourceKey: 'id',
-        //     as: 'userLogs'
-        // });
-        // UserLogs.belongsTo(CustomFoodData, {
-        //     foreignKey: 'customFoodId',
-        //     targetKey: 'id',
-        //     as: 'customFoodData'
-        // })
+        //Rentals has many Rental details
+        Rentals.hasMany(RentalsDetails, {
+            foreignKey: "rentalId"
+        })
+        RentalsDetails.belongsTo(Rentals, { as: "rental", foreignKey: "rentalId" })
 
         await sequelize.sync({ force: true }) // should init all models and reset the database
+
         console.log("Database models initialized")
     }
     catch (err) {
         console.log(err)
-        throw new Error("Could not initialize database models: " + err)
+        throw new Error("Could not initialize database models: " + err);
 
     }
 }
+
+
+
+
+
+
+
+// // user has many Rentals/Orders
+
 
 

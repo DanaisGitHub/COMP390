@@ -4,7 +4,6 @@ export interface ItemsType {
     itemId: number;
     itemName: string;
     description: string;
-    ownerId: number;
     thumbnail: string;
     pricePerDay: number;
     itemLocation: coordiantes;
@@ -13,8 +12,6 @@ export interface ItemsType {
 
 export interface RentalsType {
     rentalId: number;
-    renterId: number;
-    letterId: number;
     rentalStartDate: Date;
     rentalEndDate: Date;
     rentalStatus: string;
@@ -22,6 +19,17 @@ export interface RentalsType {
     paymentDate: Date;
     orderNumber: number;
 
+}
+
+export interface RentalsDetailsType {
+    rentalDetailId: number;
+    price: number;
+    total: number;
+    discount: number;
+    paymentDetails: string;
+    billDate: Date;
+    quantity: number;
+    orderNumber: number;
 }
 
 
