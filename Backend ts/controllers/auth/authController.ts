@@ -14,9 +14,9 @@ import { AuthModel } from '../../models/typesOfModels/authModel';
 import { User } from '../../models/modelSetUp';
 import { issueJWT, authMiddleware } from '../../utils/authUtils'
 import { runPassport } from '../../config/passport'
-import { UserAttributesType } from '../../types/dbTypes'
+import { UserAttributesType } from '../../types/userType'
 
-import StdReturn from '../../types/types';
+import StdReturn from '../../types/baseTypes';
 import { type } from 'os';
 
 // constants

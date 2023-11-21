@@ -10,9 +10,9 @@ import FoodApiClass from '../../controllers/usdaApi/usdaApi';
 
 //import self-written files
 import { User } from '../../models/modelSetUp';
-import StdReturn from '../../types/types';
+import StdReturn from '../../types/baseTypes';
 import { FoodModel } from '../../models/typesOfModels/foodModel';
-import { UserAttributesType, FoodDataType, UserLogsType, ExcerisesType, CustomFoodDataType } from '../../types/dbTypes'
+import { UserAttributesType, FoodDataType, UserLogsType, ExcerisesType, CustomFoodDataType } from '../../types/userType'
 
 
 const pathToKey = path.join(__dirname, '..', '..', 'id_rsa_pub.pem');

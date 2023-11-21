@@ -8,10 +8,12 @@ import {
     Sequelize, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute, ForeignKey, HasMany, BelongsTo, BelongsToMany, HasOne
 } from 'sequelize';
 
-import StdReturn from '../types/types';
+import StdReturn from '../types/baseTypes';
 import mysql from "mysql2";
-import { UserAttributesType, UserLogsType, ExcerisesType, FoodDataType, CustomFoodDataType } from '../types/dbTypes';
 
+import { UserType } from '../types/userType';
+import { ItemsType, RentalsType, PaymentDetailsType } from '../types/rentalType';
+import { coordiantes } from '../types/baseTypes';
 
 /**
  * param1: database name (like CREATE DB )
@@ -19,7 +21,7 @@ import { UserAttributesType, UserLogsType, ExcerisesType, FoodDataType, CustomFo
  * param3: password (db name)
  * param4: options  
  */
-export const sequelize = new Sequelize('boilerplate', 'root', 'mysql', {
+export const sequelize = new Sequelize('Sprint1BasicEComDb', 'root', 'mysql', {
     host: 'localhost',
     dialect: 'mysql',
     port: 3306,
@@ -31,91 +33,78 @@ export const sequelize = new Sequelize('boilerplate', 'root', 'mysql', {
     }
 });
 
-export class User extends Model<UserAttributesType> implements UserAttributesType {
+export class User extends Model<UserType> implements UserType {
+    public userid!: string;//Primary key
     public firstName!: string;
     public lastName!: string;
-    public id!: string;
     public password!: string;
-    public refreshToken?: string;
+    public refreshToken?: string; // not sure of ?
     public birthDate!: Date;
-    public calorieGoal!: number;
-    public weight!: number;
-    public height!: number;
-    public gender!: number
+    public profilePicture?: string;
+    public location!: coordiantes;
+    public paymentDetailsId!: number;
+    public userEmail!: string;
+    public CryptoPaymentsId!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 
 }
 
-export class UserLogs extends Model<UserLogsType> implements UserLogsType {
-    public date!: Date;
-    public email!: string;
-    public foodId!: number[];
-    public customFoodId!: number[];
-    public exerciseId!: number[];
-
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
-}
-
-export class Excerises extends Model<ExcerisesType> implements ExcerisesType {
-    public id!: number;
-    public emailId!: string;
-    public exerciseName!: string;
-    public caloriesBurned!: number;
-    public exerciseTime!: number;
-
-    public readonly createdAt!: Date;
-    public readonly updatedAt!: Date;
-};
-
-
-
-export class FoodData extends Model<FoodDataType> implements FoodDataType {
-    public id!: number;
-    public foodName!: string;
-    public calories!: number;
-    public sugar!: number;
-    public carbohydrates!: number;
-    public fat!: number;
-    public protein!: number;
-    public fibre!: number;
+export class Items extends Model<ItemsType> implements ItemsType {
+    public itemId!: number;
+    public itemName!: string;
+    public description!: string;
+    public ownerId!: number;
+    public thumbnail!: string;
+    public pricePerDay!: number;
+    public itemLocation!: coordiantes;
     public quantity!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
 
-
-export class CustomFoodData extends Model<CustomFoodDataType> implements CustomFoodDataType {
-    public id!: number;
-    public foodName!: string;
-    public calories!: number;
-    public sugar!: number;
-    public carbohydrates!: number;
-    public fat!: number;
-    public protein!: number;
-    public fibre!: number;
+export class Rentals extends Model<RentalsType> implements RentalsType {
+    public rentalId!: number;
+    public renterId!: number;
+    public letterId!: number;
+    public rentalStartDate!: Date;
+    public rentalEndDate!: Date;
+    public rentalStatus!: string;
+    public paid!: boolean;
+    public paymentDate!: Date;
+    public orderNumber!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
 
 
+export class PaymentDetails extends Model<PaymentDetailsType> implements PaymentDetailsType {
+    public paymentId!: number;
+    public paymentDate!: Date;
+    public paymentType!: string;
+    public allowed!: boolean;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
 const initUserModel = (sequelize: Sequelize) => { // so why does this not all the other definitions but the others do
     User.init(
         {
-            id: { type: DataTypes.STRING, primaryKey: true, },
+            userid: { type: DataTypes.STRING, primaryKey: true, },
             firstName: { type: DataTypes.STRING, allowNull: false, },
             lastName: { type: DataTypes.STRING, allowNull: false, },
             password: { type: DataTypes.STRING, allowNull: false, },
             refreshToken: { type: DataTypes.STRING(2048), allowNull: true, },
             birthDate: { type: DataTypes.DATE, allowNull: false, },
-            calorieGoal: { type: DataTypes.INTEGER, allowNull: false, },
-            weight: { type: DataTypes.INTEGER, allowNull: false, },
-            height: { type: DataTypes.INTEGER, allowNull: false, },
-            gender: { type: DataTypes.INTEGER, allowNull: false, }
+            profilePicture: { type: DataTypes.STRING, allowNull: true, },
+            location: { type: DataTypes.JSON, allowNull: false, },
+            paymentDetailsId: { type: DataTypes.INTEGER, allowNull: false, },
+            userEmail: { type: DataTypes.STRING, allowNull: false, },
+            CryptoPaymentsId: { type: DataTypes.INTEGER, allowNull: false, },
         },
         {
             sequelize,
@@ -124,136 +113,78 @@ const initUserModel = (sequelize: Sequelize) => { // so why does this not all th
     );
 };
 
-const initCustomFoodData = (sequelize: Sequelize) => {
-    CustomFoodData.init(
+const initItems = (sequelize: Sequelize) => {
+    Items.init(
         {
-            id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            foodName: { type: DataTypes.STRING, allowNull: false },
-            calories: { type: DataTypes.INTEGER, allowNull: false },
-            sugar: { type: DataTypes.INTEGER, allowNull: false },
-            carbohydrates: { type: DataTypes.INTEGER, allowNull: false },
-            fat: { type: DataTypes.INTEGER, allowNull: false },
-            protein: { type: DataTypes.INTEGER, allowNull: false },
-            fibre: { type: DataTypes.INTEGER, allowNull: false }
+            itemId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+            itemName: { type: DataTypes.STRING, allowNull: false },
+            description: { type: DataTypes.STRING, allowNull: false },
+            ownerId: { type: DataTypes.INTEGER, allowNull: false },
+            thumbnail: { type: DataTypes.STRING, allowNull: false },
+            pricePerDay: { type: DataTypes.INTEGER, allowNull: false },
+            itemLocation: { type: DataTypes.JSON, allowNull: false },
+            quantity: { type: DataTypes.INTEGER, allowNull: false },
         },
         {
             sequelize,
-            modelName: 'CustomFoodData'
+            modelName: 'Items'
         }
     );
 };
 
-const initUserLogsModel = (sequelize: Sequelize) => {
-    UserLogs.init(
+const initRentals = (sequelize: Sequelize) => {
+    Rentals.init(
         {
-            date: {
-                type: DataTypes.DATE,
-                primaryKey: true
-            },
-            email: {
-                type: DataTypes.STRING,
-                primaryKey: true
-            },
-            foodId: {
-                type: DataTypes.JSON,
-                allowNull: false,
-                defaultValue: [],
-                get(){
-                    const value = this.getDataValue('foodId');
-                    return value;
-                },
-                set(value: number[]){
-                    this.setDataValue('foodId', value);
-                }
-            },
-            customFoodId: {
-                type: DataTypes.JSON,
-                allowNull: false,
-                defaultValue: [],
-                get(){
-                    const value = this.getDataValue('customFoodId');
-                    return value;
-                },
-                set(value: number[]){
-                    this.setDataValue('customFoodId', value);
-                }
-            },
-            exerciseId: {
-                type: DataTypes.JSON,
-                allowNull: false,
-                defaultValue:[],
-                get(){
-                    const value = this.getDataValue('exerciseId');
-                    return value;
-                },
-                set(value: number[]){
-                    this.setDataValue('exerciseId', value);
-                }
-            },
+            rentalId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+            renterId: { type: DataTypes.INTEGER, allowNull: false },
+            letterId: { type: DataTypes.INTEGER, allowNull: false },
+            rentalStartDate: { type: DataTypes.DATE, allowNull: false },
+            rentalEndDate: { type: DataTypes.DATE, allowNull: false },
+            rentalStatus: { type: DataTypes.STRING, allowNull: false },
+            paid: { type: DataTypes.BOOLEAN, allowNull: false },
+            paymentDate: { type: DataTypes.DATE, allowNull: false },
+            orderNumber: { type: DataTypes.INTEGER, allowNull: false },
         },
         {
             sequelize,
-            modelName: "UserLogs"
+            modelName: "Rentals"
         }
     );
 }
 
-const initExcerisesModel = (sequelize: Sequelize) => {
-    Excerises.init(
+const initPaymentDetails = (sequelize: Sequelize) => {
+    PaymentDetails.init(
         {
-            id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            exerciseName: { type: DataTypes.STRING, allowNull: false },
-            emailId: { type: DataTypes.STRING, allowNull: false },
-            caloriesBurned: { type: DataTypes.INTEGER, allowNull: false },
-            exerciseTime: { type: DataTypes.INTEGER, allowNull: false }
+            paymentId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+            paymentDate: { type: DataTypes.DATE, allowNull: false },
+            paymentType: { type: DataTypes.STRING, allowNull: false },
+            allowed: { type: DataTypes.BOOLEAN, allowNull: false },
         },
         {
             sequelize,
-            modelName: "Excerises"
-        })
+            modelName: "PaymentDetails"
+        });
 };
-
-const initFoodDataModel = (sequelize: Sequelize) => {
-    FoodData.init({
-        id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-        foodName: { type: DataTypes.STRING, allowNull: false },
-        calories: { type: DataTypes.INTEGER, allowNull: false },
-        sugar: { type: DataTypes.INTEGER, allowNull: false },
-        carbohydrates: { type: DataTypes.INTEGER, allowNull: false },
-        fat: { type: DataTypes.INTEGER, allowNull: false },
-        protein: { type: DataTypes.INTEGER, allowNull: false },
-        fibre: { type: DataTypes.INTEGER, allowNull: false },
-        quantity: { type: DataTypes.INTEGER, allowNull: false }
-
-    },
-        {
-            sequelize,
-            modelName: "FoodData",
-        }
-    )
-}
 
 export const initialize = async () => {
     try {
         initUserModel(sequelize);
-        initCustomFoodData(sequelize);
-        initExcerisesModel(sequelize);
-        initUserLogsModel(sequelize);
-        initFoodDataModel(sequelize);
+        initItems(sequelize);
+        initRentals(sequelize);
+        initPaymentDetails(sequelize);
 
         // Assossiations
 
         // user has many excerises
-        User.hasMany(Excerises, {
-            foreignKey: 'emailId',
-            sourceKey: 'id',
-            as: 'excerises'
-        });
-        Excerises.belongsTo(User, {
-            foreignKey: 'emailId',
-            targetKey: 'id',
-            as: 'user'
-        });
+
+        
+        User.hasMany(Items, {
+            foreignKey: "ownerId",
+            onDelete: "CASCADE" // will delete all items that belong to user if user is deleted
+        })
+        Items.belongsTo(User)
+
+
 
         //ANY USERLOGS ASSOCIATIONS WILL NOT WORK ANYMORE
 
@@ -307,7 +238,7 @@ export const initialize = async () => {
         //     as: 'customFoodData'
         // })
 
-        await sequelize.sync() // should init all models and reset the database
+        await sequelize.sync({ force: true }) // should init all models and reset the database
         console.log("Database models initialized")
     }
     catch (err) {

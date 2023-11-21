@@ -1,8 +1,8 @@
 import { sequelize, User, UserLogs, Excerises, FoodData, CustomFoodData } from "../modelSetUp";
 import { Model, DataTypes, Sequelize, ModelCtor } from "sequelize";
 import { BaseModel } from "./baseModel";
-import StdReturn from "../../types/types"; // just changed make sure correct
-import { Macros, UserLogsTypeWithData, UserAttributesType, UserLogsType, ExcerisesType, FoodDataType, CustomFoodDataType } from "../../types/dbTypes";
+import StdReturn from "../../types/baseTypes"; // just changed make sure correct
+import { Macros, UserLogsTypeWithData, UserAttributesType, UserLogsType, ExcerisesType, FoodDataType, CustomFoodDataType } from "../../types/userType";
 
 export class FoodModel extends BaseModel { // make static the functions that don't need constructors
 

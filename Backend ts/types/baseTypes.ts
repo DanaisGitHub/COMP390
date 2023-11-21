@@ -1,7 +1,15 @@
+
+
 export default interface StdReturn {// need a clear structure for my returns 
     err: any,
     result: any
 }
+
+export interface coordiantes{
+    lat:number;
+    lng:number;
+}
+
 export  // don't think it's used
     interface RTokenModel {
     token: string,

@@ -14,7 +14,7 @@ import fs from 'fs';
 import authRoutes from './authRoutes';
 import apiRoutes from '../API/googleMaps/googleMapsAPI';
 import foodRoutes from './foodDataRoutes';
-import StdReturn from '../types/types';
+import StdReturn from '../types/baseTypes';
 import { FoodModel } from '../models/typesOfModels/foodModel';
 
 const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');

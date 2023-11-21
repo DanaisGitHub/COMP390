@@ -3,8 +3,8 @@ import { BaseModel } from "./baseModel";
 import crypto from 'crypto';
 import bcrypt from 'bcrypt'
 import passport from 'passport-jwt';
-import StdReturn from "../../types/types"; // just changed make sure correct
-import { UserAttributesType } from '../../types/dbTypes'
+import StdReturn from "../../types/baseTypes"; // just changed make sure correct
+import { UserAttributesType } from '../../types/userType'
 
 
 // pre-processing & storage goes in here

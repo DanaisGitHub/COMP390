@@ -1,5 +1,5 @@
-import StdReturn from '../../types/types';
-import { UserAttributesType, UserLogsType, ExcerisesType, FoodDataType, CustomFoodDataType } from '../../types/dbTypes';
+import StdReturn from '../../types/baseTypes';
+import { UserAttributesType, UserLogsType, ExcerisesType, FoodDataType, CustomFoodDataType } from '../../types/userType';
 
 // if you string is retured in error then error == true
 // if error == null then error == false
