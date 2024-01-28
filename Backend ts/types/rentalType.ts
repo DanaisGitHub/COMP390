@@ -1,7 +1,7 @@
 import { coordiantes } from './baseTypes';
 
-export interface ItemsType {
-    itemId: number;
+export interface ItemType {
+    id: number;
     itemName: string;
     description: string;
     thumbnail: string;
@@ -10,8 +10,8 @@ export interface ItemsType {
     quantity: number;
 }
 
-export interface RentalsType {
-    rentalId: number;
+export interface RentalType {
+    id: number;
     rentalStartDate: Date;
     rentalEndDate: Date;
     rentalStatus: string;
@@ -21,8 +21,8 @@ export interface RentalsType {
 
 }
 
-export interface RentalsDetailsType {
-    rentalDetailId: number;
+export interface RentalDetailType {
+    id: number;
     price: number;
     total: number;
     discount: number;
@@ -33,8 +33,8 @@ export interface RentalsDetailsType {
 }
 
 
-export interface PaymentDetailsType {
-    paymentId: number;
+export interface PaymentDetailType {
+    id: number;
     paymentDate: Date;
     paymentType: string;
     allowed: boolean;

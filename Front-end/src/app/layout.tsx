@@ -1,11 +1,12 @@
-'use client'
 import './globals.css'
-import { Inter } from 'next/font/google'
 
-import header from '../components/header'
-import footer from '../components/footer'
+import Header from '../components/header'
+import Footer from '../components/footer'
 
-const inter = Inter({ subsets: ['latin'] })
+export const metadata = {
+  title: 'Peer-To-Peer Rental Marketplace',
+  description: 'Peer-To-Peer Rental Marketplace',
+}
 
 
 
@@ -16,11 +17,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <header>{header()}</header>
+      <body >
+         <Header/> {/*instad of doing the function Header() to make this a server component, we put <></> */}
         {children}
-        <footer>{footer()}</footer>
-        </body>
+        <Footer/>
+      </body>
     </html>
   )
 }

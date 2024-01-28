@@ -15,41 +15,40 @@ class AuthModel extends baseModel_1.BaseModel {
         this.signUp = async (userDetails) => {
             // check to see if already exists
             // check data is correct (should use validator software)
-            let isUser = await this.isAlreadyAUserBool(userDetails.id); // 2 db searches when we could do 1
-            if (isUser) {
-                //user does exists
-                console.log("User Exsits");
-                return { err: "User Exsits", result: null };
-            }
-            const salt = await bcrypt_1.default.genSalt(10);
-            userDetails.password = await bcrypt_1.default.hash(userDetails.password, salt);
-            const { err, result } = await this.create(this.user, userDetails);
-            if (err) {
-                console.log(err);
-                throw Error("Could't save details");
-            }
-            else {
+            try {
+                let isUser = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
+                if (isUser.result !== null) {
+                    //user does exists
+                    console.log("User " + userDetails.userEmail + " Exsits");
+                    return { err: "User '" + userDetails.userEmail + "' Exsits", result: null };
+                }
+                const salt = await bcrypt_1.default.genSalt(10);
+                userDetails.password = await bcrypt_1.default.hash(userDetails.password, salt);
+                const { err, result } = await this.baseCreate(this.user, userDetails);
                 return { err: null, result: result };
             }
+            catch (err) {
+                console.log(err);
+                throw new Error("AuthModel signUp() -----> " + err);
+            }
         };
-        // -1 means not found, -2 means passwords incorrect
         this.login = async (obj) => {
             try {
-                const { err, result } = await this.findByPkey(this.user, obj.email);
+                const { err, result } = await this.findUserByEmail(obj.email);
                 if (err) {
-                    console.log(`Couldn't find user ${err}`);
+                    console.log(`Error in login ${err}`);
                     return { err: err, result: null }; // I don't think this ever runs
                 }
                 if (result === null) {
                     //not found, already console.logged
-                    return { err: true, result: -1 };
+                    return { err: "User Not Found", result: null };
                 }
                 const user = result;
-                await this.update(user, { refreshToken: obj.refreshToken });
+                await this.baseUpdate(user, { refreshToken: obj.refreshToken });
                 const passwordMatch = await this.comparePasswords(obj.rawPassword, user.password);
                 if (!passwordMatch.result) {
                     console.log("passwords don't match");
-                    return { err: "Passwords don't match", result: -2 };
+                    return { err: "Passwords don't match", result: null };
                 }
                 return { err: null, result: result };
             }
@@ -58,50 +57,23 @@ class AuthModel extends baseModel_1.BaseModel {
                 throw new Error("Login error");
             }
         };
-        this.isAlreadyAUserObj = async (primaryKey) => {
+        this.findUserByEmail = async (email) => {
             try {
-                const { err, result } = await this.findByPkey(this.user, primaryKey);
-                if (err) {
-                    throw new Error(`Problem when trying to find user ) ${err}}`);
-                    return { err: err, result: result };
-                }
+                const { err, result } = await this.findOne(this.user, { where: { "userEmail": email } });
                 if (result === null) {
-                    return { err: err, result: result };
+                    console.log(err);
+                    return { err: "User Not Found", result: null };
                 }
-                else {
-                    return { err: err, result: result };
-                }
+                return { err: err, result: result };
             }
             catch (err) {
                 console.log(err);
-                throw new Error(`Problem when trying to find user ) ${err}}`);
-            }
-        };
-        this.isAlreadyAUserBool = async (primaryKey) => {
-            try {
-                const { err, result } = await this.findByPkey(this.user, primaryKey);
-                if (err) {
-                    return false;
-                }
-                if (result === null) {
-                    return false;
-                }
-                else {
-                    return true;
-                }
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Problem when trying to find user isAlreadyAUserBool");
+                throw new Error(`authModel findUserByEmai catch err ----> ${err}}`);
             }
         };
         this.deleteEverything = async () => {
             try {
                 await this.user.destroy({ where: {} });
-                await modelSetUp_1.UserLogs.destroy({ where: {} });
-                await modelSetUp_1.Excerises.destroy({ where: {} });
-                await modelSetUp_1.FoodData.destroy({ where: {} });
-                await modelSetUp_1.CustomFoodData.destroy({ where: {} });
                 return { err: null, result: "Everything from db is delete" };
             }
             catch (err) {
@@ -135,7 +107,7 @@ class AuthModel extends baseModel_1.BaseModel {
             try {
                 const { id, refreshToken } = obj;
                 console.log(id);
-                const { err, result } = await this.isAlreadyAUserObj(id);
+                const { err, result } = await this.findUserByEmail(id);
                 const user = result;
                 console.log("err =" + err);
                 if (err) {
@@ -164,32 +136,31 @@ class AuthModel extends baseModel_1.BaseModel {
         //         throw new Error(`Couldn't email token at this time ${err}`)
         //     }
         // }
-        this.getEverything = async () => {
-            try {
-                let allDatabaseResults = {
-                    users: [],
-                    userLogs: [],
-                    excerises: [],
-                    foodData: [],
-                    customFoodData: []
-                };
-                const allUsers = await this.findAll(modelSetUp_1.User, {});
-                const allUserLogs = await this.findAll(modelSetUp_1.UserLogs, {});
-                const allExcerises = await this.findAll(modelSetUp_1.Excerises, {});
-                const allFoodData = await this.findAll(modelSetUp_1.FoodData, {});
-                const allCustomFoodData = await this.findAll(modelSetUp_1.CustomFoodData, {});
-                allDatabaseResults.users = allUsers.result;
-                allDatabaseResults.userLogs = allUserLogs.result;
-                allDatabaseResults.excerises = allExcerises.result;
-                allDatabaseResults.foodData = allFoodData.result;
-                allDatabaseResults.customFoodData = allCustomFoodData.result;
-                return { err: null, result: allDatabaseResults };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Problem when trying to find all");
-            }
-        };
+        // public getEverything = async (): Promise<StdReturn> => {
+        //     try {
+        //         let allDatabaseResults = {
+        //             users: [],
+        //             userLogs: [],
+        //             excerises: [],
+        //             foodData: [],
+        //             customFoodData: []
+        //         }
+        //         const allUsers = await this.findAll(User, {});
+        //         const allUserLogs = await this.findAll(UserLogs, {});
+        //         const allExcerises = await this.findAll(Excerises, {});
+        //         const allFoodData = await this.findAll(FoodData, {});
+        //         const allCustomFoodData = await this.findAll(CustomFoodData, {});
+        //         allDatabaseResults.users = allUsers.result;
+        //         allDatabaseResults.userLogs = allUserLogs.result;
+        //         allDatabaseResults.excerises = allExcerises.result;
+        //         allDatabaseResults.foodData = allFoodData.result;
+        //         allDatabaseResults.customFoodData = allCustomFoodData.result;
+        //         return { err: null, result: allDatabaseResults }
+        //     } catch (err) {
+        //         console.log(err)
+        //         throw new Error("Problem when trying to find all");
+        //     }
+        // }
     }
 }
 exports.AuthModel = AuthModel;

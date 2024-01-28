@@ -10,10 +10,14 @@ import {
 
 import StdReturn from '../types/baseTypes';
 import mysql from "mysql2";
+import { ItemsModel } from "./typesOfModels/itemsModel";
 
-import { UserType } from '../types/userType';
-import { ItemsType, RentalsType, PaymentDetailsType, RentalsDetailsType } from '../types/rentalType';
+import { UserType, UserPreferenceType } from '../types/userType';
+import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../types/rentalType';
 import { coordiantes } from '../types/baseTypes';
+
+
+export type ModelsClasses = User | UserPreference | Item | Rental | PaymentDetail | RentalsDetails
 
 /**
  * param1: database name (like CREATE DB )
@@ -34,7 +38,7 @@ export const sequelize = new Sequelize('Sprint1BasicEComDb', 'root', 'mysql', {
 });
 
 export class User extends Model<UserType> implements UserType {
-    public userid!: string;//Primary key
+    public id!: string;//Primary key
     public firstName!: string;
     public lastName!: string;
     public password!: string;
@@ -51,8 +55,21 @@ export class User extends Model<UserType> implements UserType {
 
 }
 
-export class Items extends Model<ItemsType> implements ItemsType {
-    public itemId!: number;
+export class UserPreference extends Model<UserPreferenceType> implements UserPreferenceType {
+    public id!: number;
+    public maxDistance!: number;
+    public maxPrice!: number;
+    public minRating!: number;
+    public dateRange!: { start: Date, end: Date };
+
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+
+}
+
+export class Item extends Model<ItemType> implements ItemType {
+    public id!: number;
     public itemName!: string;
     public description!: string;
     public ownerId!: number;
@@ -65,8 +82,8 @@ export class Items extends Model<ItemsType> implements ItemsType {
     public readonly updatedAt!: Date;
 }
 
-export class Rentals extends Model<RentalsType> implements RentalsType {
-    public rentalId!: number;
+export class Rental extends Model<RentalType> implements RentalType {
+    public id!: number;
     public renterId!: number;
     public letterId!: number;
     public rentalStartDate!: Date;
@@ -81,8 +98,8 @@ export class Rentals extends Model<RentalsType> implements RentalsType {
 }
 
 
-export class PaymentDetails extends Model<PaymentDetailsType> implements PaymentDetailsType {
-    public paymentId!: number;
+export class PaymentDetail extends Model<PaymentDetailType> implements PaymentDetailType {
+    public id!: number;
     public paymentDate!: Date;
     public paymentType!: string;
     public allowed!: boolean;
@@ -90,8 +107,8 @@ export class PaymentDetails extends Model<PaymentDetailsType> implements Payment
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
-export class RentalsDetails extends Model<RentalsDetailsType> implements RentalsDetailsType {
-    public rentalDetailId!: number;
+export class RentalsDetails extends Model<RentalDetailType> implements RentalDetailType {
+    public id!: number;
     public itemId!: number;
     public rentalId!: number;
     public price!: number;
@@ -106,151 +123,248 @@ export class RentalsDetails extends Model<RentalsDetailsType> implements Rentals
     public readonly updatedAt!: Date;
 }
 
-const initUserModel = (sequelize: Sequelize) => { // so why does this not all the other definitions but the others do
-    User.init(
-        {
-            userid: { type: DataTypes.STRING, primaryKey: true, },
-            firstName: { type: DataTypes.STRING, allowNull: false, },
-            lastName: { type: DataTypes.STRING, allowNull: false, },
-            password: { type: DataTypes.STRING, allowNull: false, },
-            refreshToken: { type: DataTypes.STRING(2048), allowNull: true, },
-            birthDate: { type: DataTypes.DATE, allowNull: false, },
-            profilePicture: { type: DataTypes.STRING, allowNull: true, },
-            location: { type: DataTypes.JSON, allowNull: false, },
-            paymentDetailsId: { type: DataTypes.INTEGER, allowNull: false, },
-            userEmail: { type: DataTypes.STRING, allowNull: false, },
-            CryptoPaymentsId: { type: DataTypes.INTEGER, allowNull: false, },
-        },
-        {
-            sequelize,
-            modelName: 'Users',
-        }
-    );
-};
 
-const initItems = (sequelize: Sequelize) => {
-    Items.init(
-        {
-            itemId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            itemName: { type: DataTypes.STRING, allowNull: false },
-            description: { type: DataTypes.STRING, allowNull: false },
-            thumbnail: { type: DataTypes.STRING, allowNull: false },
-            pricePerDay: { type: DataTypes.INTEGER, allowNull: false },
-            itemLocation: { type: DataTypes.JSON, allowNull: false },
-            quantity: { type: DataTypes.INTEGER, allowNull: false },
-        },
-        {
-            sequelize,
-            modelName: 'Items'
-        }
-    );
-};
+const InitialiseDatabase = class {
 
-const initRentals = (sequelize: Sequelize) => {
-    Rentals.init(
-        {
-            rentalId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            rentalStartDate: { type: DataTypes.DATE, allowNull: false },
-            rentalEndDate: { type: DataTypes.DATE, allowNull: false },
-            rentalStatus: { type: DataTypes.STRING, allowNull: false },
-            paid: { type: DataTypes.BOOLEAN, allowNull: false },
-            paymentDate: { type: DataTypes.DATE, allowNull: false },
-            orderNumber: { type: DataTypes.INTEGER, allowNull: false },
-        },
-        {
-            sequelize,
-            modelName: "Rentals"
-        }
-    );
-}
+    static initUserModel = (sequelize: Sequelize) => { // so why does this not all the other definitions but the others do
+        User.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, },
+                firstName: { type: DataTypes.STRING, allowNull: false, },
+                lastName: { type: DataTypes.STRING, allowNull: false, },
+                password: { type: DataTypes.STRING, allowNull: false, },
+                refreshToken: { type: DataTypes.STRING(2048), allowNull: true, },
+                birthDate: { type: DataTypes.DATE, allowNull: false, },
+                profilePicture: { type: DataTypes.STRING, allowNull: true, },
+                location: { type: DataTypes.JSON, allowNull: false, },
+                paymentDetailsId: { type: DataTypes.INTEGER, allowNull: false, },
+                userEmail: { type: DataTypes.STRING, allowNull: false, },
+                CryptoPaymentsId: { type: DataTypes.INTEGER, allowNull: false, },
+            },
+            {
+                sequelize,
+                modelName: 'User',
+            }
+        );
+    };
 
-const initPaymentDetails = (sequelize: Sequelize) => {
-    PaymentDetails.init(
-        {
-            paymentId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            paymentDate: { type: DataTypes.DATE, allowNull: false },
-            paymentType: { type: DataTypes.STRING, allowNull: false },
-            allowed: { type: DataTypes.BOOLEAN, allowNull: false },
-        },
-        {
-            sequelize,
-            modelName: "PaymentDetails"
-        });
-};
+    static initUserPreferenceModel = (sequelize: Sequelize) => {
+        UserPreference.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true, },
+                maxDistance: { type: DataTypes.INTEGER, allowNull: false, },
+                maxPrice: { type: DataTypes.INTEGER, allowNull: false, },
+                minRating: { type: DataTypes.INTEGER, allowNull: false, },
+                dateRange: { type: DataTypes.JSON, allowNull: false, },
+            },
+            {
+                sequelize,
+                modelName: 'UserPreference',
+            }
+        );
+    }
 
-const initRentalsDetails = (sequelize: Sequelize) => {
-    RentalsDetails.init(
-        {
-            rentalDetailId: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-            price: { type: DataTypes.INTEGER, allowNull: false },
-            total: { type: DataTypes.INTEGER, allowNull: false },
-            discount: { type: DataTypes.INTEGER, allowNull: false },
-            paymentDetails: { type: DataTypes.STRING, allowNull: false },
-            billDate: { type: DataTypes.DATE, allowNull: false },
-            quantity: { type: DataTypes.INTEGER, allowNull: false },
-            orderNumber: { type: DataTypes.INTEGER, allowNull: false },
-        },
-        {
-            sequelize,
-            modelName: "RentalsDetails"
-        });
+    static initItems = (sequelize: Sequelize) => {
+        Item.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                itemName: { type: DataTypes.STRING, allowNull: false },
+                description: { type: DataTypes.STRING, allowNull: false },
+                thumbnail: { type: DataTypes.STRING, allowNull: false },
+                pricePerDay: { type: DataTypes.INTEGER, allowNull: false },
+                itemLocation: { type: DataTypes.JSON, allowNull: false },
+                quantity: { type: DataTypes.INTEGER, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: 'Item'
+            }
+        );
+    };
+
+    static initRentals = (sequelize: Sequelize) => {
+        Rental.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                rentalStartDate: { type: DataTypes.DATE, allowNull: false },
+                rentalEndDate: { type: DataTypes.DATE, allowNull: false },
+                rentalStatus: { type: DataTypes.STRING, allowNull: false },
+                paid: { type: DataTypes.BOOLEAN, allowNull: false },
+                paymentDate: { type: DataTypes.DATE, allowNull: false },
+                orderNumber: { type: DataTypes.INTEGER, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "Rental"
+            }
+        );
+    }
+
+    static initPaymentDetails = (sequelize: Sequelize) => {
+        PaymentDetail.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                paymentDate: { type: DataTypes.DATE, allowNull: false },
+                paymentType: { type: DataTypes.STRING, allowNull: false },
+                allowed: { type: DataTypes.BOOLEAN, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "PaymentDetail"
+            });
+    };
+
+    static initRentalsDetails = (sequelize: Sequelize) => {
+        RentalsDetails.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                price: { type: DataTypes.INTEGER, allowNull: false },
+                total: { type: DataTypes.INTEGER, allowNull: false },
+                discount: { type: DataTypes.INTEGER, allowNull: false },
+                paymentDetails: { type: DataTypes.STRING, allowNull: false },
+                billDate: { type: DataTypes.DATE, allowNull: false },
+                quantity: { type: DataTypes.INTEGER, allowNull: false },
+                orderNumber: { type: DataTypes.INTEGER, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "RentalsDetail"
+            });
+    }
+
+    /**
+     * make a one to many relation between two models
+     * 
+     * @param options 
+     */
+    static hasManyRelation = (options: { model: ModelDefined<any, any>, otherModel: ModelDefined<any, any>, modelAs?: string, otherAs?: string, foreignKey: string }) => {
+        const { model, otherModel, modelAs, otherAs, foreignKey } = options;
+        model.hasMany(otherModel, {
+            foreignKey: foreignKey,
+            as: modelAs
+        })
+        otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
+    }
+
+    /**
+     * make a one to many relation between two models with custom onDelete behaviour
+     * 
+     * @param options 
+     */
+    static hasManyRelationOnDelete = (options: { model: ModelDefined<any, any>, otherModel: ModelDefined<any, any>, modelAs?: string, otherAs?: string, foreignKey: string, onDelete: string }) => {
+        const { model, otherModel, modelAs, otherAs, foreignKey, onDelete } = options;
+        model.hasMany(otherModel, {
+            foreignKey: foreignKey,
+            as: modelAs,
+            onDelete: onDelete
+        })
+        otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
+    }
+
+    /**
+     * make a one to one relation between two models
+     * 
+     * @param options 
+     */
+    static hasOneRelation = (options: { model: ModelDefined<any, any>, otherModel: ModelDefined<any, any>, modelAs?: string, otherAs?: string, foreignKey: string }) => {
+        const { model, otherModel, modelAs, otherAs, foreignKey } = options;
+        model.hasOne(otherModel, {
+            foreignKey: foreignKey,
+            as: modelAs
+        })
+        otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
+    }
+
+    static enableFullTextSearch = () => {
+
+        ItemsModel.makeItemsFullTextSearchable();
+
+        //ALTER TABLE item ADD FULLTEXT(itemName, description);
+    }
+
+
+
 }
 
 export const initialize = async () => {
     try {
-        initUserModel(sequelize);
-        initItems(sequelize);
-        initRentals(sequelize);
-        initPaymentDetails(sequelize);
-        initRentalsDetails(sequelize);
+        const initDB = InitialiseDatabase;
+        initDB.initUserModel(sequelize);
+        initDB.initUserPreferenceModel(sequelize);
+        initDB.initItems(sequelize);
+        initDB.initRentals(sequelize);
+        initDB.initPaymentDetails(sequelize);
+        initDB.initRentalsDetails(sequelize);
 
-        //i think async skipping to creating assostiations before the models are created
-        User.hasMany(Items, {
-            foreignKey: "ownerId",
-            onDelete: "CASCADE",// will delete all items that belong to user if user is deleted
 
-        })
-        Items.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' })
+        // User.hasMany(Item, {
+        //     foreignKey: "ownerId",
+        //     onDelete: "CASCADE",// will delete all items that belong to user if user is deleted
+
+        // })
+        // Item.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' }) // that as is not working to redefine the name of the foreign key
+        initDB.hasManyRelationOnDelete({ model: User, otherModel: Item, foreignKey: "ownerId", onDelete: "CASCADE", modelAs: 'owner' })
 
         //User has many Rentals
-        User.hasMany(Rentals, {
-            foreignKey: "renterId",
-            as: "renter"
-        })
-        User.hasMany(Rentals, {
-            foreignKey: "letterId",
-            as: "letter"
-        })
-        Rentals.belongsTo(User, { foreignKey: 'renterId', as: 'renter' })
-        Rentals.belongsTo(User, { foreignKey: 'letterId', as: 'letter' })
+        // User.hasMany(Rental, {
+        //     foreignKey: "renterId",
+        //     as: "renter"
+        // })
 
-        //Rental has one payment
-        Rentals.hasOne(PaymentDetails, {
-            foreignKey: "rental",
-        })
-        PaymentDetails.belongsTo(Rentals, { as: "rentalPayment", foreignKey: "rental" })
+        // Rental.belongsTo(User, { foreignKey: 'renterId', as: 'renter' })
 
-        //items has many Rental details
-        Items.hasMany(RentalsDetails, {
-            foreignKey: "itemId"
-        })
-        RentalsDetails.belongsTo(Items, { as: "item", foreignKey: "itemId" })
+        // User.hasMany(Rental, {
+        //     foreignKey: "letterId",
+        //     as: "letter"
+        // })
+        // Rental.belongsTo(User, { foreignKey: 'letterId', as: 'letter' })
 
-        //Rentals has many Rental details
-        Rentals.hasMany(RentalsDetails, {
-            foreignKey: "rentalId"
-        })
-        RentalsDetails.belongsTo(Rentals, { as: "rental", foreignKey: "rentalId" })
+        initDB.hasManyRelation({ model: User, otherModel: Rental, modelAs: "renter", otherAs: "renter", foreignKey: "renterId" })// NOTE: I think foreign key is wrong should be userID
+        initDB.hasManyRelation({ model: User, otherModel: Rental, modelAs: "letter", otherAs: "letter", foreignKey: "letterId" })// NOTE: I think foreign key is wrong should be userID
 
-        await sequelize.sync({ force: true }) // should init all models and reset the database
 
+        // //user <--> userPreference
+        // User.hasOne(UserPreference, {
+        //     foreignKey: "userId", // error here
+        // })
+        // UserPreference.belongsTo(User, { foreignKey: 'userId', as: 'user' })
+        initDB.hasOneRelation({ model: User, otherModel: UserPreference, foreignKey: "preferenceId", otherAs: "preference" })
+
+
+
+
+        // //Rental has one payment
+        // Rental.hasOne(PaymentDetail, {
+        //     foreignKey: "rental",
+        // })
+        // PaymentDetail.belongsTo(Rental, { as: "rentalPayment", foreignKey: "rental" })
+        initDB.hasOneRelation({ model: Rental, otherModel: PaymentDetail, foreignKey: "rental", modelAs: "rentalPayment" })
+        // //items has many Rental details
+        // Item.hasMany(RentalsDetails, {
+        //     foreignKey: "itemId"
+        // })
+        // RentalsDetails.belongsTo(Item, { as: "item", foreignKey: "itemId" })
+        initDB.hasManyRelation({ model: Item, otherModel: RentalsDetails, foreignKey: "itemId", otherAs: "item" })
+        // //Rentals has many Rental details
+        // Rental.hasMany(RentalsDetails, {
+        //     foreignKey: "rentalId"
+        // })
+        // RentalsDetails.belongsTo(Rental, { as: "rental", foreignKey: "rentalId" })
+        initDB.hasManyRelation({ model: Rental, otherModel: RentalsDetails, foreignKey: "rentalId", otherAs: "rental" })
+
+
+
+        await sequelize.sync({ force: true })// should init all models and reset the database
         console.log("Database models initialized")
+        await initDB.enableFullTextSearch();
     }
-    catch (err) {
+    catch (err: any) {
         console.log(err)
-        throw new Error("Could not initialize database models: " + err);
+        throw new Error("Could not initialize database models!!!!!!!!!!!!!!!!!!!: " + err);
 
     }
+
+
 }
 
 

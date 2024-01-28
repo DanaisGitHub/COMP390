@@ -14,7 +14,7 @@ const router = Router();
 
 const errorHandler = (err: any, req: Req, res: Res, next: Next) => {
     console.log("There was an error", err)
-    res.status(500).json({ err: `There was a fatal an error`, result: null })
+    res.status(500).json({ err: err, result: null })
 }
 
 router.get('/error', (req: Req, res: Res, next: Next) => {// how you error handle
@@ -30,15 +30,20 @@ router.get('/error', (req: Req, res: Res, next: Next) => {// how you error handl
 //     }
 // })
 
+
+
+
+
 //added in 
 router.post('/signUp', async (req: Req, res: Res, next: Next) => { // semi works need to check all casses+ should be try catches 
     try {
-        AuthFunctions.signUp(req, res, next);
+        await AuthFunctions.signUp(req, res, next);
     }
     catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
+        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"+err)
         next(err)
+        //res.status(500).json({ err: err, message: null })
+        
     }
 })
 
@@ -94,14 +99,14 @@ router.post("/deleteEverything", async (req: Req, res: Res, next: Next) => { // 
     }
 })
 
-router.get("/getEverything", async (req: Req, res: Res, next: Next) => { // works // Shouls we Really have this in production?
-    try {
-        AuthFunctions.getEverything(req, res, next);
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
-    }
-});
+// router.get("/getEverything", async (req: Req, res: Res, next: Next) => { // works // Shouls we Really have this in production?
+//     try {
+//         AuthFunctions.getEverything(req, res, next);
+//     } catch (err) {
+//         console.log(err)
+//         res.status(500).json({ err: err, message: null })
+//     }
+// });
 
 // router.post("/deleteUser",authMiddleware, async (req: Req, res: Res, next: Next) => { // works // At some point Due to GDPR we will need to have this
 //     try{

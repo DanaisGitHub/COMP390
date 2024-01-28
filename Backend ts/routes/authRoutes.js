@@ -10,7 +10,7 @@ const authUtils_1 = require("../utils/authUtils");
 const router = (0, express_1.Router)();
 const errorHandler = (err, req, res, next) => {
     console.log("There was an error", err);
-    res.status(500).json({ err: `There was a fatal an error`, result: null });
+    res.status(500).json({ err: err, result: null });
 };
 router.get('/error', (req, res, next) => {
     next(errorHandler); // in async function you can do next(errorHandler) but no need to do it in a sync function
@@ -26,12 +26,12 @@ router.get('/error', (req, res, next) => {
 //added in 
 router.post('/signUp', async (req, res, next) => {
     try {
-        authController_1.AuthController.signUp(req, res, next);
+        await authController_1.AuthController.signUp(req, res, next);
     }
     catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, message: null });
+        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" + err);
         next(err);
+        //res.status(500).json({ err: err, message: null })
     }
 });
 router.post('/login', async (req, res, next) => {
@@ -79,15 +79,14 @@ router.post("/deleteEverything", async (req, res, next) => {
         res.status(500).json({ err: err, message: null });
     }
 });
-router.get("/getEverything", async (req, res, next) => {
-    try {
-        authController_1.AuthController.getEverything(req, res, next);
-    }
-    catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, message: null });
-    }
-});
+// router.get("/getEverything", async (req: Req, res: Res, next: Next) => { // works // Shouls we Really have this in production?
+//     try {
+//         AuthFunctions.getEverything(req, res, next);
+//     } catch (err) {
+//         console.log(err)
+//         res.status(500).json({ err: err, message: null })
+//     }
+// });
 // router.post("/deleteUser",authMiddleware, async (req: Req, res: Res, next: Next) => { // works // At some point Due to GDPR we will need to have this
 //     try{
 //         AuthFunctions.deleteUser(req, res, next);

@@ -9,7 +9,7 @@ class FoodModel extends baseModel_1.BaseModel {
         try {
             let foodIdObjects = [];
             for (let i = 0; i < customFoodIdKeys.length; i++) {
-                const theEntry = await this.findByPkey(modelSetUp_1.CustomFoodData, customFoodIdKeys[i]);
+                const theEntry = await this.findByPkey(CustomFoodData, customFoodIdKeys[i]);
                 foodIdObjects.push(theEntry.result);
             }
             return { err: false, result: foodIdObjects };
@@ -23,7 +23,7 @@ class FoodModel extends baseModel_1.BaseModel {
         try {
             let foodIdObjects = [];
             for (let i = 0; i < foodIdKeys.length; i++) {
-                const theEntry = await this.findByPkey(modelSetUp_1.FoodData, foodIdKeys[i]);
+                const theEntry = await this.findByPkey(FoodData, foodIdKeys[i]);
                 foodIdObjects.push(theEntry.result);
             }
             return { err: false, result: foodIdObjects };
@@ -37,7 +37,7 @@ class FoodModel extends baseModel_1.BaseModel {
         try {
             let exerciseIdObjects = [];
             for (let i = 0; i < exerciseIdKeys.length; i++) {
-                const theEntry = await this.findByPkey(modelSetUp_1.Excerises, exerciseIdKeys[i]);
+                const theEntry = await this.findByPkey(Excerises, exerciseIdKeys[i]);
                 exerciseIdObjects.push(theEntry.result);
             }
             return { err: false, result: exerciseIdObjects };
@@ -171,7 +171,7 @@ class FoodModel extends baseModel_1.BaseModel {
     }
     async getAllUserLogs(userId) {
         try {
-            const response = await this.findAll(modelSetUp_1.UserLogs, { where: { email: userId } });
+            const response = await this.findAll(UserLogs, { where: { email: userId } });
             return response;
         }
         catch (err) {
@@ -182,7 +182,7 @@ class FoodModel extends baseModel_1.BaseModel {
     async getUserLogsForDay(userId, date) {
         try {
             const compositeKey = { email: userId, date: date };
-            const theEntry = await this.findOne(modelSetUp_1.UserLogs, { where: compositeKey });
+            const theEntry = await this.findOne(UserLogs, { where: compositeKey });
             return { err: false, result: theEntry.result };
         }
         catch (err) {
@@ -205,7 +205,7 @@ class FoodModel extends baseModel_1.BaseModel {
             console.log(newData);
             const { err, result } = await this.findByPkey(modelSetUp_1.User, userId);
             const userObj = result;
-            const response = await this.update(userObj, newData);
+            const response = await this.baseUpdate(userObj, newData);
             // updating the user in the class
             return response;
         }
@@ -217,7 +217,7 @@ class FoodModel extends baseModel_1.BaseModel {
     ////////////////////////add to Database////////////////////////////////////////////////// Not adding users here doing that in auth
     async addCustomFood(userId, newData) {
         try {
-            const response = await this.create(modelSetUp_1.CustomFoodData, newData);
+            const response = await this.baseCreate(CustomFoodData, newData);
             // we need id of new entry to add to userlog
             //const primaryKey = { response.result.id };
             return response;
@@ -230,7 +230,7 @@ class FoodModel extends baseModel_1.BaseModel {
     async addExcerise(newData) {
         try {
             console.log(newData);
-            const response = await this.create(modelSetUp_1.Excerises, newData);
+            const response = await this.baseCreate(Excerises, newData);
             return response;
         }
         catch (err) {
@@ -240,7 +240,7 @@ class FoodModel extends baseModel_1.BaseModel {
     }
     async addFood(newData) {
         try {
-            const response = await this.create(modelSetUp_1.FoodData, newData);
+            const response = await this.baseCreate(FoodData, newData);
             return response;
         }
         catch (err) {
@@ -251,9 +251,9 @@ class FoodModel extends baseModel_1.BaseModel {
     async addUserLogs(newData) {
         try {
             const compositeKey = { email: newData.email, date: newData.date };
-            const { err, result } = await this.findOne(modelSetUp_1.UserLogs, { where: compositeKey });
+            const { err, result } = await this.findOne(UserLogs, { where: compositeKey });
             if (err === "not found") { // works
-                const response = await this.create(modelSetUp_1.UserLogs, newData);
+                const response = await this.baseCreate(UserLogs, newData);
                 return { err: false, result: response.result };
             }
             if (err) {
@@ -297,8 +297,8 @@ class FoodModel extends baseModel_1.BaseModel {
                 exerciseId: newExcerisesId,
                 customFoodId: newCustomFoodId
             };
-            const response = await this.update(result, updateData);
-            const theEntry = await this.findOne(modelSetUp_1.UserLogs, { where: compositeKey });
+            const response = await this.baseUpdate(result, updateData);
+            const theEntry = await this.findOne(UserLogs, { where: compositeKey });
             return { err: false, result: theEntry.result };
         }
         catch (err) {

@@ -1,4 +1,4 @@
-import { sequelize, User, UserLogs, Excerises, FoodData, CustomFoodData } from "../modelSetUp";
+import {sequelize, User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails} from "../modelSetUp";
 import { Model, DataTypes, Sequelize, ModelCtor } from "sequelize";
 import { BaseModel } from "./baseModel";
 import StdReturn from "../../types/baseTypes"; // just changed make sure correct
@@ -233,7 +233,7 @@ export class FoodModel extends BaseModel { // make static the functions that don
 
             const { err, result } = await this.findByPkey(User, userId);
             const userObj = result;
-            const response: StdReturn = await this.update(userObj, newData)
+            const response: StdReturn = await this.baseUpdate(userObj, newData)
             // updating the user in the class
             return response;
         } catch (err) {
@@ -245,7 +245,7 @@ export class FoodModel extends BaseModel { // make static the functions that don
     ////////////////////////add to Database////////////////////////////////////////////////// Not adding users here doing that in auth
     public async addCustomFood(userId: string, newData: CustomFoodDataType): Promise<StdReturn> { // yes with auth problem
         try {
-            const response: StdReturn = await this.create(CustomFoodData, newData)
+            const response: StdReturn = await this.baseCreate(CustomFoodData, newData)
 
             // we need id of new entry to add to userlog
 
@@ -261,7 +261,7 @@ export class FoodModel extends BaseModel { // make static the functions that don
     public async addExcerise(newData: ExcerisesType): Promise<StdReturn> { // yes with auth problem
         try {
             console.log(newData)
-            const response: StdReturn = await this.create(Excerises, newData)
+            const response: StdReturn = await this.baseCreate(Excerises, newData)
             return response;
         } catch (err) {
             console.log(err)
@@ -271,7 +271,7 @@ export class FoodModel extends BaseModel { // make static the functions that don
 
     public async addFood(newData: FoodDataType): Promise<StdReturn> {
         try {
-            const response: StdReturn = await this.create(FoodData, newData)
+            const response: StdReturn = await this.baseCreate(FoodData, newData)
             return response;
         }
         catch (err) {
@@ -286,7 +286,7 @@ export class FoodModel extends BaseModel { // make static the functions that don
 
             const { err, result }: StdReturn = await this.findOne(UserLogs, { where: compositeKey });
             if (err === "not found") { // works
-                const response: StdReturn = await this.create(UserLogs, newData)
+                const response: StdReturn = await this.baseCreate(UserLogs, newData)
                 return { err: false, result: response.result };
             }
             if (err) {
@@ -336,7 +336,7 @@ export class FoodModel extends BaseModel { // make static the functions that don
                 customFoodId: newCustomFoodId
             }
 
-            const response: StdReturn = await this.update(result, updateData)
+            const response: StdReturn = await this.baseUpdate(result, updateData)
             const theEntry: StdReturn = await this.findOne(UserLogs, { where: compositeKey });
 
             return { err: false, result: theEntry.result };
