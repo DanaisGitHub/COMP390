@@ -1,17 +1,17 @@
 import { coordiantes } from './baseTypes';
 
 export interface ItemType {
-    id: number;
+    id?: number;
     itemName: string;
     description: string;
     thumbnail: string;
     pricePerDay: number;
-    itemLocation: coordiantes;
+    itemLocation?: coordiantes;
     quantity: number;
 }
 
 export interface RentalType {
-    id: number;
+    id?: number;
     rentalStartDate: Date;
     rentalEndDate: Date;
     rentalStatus: string;
@@ -22,7 +22,7 @@ export interface RentalType {
 }
 
 export interface RentalDetailType {
-    id: number;
+    id?: number;
     price: number;
     total: number;
     discount: number;
@@ -34,7 +34,7 @@ export interface RentalDetailType {
 
 
 export interface PaymentDetailType {
-    id: number;
+    id?: number;
     paymentDate: Date;
     paymentType: string;
     allowed: boolean;

@@ -10,14 +10,16 @@ import {
 
 import StdReturn from '../types/baseTypes';
 import mysql from "mysql2";
-import { ItemsModel } from "./typesOfModels/itemsModel";
+import { ItemModel } from "./typesOfModels/itemsModel";
 
 import { UserType, UserPreferenceType } from '../types/userType';
 import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../types/rentalType';
 import { coordiantes } from '../types/baseTypes';
 
 
-export type ModelsClasses = User | UserPreference | Item | Rental | PaymentDetail | RentalsDetails
+let deleteDatabase = false;
+
+
 
 /**
  * param1: database name (like CREATE DB )
@@ -75,7 +77,7 @@ export class Item extends Model<ItemType> implements ItemType {
     public ownerId!: number;
     public thumbnail!: string;
     public pricePerDay!: number;
-    public itemLocation!: coordiantes;
+    public itemLocation?: coordiantes;
     public quantity!: number;
 
     public readonly createdAt!: Date;
@@ -172,7 +174,7 @@ const InitialiseDatabase = class {
                 description: { type: DataTypes.STRING, allowNull: false },
                 thumbnail: { type: DataTypes.STRING, allowNull: false },
                 pricePerDay: { type: DataTypes.INTEGER, allowNull: false },
-                itemLocation: { type: DataTypes.JSON, allowNull: false },
+                itemLocation: { type: DataTypes.JSON, allowNull: true },
                 quantity: { type: DataTypes.INTEGER, allowNull: false },
             },
             {
@@ -276,8 +278,7 @@ const InitialiseDatabase = class {
     }
 
     static enableFullTextSearch = () => {
-
-        ItemsModel.makeItemsFullTextSearchable();
+        ItemModel.makeItemsFullTextSearchable();
 
         //ALTER TABLE item ADD FULLTEXT(itemName, description);
     }
@@ -353,10 +354,14 @@ export const initialize = async () => {
         initDB.hasManyRelation({ model: Rental, otherModel: RentalsDetails, foreignKey: "rentalId", otherAs: "rental" })
 
 
-
-        await sequelize.sync({ force: true })// should init all models and reset the database
+       
+        const options = deleteDatabase ? { force: true } : undefined;
+        await sequelize.sync(options)// should init all models and reset the database
         console.log("Database models initialized")
-        await initDB.enableFullTextSearch();
+        if (deleteDatabase){
+            initDB.enableFullTextSearch();
+        }
+
     }
     catch (err: any) {
         console.log(err)

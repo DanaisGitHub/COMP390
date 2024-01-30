@@ -8,13 +8,14 @@ const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const authRoutes_1 = __importDefault(require("./authRoutes"));
 const googleMapsAPI_1 = __importDefault(require("../API/googleMaps/googleMapsAPI"));
-const foodDataRoutes_1 = __importDefault(require("./foodDataRoutes"));
+const testRoutes_1 = __importDefault(require("./testRoutes"));
+//import { FoodModel } from '../models/typesOfModels/foodModel';
 const pathToKey = path_1.default.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
 const router = (0, express_1.Router)();
+router.use('/test', testRoutes_1.default);
 router.use('/auth', authRoutes_1.default);
 router.use('/api', googleMapsAPI_1.default);
-router.use('/food', foodDataRoutes_1.default);
 const errorHandler = (err, req, res, next) => {
     console.log("There was an error", err);
     res.status(500).json({ err: "There was a fatal an error", result: err });

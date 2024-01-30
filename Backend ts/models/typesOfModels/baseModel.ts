@@ -1,10 +1,12 @@
 import StdReturn from '../../types/baseTypes';
 import { DatabaseError, NotFoundError } from '../../utils/customError';
-import { RentalsDetails, User } from '../modelSetUp';
-import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions } from 'sequelize/types';
+import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference } from '../modelSetUp';
+import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier } from 'sequelize/types';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
 import { mode } from 'crypto-js';
+import { Col, Fn, Literal, MakeNullishOptional } from 'sequelize/types/utils';
+import { ItemType } from '../../types/rentalType';
 
 
 
@@ -18,8 +20,14 @@ import { mode } from 'crypto-js';
  * abstract Class that provides atomic action to the database
  * @Description You have to pass the model in as parameter to the functions
  */
-export abstract class BaseModel {
+export class BaseModel<T extends Model<any, any> = Models> {
 
+
+    protected model: ModelStatic<T>;// need to make this a generic
+
+    constructor(model: ModelStatic<T>) {
+        this.model = model;
+    }
     //START OF DDL
     /**
      * creates a new entry into the database 
@@ -27,10 +35,10 @@ export abstract class BaseModel {
      * @param options object defining how data should be created (is an object of same type as model)
      * @returns Object of row created, where more functions can be done directly
      */
-    protected   baseCreate =  async <T extends Model<any, any> = Models>(model: ModelStatic<T>, options: Attributes<T>): Promise<StdReturn<T>> => { //would like options to be type of model
+    protected baseCreate = async (options: Attributes<T>): Promise<StdReturn<T>> => { //would like options to be type of model
 
         try {
-            const result = await model.create(options); // Cast options to 'any' type
+            const result = await this.model.create(options); // Cast options to 'any' type
             return { err: null, result };
         }
         catch (err: any) {
@@ -46,10 +54,10 @@ export abstract class BaseModel {
      * @param options used to define what you want to delete
      * @returns 
      */
-    protected baseDestroy = async  <T extends Model<any, any> = Models>(model: ModelStatic<T>, options: DestroyOptions<Attributes<T>>): Promise<StdReturn<number>> => { //models = USER // options = OPTIONS
+    protected baseDestroy = async (options: DestroyOptions<Attributes<T>>): Promise<StdReturn<number>> => { //models = USER // options = OPTIONS
         try {
 
-            const result = await model.destroy(options) // returns a number 
+            const result = await this.model.destroy(options) // returns a number 
             if (result === null) {
                 throw new NotFoundError("User not found in 'destroy' ");
             }
@@ -61,31 +69,17 @@ export abstract class BaseModel {
         }
     }
 
-    protected build = async (model: any, options: any): Promise<StdReturn> => { // if any defalut values not filled, filled with defulat already set
-        try {
-            const result = await model.build(options)
-            if (result === null || result === undefined) {
-                throw new NotFoundError("User not found in 'build' ");
-            }
-            return { err: null, result };
-        }
-        catch (err) {
-            console.log(err);
-            throw new Error("Failed to perfrom build database Operation");
-        }
-    }
-
     /**
-     * updates certain fields in specific entry
-     * 
-     * @param model T = The specific row/entry you are refering too eg perosn Jane in Users
-     * @param options What you want changing
-     * @returns if Successful returns nothing  else throws ERROR
-     */
-    protected baseUpdate = async  <T extends Model<any, any> = Models>(model: T, options: InstanceUpdateOptions<T>): Promise<void> => { // if any defalut values not filled, filled with defulat already set.
+ * 
+ * @param model ModelStatic<T> = Table you want to update
+ * @param searchTerm for ALL items you want to update
+ * @param updatingFields update 
+ */
+    protected baseUpdate = async (
+        values: { [key in keyof Attributes<T>]?: Fn | Col | Literal | Attributes<T>[key] | undefined },
+        searchTerm: Omit<UpdateOptions<Attributes<T>>, "returning">): Promise<void> => { // if any defalut values not filled, filled with defulat already set.
         try {
-            await model.update(options)
-            await model.save();// not needed
+            await this.model.update(values, searchTerm);
         }
         catch (err) {
             console.log(err);
@@ -104,9 +98,9 @@ export abstract class BaseModel {
      * @param options and object of conditions
      * @returns if found returns object, if not found returns null 
      */
-    protected baseFindOne = async <T extends Model<any, any> = Models>(model: ModelStatic<T>, options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T>> => {
+    protected baseFindOne = async (options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T>> => {
         try {
-            const result = await model.findOne(options)
+            const result = await this.model.findOne(options)
             if (result === null || result === undefined) {
                 throw new NotFoundError("User not found in 'findOne' ");
             }
@@ -120,9 +114,9 @@ export abstract class BaseModel {
 
 
 
-    protected baseFindAll = async <T extends Model<any, any> = Models>(model: ModelStatic<T>, options: FindOptions<Attributes<T>> | undefined): Promise<StdReturn<T[]>> => {
+    protected baseFindAll = async (options: FindOptions<Attributes<T>> | undefined): Promise<StdReturn<T[]>> => {
         try {
-            const result = await model.findAll(options)
+            const result = await this.model.findAll(options)
             if (result === null || result === undefined) {
                 throw new NotFoundError("not found in 'findAll' ");
 
@@ -135,12 +129,25 @@ export abstract class BaseModel {
         }
     }
 
-    protected findOrCreate = async (model: any, options: any): Promise<StdReturn> => {
+    protected build = async (options: any): Promise<StdReturn> => { // if any defalut values not filled, filled with defulat already set
         try {
-            const result = await model.findByPk(options)
-            if (result.user === null || result.user === undefined) {
-                throw new NotFoundError("User not found in 'findOrCreate' ");
+            const result = await this.model.build(options)
+            if (result === null || result === undefined) {
+                throw new NotFoundError("User not found in 'build' ");
             }
+            return { err: null, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new Error("Failed to perfrom build database Operation");
+        }
+    }
+
+
+
+    protected findOrCreate = async (options: FindOrCreateOptions<Attributes<T>, MakeNullishOptional<T["_creationAttributes"]>>): Promise<StdReturn<[T, boolean]>> => {
+        try {
+            const result = await this.model.findCreateFind(options)
             return { err: null, result };
         }
         catch (err) {
@@ -148,9 +155,9 @@ export abstract class BaseModel {
             throw new DatabaseError("Failed to perfrom findOrCreate database Operation");
         }
     }
-    
-    protected findByPkey = async (model: any, primaryKey: any): Promise<StdReturn> => {
-        const result = await model.findByPk(primaryKey)
+
+    protected findByPkey = async (identifier?: Identifier | undefined, options?: Omit<FindOptions<Attributes<T>>, "where"> | undefined): Promise<StdReturn<T>> => {
+        const result = await this.model.findByPk(identifier, options)
         if (result === null) {
             throw new NotFoundError("not found in findByPkey")
         }
@@ -160,10 +167,10 @@ export abstract class BaseModel {
         console.log(err);
         throw new DatabaseError("Failed to perfrom findByPkey database Operation");
     }
-    
-    protected findAndCountAll = async (model: any, options: any): Promise<StdReturn> => {
+
+    protected findAndCountAll = async (options: any): Promise<StdReturn> => {
         try {
-            const result = await model.findAndCountAll(options)
+            const result = await this.model.findAndCountAll(options)
             if (result.rows === null || result.rows === undefined) {
                 throw new NotFoundError("not found in findAndCountAll")
             }
@@ -175,18 +182,64 @@ export abstract class BaseModel {
         }
     }
 
-    // need to make sure query is escaped/ or does SEQULIZE do that for use
-    protected customQuery = async (model: any, query: string, options: any): Promise<StdReturn> => {
+    // TODO: Custom Query
+
+
+    ///////////////////////////
+    //PUBLIC FUNCTIONS
+    ///////////////////////////
+    public async addNew(details: Attributes<T>): Promise<StdReturn<T>> {
         try {
-            const result = await model.query(query, options)
-            if (result === null || result === undefined) {
-                throw new NotFoundError("not found in 'customQuery' ");
-            }
-            return { err: null, result };
+            const { err, result } = await this.baseCreate(details);
+            return { err, result };
         }
         catch (err) {
             console.log(err);
-            throw new DatabaseError("Failed to perfrom customQuery database Operation");
+            throw new DatabaseError("Item Models addNew()::=> " + err);
+        }
+    }
+
+    public async remove(searchTerm: DestroyOptions<Attributes<T>>): Promise<StdReturn<number>> {
+        try {
+            const { err, result } = await this.baseDestroy(searchTerm); // will need to test
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("Item Models destroy()::=> " + err);
+        }
+    }
+
+    public async update(
+        values: { [key in keyof Attributes<T>]?: Fn | Col | Literal | Attributes<T>[key] | undefined },
+        searchTerm: Omit<UpdateOptions<Attributes<T>>, "returning">): Promise<void> {
+        try {
+            await this.baseUpdate(values, searchTerm);
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("Item Models update()::=> " + err);
+        }
+    }
+
+    public async find(options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T>> {
+        try {
+            const { err, result } = await this.baseFindOne(options)
+            return { err, result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("Item Models find()::=> " + err);
+        }
+    }
+    public async findMany(options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T[]>> {
+        try {
+            const { err, result } = await this.baseFindAll(options)
+            return { err, result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("Item Models findMany()::=> " + err);
         }
     }
 }

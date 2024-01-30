@@ -2,8 +2,6 @@ import { Router, Request as Req, Response as Res, NextFunction as Next } from 'e
 
 // test
 import { authMiddleware } from '../utils/authUtils'
-
-import FoodClass from '../controllers/food/foodController';
 import { User } from '../models/modelSetUp';
 import jwt from 'jsonwebtoken';
 
@@ -13,19 +11,18 @@ import fs from 'fs';
 
 import authRoutes from './authRoutes';
 import apiRoutes from '../API/googleMaps/googleMapsAPI';
-import foodRoutes from './foodDataRoutes';
+import testRoutes from './testRoutes';
 import StdReturn from '../types/baseTypes';
-import { FoodModel } from '../models/typesOfModels/foodModel';
+//import { FoodModel } from '../models/typesOfModels/foodModel';
 
 const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
 const router = Router();
-
+router.use('/test', testRoutes)
 router.use('/auth', authRoutes);
 
 router.use('/api', apiRoutes);
-router.use('/food', foodRoutes);
 
 
 

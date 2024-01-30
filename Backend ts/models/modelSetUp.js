@@ -5,6 +5,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.initialize = exports.RentalsDetails = exports.PaymentDetail = exports.Rental = exports.Item = exports.UserPreference = exports.User = exports.sequelize = void 0;
 const sequelize_1 = require("sequelize");
 const itemsModel_1 = require("./typesOfModels/itemsModel");
+let deleteDatabase = false;
 /**
  * param1: database name (like CREATE DB )
  * param2: username (profile of mysql)
@@ -79,7 +80,7 @@ const InitialiseDatabase = (_a = class {
             description: { type: sequelize_1.DataTypes.STRING, allowNull: false },
             thumbnail: { type: sequelize_1.DataTypes.STRING, allowNull: false },
             pricePerDay: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
-            itemLocation: { type: sequelize_1.DataTypes.JSON, allowNull: false },
+            itemLocation: { type: sequelize_1.DataTypes.JSON, allowNull: true },
             quantity: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
         }, {
             sequelize,
@@ -167,7 +168,7 @@ const InitialiseDatabase = (_a = class {
         otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs });
     },
     _a.enableFullTextSearch = () => {
-        itemsModel_1.ItemsModel.makeItemsFullTextSearchable();
+        itemsModel_1.ItemModel.makeItemsFullTextSearchable();
         //ALTER TABLE item ADD FULLTEXT(itemName, description);
     },
     _a);
@@ -223,9 +224,12 @@ const initialize = async () => {
         // })
         // RentalsDetails.belongsTo(Rental, { as: "rental", foreignKey: "rentalId" })
         initDB.hasManyRelation({ model: Rental, otherModel: RentalsDetails, foreignKey: "rentalId", otherAs: "rental" });
-        await exports.sequelize.sync({ force: true }); // should init all models and reset the database
+        const options = deleteDatabase ? { force: true } : undefined;
+        await exports.sequelize.sync(options); // should init all models and reset the database
         console.log("Database models initialized");
-        await initDB.enableFullTextSearch();
+        if (deleteDatabase) {
+            initDB.enableFullTextSearch();
+        }
     }
     catch (err) {
         console.log(err);
