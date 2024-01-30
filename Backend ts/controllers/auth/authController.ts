@@ -8,16 +8,22 @@ import path from 'path';
 import fs from 'fs';
 import * as jwt from "jsonwebtoken"
 import type { JwtPayload } from "jsonwebtoken"
+import express from 'express';
 
 //import self-written files
 import { AuthModel } from '../../models/typesOfModels/authModel';
 import { User } from '../../models/modelSetUp';
 import { issueJWT, authMiddleware } from '../../utils/authUtils'
 import { runPassport } from '../../config/passport'
-import { UserAttributesType } from '../../types/dbTypes'
+import { UserType } from '../../types/userType'
 
-import StdReturn from '../../types/types';
+import StdReturn from '../../types/baseTypes';
 import { type } from 'os';
+
+import {errorHandler, asyncErrorHandler} from '../errorController'
+
+
+
 
 // constants
 const pathToKey = path.join(__dirname, '..', '..', 'id_rsa_pub.pem');
@@ -27,16 +33,18 @@ const accessTime = 900000 * 4 * 24 * 30  // 15 days
 const refreshTime = 900000 * 4 * 24 * 30 // 30 days
 runPassport(passport);
 
-export class AuthController {
+const app = express();
+
+export class AuthController { // would be nice to use a singleton here 
 
 
-    public static issueNewAccessToken = (res:Res,payload:any) : {token: string;expires: string;} => {
+    public static issueNewAccessToken = (res: Res, payload: any): { token: string; expires: string; } => {
         const newAccessToken = issueJWT(payload)
         res.write("New access token issued")
         res.cookie("accessToken", newAccessToken, { maxAge: accessTime, httpOnly: true })
         return newAccessToken
     }
-    
+
     /**
      * 
      * @param token the JWT token 
@@ -77,7 +85,6 @@ export class AuthController {
         return token
     }
 
-
     /**
      * Assuming Correct Authentification, logs user in by setting cookies and headers
      * @param res Response
@@ -86,7 +93,7 @@ export class AuthController {
     private static logUserIn = (res: Res, payload: String) => {
         try {
             const refreshToken = issueJWT({ id: payload }, "30d");//Should we renew refresh token at each login
-            const accessToken = this.issueNewAccessToken(res,payload)
+            const accessToken = this.issueNewAccessToken(res, payload)
             res.cookie("refreshToken", refreshToken, { maxAge: refreshTime, httpOnly: true })
             res.setHeader('Authorization', 'Bearer ' + accessToken) // no header is being set
             console.log("Logged in")
@@ -130,29 +137,9 @@ export class AuthController {
      */
     public static signUp = async (req: Req, res: Res, next: Next) => {
         try {
-            console.log(req.body)
-            const email: string = req.body.id;
-            const password: string = req.body.password;
-            const firstName: string = req.body.firstName;
-            const lastName: string = req.body.lastName;
-            const weight: number = req.body.weight;
-            const calorieGoal: number = req.body.calorieGoal;
-            const birthDate: Date = req.body.birthDate; // has to be Date format
-            const height: number = req.body.height; // has to be Date format
-            const gender: number = req.body.gender
-
-            let user: UserAttributesType = {
-                firstName: firstName,
-                lastName: lastName,
-                id: email,
-                password: password,
-                birthDate: birthDate,
-                calorieGoal: calorieGoal,
-                weight: weight,
-                height: height,
-                gender: gender
-            }
-
+            let user: UserType = req.body
+            user.birthDate = new Date();
+            console.log(user)
 
             const { err, result } = await db.signUp(user)
             if (err) {
@@ -161,14 +148,14 @@ export class AuthController {
                 console.log(result)
                 res.status(400).json({ err: err, message: result })
             }
-            else {
-                res.status(200).json({ err: err, message: "Success" })
-            }
+            res.status(200).json({ err: err, message: "Success" })
 
         }
-        catch (err) {
+        catch (err: any) {
+
+            //need to somehow send error to error handler
             console.log(err)
-            res.status(500).json({ err: err, message: "Internal Server Error" })
+            next(err)
         }
     }
 
@@ -242,7 +229,7 @@ export class AuthController {
      */
     public static accessExpired = (req: Req, res: Res, next: Next): StdReturn => {
         try {
-            
+
             let theResult: StdReturn = { err: null, result: null }
             const refreshToken: string | undefined = this.extractRefreshTokenFromReq(req);
             if (refreshToken === undefined) {
@@ -287,15 +274,15 @@ export class AuthController {
         }
     }
 
-    public static getEverything = async (req: Req, res: Res, next: Next) => {
-        try {
-            const result = await db.getEverything();
-            res.status(200).json({ err: result.err, reuslt: result.result })
-        } catch (err) {
-            console.log(err)
-            res.status(500).json({ err: true, result: err })
-        }
-    }
+    // public static getEverything = async (req: Req, res: Res, next: Next) => {
+    //     try {
+    //         const result = await db.getEverything();
+    //         res.status(200).json({ err: result.err, reuslt: result.result })
+    //     } catch (err) {
+    //         console.log(err)
+    //         res.status(500).json({ err: true, result: err })
+    //     }
+    // }
 
     // public static getAllUsers = async (req: Req, res: Res, next: Next) => {
     //     try {
@@ -307,6 +294,5 @@ export class AuthController {
     //     }
     // }
 
-
-
 }
+app.use(errorHandler)

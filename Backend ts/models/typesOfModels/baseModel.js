@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseModel = void 0;
+const customError_1 = require("../../utils/customError");
 // if you string is retured in error then error == true
 // if error == null then error == false
 //could be all statics and not need to instantiate
@@ -9,82 +10,56 @@ exports.BaseModel = void 0;
  * @Description You have to pass the model in as parameter to the functions
  */
 class BaseModel {
-    constructor() {
+    constructor(model) {
         //START OF DDL
         /**
          * creates a new entry into the database
+         * @model ModelStatic<T> is the model/table you want to create a new entry in
          * @param options object defining how data should be created (is an object of same type as model)
          * @returns Object of row created, where more functions can be done directly
          */
-        this.create = async (model, options) => {
-            let theReturn = { err: null, result: "" };
+        this.baseCreate = async (options) => {
             try {
-                const result = await model.create(options);
-                theReturn.err = null;
-                theReturn.result = result;
-                return theReturn;
+                const result = await this.model.create(options); // Cast options to 'any' type
+                return { err: null, result };
             }
             catch (err) {
                 console.log(err);
-                throw new Error("Failed to perfrom create database Operation");
-            }
-        };
-        this.destroy = async (model, options) => {
-            let theReturn = { err: null, result: "" };
-            try {
-                const result = await model.destroy(options);
-                console.log(result);
-                if (result === null) {
-                    console.log("Not Found");
-                    theReturn.result = 'Not Found';
-                    theReturn.err = true;
-                    return theReturn;
-                }
-                theReturn.err = null;
-                theReturn.result = result;
-                return theReturn;
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Failed to perfrom destroy database Operation");
-            }
-        };
-        this.build = async (model, options) => {
-            let theReturn = { err: null, result: "" };
-            try {
-                const result = await model.build(options);
-                if (result === null || result === undefined) {
-                    theReturn.result = 'Not Found';
-                    theReturn.err = true;
-                    return theReturn;
-                }
-                theReturn.err = null;
-                theReturn.result = { created: true };
-                return theReturn;
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Failed to perfrom build database Operation");
+                throw new customError_1.DatabaseError("baseModels Create() Error " + err.message);
             }
         };
         /**
-         * updates certain fields in specific entry
-         * @param model The specific row/entry you are refering too eg perosn Jane in Users
-         * @param options What you want changing
-         * @returns if Successful returns nothing  else throws ERROR
+         *
+         * @param model ModelStatic<T> = Table you want to delete from
+         * @param options used to define what you want to delete
+         * @returns
          */
-        this.update = async (model, options) => {
+        this.baseDestroy = async (options) => {
             try {
-                let theReturn = { err: null, result: "" };
-                await model.update(options);
-                await model.save();
-                theReturn.err = null;
-                theReturn.result = null;
-                return theReturn;
+                const result = await this.model.destroy(options); // returns a number 
+                if (result === null) {
+                    throw new customError_1.NotFoundError("User not found in 'destroy' ");
+                }
+                return { err: null, result };
             }
             catch (err) {
                 console.log(err);
-                throw new Error("Failed to perfrom update database Operation: " + err);
+                throw new customError_1.DatabaseError("Failed to perfrom destroy database Operation");
+            }
+        };
+        /**
+     *
+     * @param model ModelStatic<T> = Table you want to update
+     * @param searchTerm for ALL items you want to update
+     * @param updatingFields update
+     */
+        this.baseUpdate = async (values, searchTerm) => {
+            try {
+                await this.model.update(values, searchTerm);
+            }
+            catch (err) {
+                console.log(err);
+                throw new customError_1.DatabaseError("Failed to perfrom update database Operation: " + err);
             }
         };
         // create function bulkCreate
@@ -92,125 +67,137 @@ class BaseModel {
         //START OF DML
         /**
          * finds a specfic row that confroms to optinal clauses
+         * @param model ModelStatic<T> = Table you want to find one from
          * @param options and object of conditions
          * @returns if found returns object, if not found returns null
          */
-        this.findOne = async (model, options) => {
-            let theReturn = { err: null, result: "" };
+        this.baseFindOne = async (options) => {
             try {
-                const result = await model.findOne(options);
+                const result = await this.model.findOne(options);
                 if (result === null || result === undefined) {
-                    console.log("not found");
-                    theReturn.result = null;
-                    theReturn.err = "not found";
-                    return theReturn;
+                    throw new customError_1.NotFoundError("User not found in 'findOne' ");
                 }
-                theReturn.err = null;
-                theReturn.result = result;
-                return theReturn;
+                return { err: null, result };
             }
             catch (err) {
-                console.log(err);
-                throw new Error("Failed to perfrom findOne database Operation");
+                console.error(err);
+                throw new customError_1.DatabaseError("Failed to perform 'findOne'");
             }
         };
-        this.findAll = async (model, options) => {
-            let theReturn = { err: null, result: "" };
+        this.baseFindAll = async (options) => {
             try {
-                const result = await model.findAll(options);
+                const result = await this.model.findAll(options);
                 if (result === null || result === undefined) {
-                    console.log("not found");
-                    theReturn.result = null;
-                    theReturn.err = "not found";
-                    return theReturn;
+                    throw new customError_1.NotFoundError("not found in 'findAll' ");
                 }
-                theReturn.err = null;
-                theReturn.result = result;
-                return theReturn;
+                return { err: null, result };
             }
             catch (err) {
                 console.log(err);
-                throw new Error("Failed to perfrom findAll database Operation");
+                throw new customError_1.DatabaseError("Failed to perfrom findAll database Operation");
             }
         };
-        // what about if not found
-        this.findOrCreate = async (model, options) => {
+        this.build = async (options) => {
             try {
-                let theReturn = { err: null, result: null };
-                const { user, created } = await model.findByPk(options);
-                if (user === null || user === undefined) {
-                    console.log("not found");
-                    theReturn.result = null;
-                    theReturn.err = "not found";
-                    return theReturn;
-                }
-                theReturn.err = null;
-                theReturn.result = { user: user, created: created };
-                return theReturn;
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Failed to perfrom findOrCreate database Operation");
-            }
-        };
-        /**
-         * Finds an instance of primary key in table and return the row of the table
-         * @param primaryKey Is the Primary of table you want to find
-         * @returns if (err) wil crash, if not found will return not found, will return the table as object (How the function is Sequlize returns it)
-         */
-        this.findByPkey = async (model, primaryKey) => {
-            try {
-                let theReturn = { err: "Primary Key Not Found", result: null };
-                const result = await model.findByPk(primaryKey);
-                if (result === null) {
-                    console.log("not found");
-                    return theReturn;
-                }
-                theReturn.err = null;
-                theReturn.result = result;
-                return theReturn;
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Failed to perfrom findByPkey database Operation");
-            }
-        };
-        this.findAndCountAll = async (model, options) => {
-            let theReturn = { err: null, result: null };
-            try {
-                const { count, rows } = await model.findAndCountAll(options);
-                if (rows === null || rows === undefined) {
-                    console.log("not found");
-                    theReturn.result = null;
-                    return theReturn;
-                }
-                theReturn.err = null;
-                theReturn.result = { count: count, rows: rows };
-                return theReturn;
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Failed to perfrom findByPkey database Operation");
-            }
-        };
-        // need to make sure query is escaped/ or does SEQULIZE do that for use
-        this.customQuery = async (model, query, options) => {
-            try {
-                let theReturn = { err: null, result: "" };
-                const result = await model.query(query, options);
+                const result = await this.model.build(options);
                 if (result === null || result === undefined) {
-                    theReturn.result = 'Not Found';
-                    return theReturn;
+                    throw new customError_1.NotFoundError("User not found in 'build' ");
                 }
-                theReturn.err = null;
-                theReturn.result = result;
-                return theReturn;
+                return { err: null, result };
             }
             catch (err) {
                 console.log(err);
-                throw new Error("Failed to perfrom customQuery database Operation");
+                throw new Error("Failed to perfrom build database Operation");
             }
         };
+        this.findOrCreate = async (options) => {
+            try {
+                const result = await this.model.findCreateFind(options);
+                return { err: null, result };
+            }
+            catch (err) {
+                console.log(err);
+                throw new customError_1.DatabaseError("Failed to perfrom findOrCreate database Operation");
+            }
+        };
+        this.findByPkey = async (identifier, options) => {
+            const result = await this.model.findByPk(identifier, options);
+            if (result === null) {
+                throw new customError_1.NotFoundError("not found in findByPkey");
+            }
+            return { err: null, result };
+        };
+        this.findAndCountAll = async (options) => {
+            try {
+                const result = await this.model.findAndCountAll(options);
+                if (result.rows === null || result.rows === undefined) {
+                    throw new customError_1.NotFoundError("not found in findAndCountAll");
+                }
+                return { err: null, result };
+            }
+            catch (err) {
+                console.log(err);
+                throw new customError_1.DatabaseError("Failed to perfrom findByPkey database Operation");
+            }
+        };
+        this.model = model;
+    }
+    catch(err) {
+        console.log(err);
+        throw new customError_1.DatabaseError("Failed to perfrom findByPkey database Operation");
+    }
+    // TODO: Custom Query
+    ///////////////////////////
+    //PUBLIC FUNCTIONS
+    ///////////////////////////
+    async addNew(details) {
+        try {
+            const { err, result } = await this.baseCreate(details);
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Item Models addNew()::=> " + err);
+        }
+    }
+    async remove(searchTerm) {
+        try {
+            const { err, result } = await this.baseDestroy(searchTerm); // will need to test
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Item Models destroy()::=> " + err);
+        }
+    }
+    async update(values, searchTerm) {
+        try {
+            await this.baseUpdate(values, searchTerm);
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Item Models update()::=> " + err);
+        }
+    }
+    async find(options) {
+        try {
+            const { err, result } = await this.baseFindOne(options);
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Item Models find()::=> " + err);
+        }
+    }
+    async findMany(options) {
+        try {
+            const { err, result } = await this.baseFindAll(options);
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Item Models findMany()::=> " + err);
+        }
     }
 }
 exports.BaseModel = BaseModel;

@@ -1,18 +1,10 @@
 /* Hide navigation items for smaller screens */
 
-.mainMenu {
-  justify-content: end;
-  
-  
-}
-
 .eachLink {
   display: block;
 
   padding: 0.5rem 1rem;
   border-radius: 0.375rem;
-
-
 
   --tw-blur: blur(0);
 

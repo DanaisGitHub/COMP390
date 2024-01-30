@@ -33,10 +33,12 @@ const passport_1 = __importDefault(require("passport"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const jwt = __importStar(require("jsonwebtoken"));
+const express_1 = __importDefault(require("express"));
 //import self-written files
 const authModel_1 = require("../../models/typesOfModels/authModel");
 const authUtils_1 = require("../../utils/authUtils");
 const passport_2 = require("../../config/passport");
+const errorController_1 = require("../errorController");
 // constants
 const pathToKey = path_1.default.join(__dirname, '..', '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
@@ -44,6 +46,7 @@ const db = new authModel_1.AuthModel();
 const accessTime = 900000 * 4 * 24 * 30; // 15 days
 const refreshTime = 900000 * 4 * 24 * 30; // 30 days
 (0, passport_2.runPassport)(passport_1.default);
+const app = (0, express_1.default)();
 class AuthController {
 }
 exports.AuthController = AuthController;
@@ -139,27 +142,9 @@ AuthController.tokenState = (token) => {
  */
 AuthController.signUp = async (req, res, next) => {
     try {
-        console.log(req.body);
-        const email = req.body.id;
-        const password = req.body.password;
-        const firstName = req.body.firstName;
-        const lastName = req.body.lastName;
-        const weight = req.body.weight;
-        const calorieGoal = req.body.calorieGoal;
-        const birthDate = req.body.birthDate; // has to be Date format
-        const height = req.body.height; // has to be Date format
-        const gender = req.body.gender;
-        let user = {
-            firstName: firstName,
-            lastName: lastName,
-            id: email,
-            password: password,
-            birthDate: birthDate,
-            calorieGoal: calorieGoal,
-            weight: weight,
-            height: height,
-            gender: gender
-        };
+        let user = req.body;
+        user.birthDate = new Date();
+        console.log(user);
         const { err, result } = await db.signUp(user);
         if (err) {
             // should be sending more signigicant error
@@ -167,13 +152,12 @@ AuthController.signUp = async (req, res, next) => {
             console.log(result);
             res.status(400).json({ err: err, message: result });
         }
-        else {
-            res.status(200).json({ err: err, message: "Success" });
-        }
+        res.status(200).json({ err: err, message: "Success" });
     }
     catch (err) {
+        //need to somehow send error to error handler
         console.log(err);
-        res.status(500).json({ err: err, message: "Internal Server Error" });
+        next(err);
     }
 };
 /**
@@ -270,13 +254,4 @@ AuthController.deleteEverything = async (req, res, next) => {
         res.json({ err: true, result: err });
     }
 };
-AuthController.getEverything = async (req, res, next) => {
-    try {
-        const result = await db.getEverything();
-        res.status(200).json({ err: result.err, reuslt: result.result });
-    }
-    catch (err) {
-        console.log(err);
-        res.status(500).json({ err: true, result: err });
-    }
-};
+app.use(errorController_1.errorHandler);

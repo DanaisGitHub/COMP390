@@ -1,7 +1,7 @@
 // USDA.gov API is down
 import axios from "axios";
 
-import { FoodNutrients, Foods, Macros } from "../../types/foodTypes";
+import { FoodNutrients, Foods, Macros } from "../../types/rentalType";
 
 const secretKey = "zeaBsAb7dpyqN2EyumbilHGVfa1XZH88lqF0i5It";
 
