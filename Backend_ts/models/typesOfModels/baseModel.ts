@@ -48,8 +48,8 @@ export class BaseModel<T extends Model<any, any> = Models> {
     }
 
     protected baseCreateMany = async (
-        records: readonly MakeNullishOptional<T["_creationAttributes"]>[], 
-        options?: BulkCreateOptions<Attributes<T>>): Promise<StdReturn<T[]>> => { //would like options to be type of model
+        records: readonly MakeNullishOptional<T["_creationAttributes"]>[], // need to make this a generic
+        options?: CreateOptions<Attributes<T>>): Promise<StdReturn<T[]>> => { //would like options to be type of model
 
         try {
             const result = await this.model.bulkCreate(records, options); // Cast options to 'any' type

@@ -3,7 +3,8 @@ import { Model, DataTypes, Sequelize, ModelCtor, QueryTypes, Attributes, Instanc
 import { BaseModel } from "./baseModel";
 import StdReturn from "../../types/baseTypes"; // just changed make sure correct
 import { UserType, UserPreferenceType, } from "../../types/userType";
-import { ItemType, RentalType, RentalDetailType, PaymentDetailType, BookType } from "../../types/rentalType";
+import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../types/rentalType";
+import { BookType } from "../../types/bookTypes";
 import { DatabaseError, NotFoundError } from '../../utils/customError';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Col, Fn, Literal } from "sequelize/types/utils";
@@ -43,8 +44,6 @@ export class ItemModel extends BaseModel<Item> {
         super(Item)
     }
 
-
-
     public async querySearchItems(query: string): Promise<StdReturn> {
         let searchTerm: string = `
         SELECT * FROM items 
@@ -65,40 +64,9 @@ export class ItemModel extends BaseModel<Item> {
             throw new DatabaseError(" makeItemsFullTextSearchable() " + err);
         }
     }
-
-    public async addManyNewBookItems(): Promise<StdReturn<BookItem[]>> {
-        try {
-            const bookItem = new BookItemModel();
-            const {err, result} = await bookItem.addManyNewBookItems();
-            return { err: null, result }
-
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("addNewBookItem()" + err);
-        }
-    }
-
-
-
 }
 
 
-export class BookItemModel extends BaseModel<BookItem> {
 
-    public constructor() {
-        super(BookItem)
-    }
 
-    public async addManyNewBookItems(): Promise<StdReturn<BookItem[]>> {
-        try {
-            const bookItemDetails: BookType[] = await CSVtoSQLBook.run();
-            const bookItem: BookItem[] = await this.model.bulkCreate(bookItemDetails, { returning: true })
-            return { err: null, result: bookItem }
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("addNewBookItem()" + err);
-        }
-    }
-}
+

@@ -21,7 +21,6 @@ const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 const router = Router();
 router.use('/test', testRoutes)
 router.use('/auth', authRoutes);
-
 router.use('/api', apiRoutes);
 
 

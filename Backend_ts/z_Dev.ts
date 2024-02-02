@@ -1,7 +1,7 @@
 import fs from 'fs';
 import csvtojson from 'csvtojson';
 const csvFilePath = '../Backend_py/DataSource/first10s.csv';
-import { BookType, BookTypeRaw } from './types/rentalType';
+import { BookType, BookTypeRaw } from './types/BookTypes';
 import { DATE } from 'sequelize';
 import { raw } from 'body-parser';
 import { parse } from 'path';

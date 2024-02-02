@@ -13,8 +13,11 @@ import mysql from "mysql2";
 import { ItemModel } from "./typesOfModels/itemsModel";
 
 import { UserType, UserPreferenceType } from '../types/userType';
-import { ItemType, RentalType, PaymentDetailType, RentalDetailType, BookType } from '../types/rentalType';
+import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../types/rentalType';
+import { BookType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType } from '../types/bookTypes';
 import { coordiantes } from '../types/baseTypes';
+import { BookItemModel } from './typesOfModels/bookModel';
+import { CSVtoSQLBook } from './CSVtoSQL';
 
 
 let deleteDatabase = true;
@@ -109,6 +112,7 @@ export class PaymentDetail extends Model<PaymentDetailType> implements PaymentDe
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
+
 export class RentalsDetails extends Model<RentalDetailType> implements RentalDetailType {
     public id!: number;
     public itemId!: number;
@@ -142,6 +146,56 @@ export class BookItem extends Model<BookType> implements BookType {
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
+
+export class BookAuthor extends Model<BookAuthorType> implements BookAuthorType {
+    public bookId!: number; // Primary & Foreign Key
+    public authorId!: number; // Primary & Foreign Key
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+export class BookFormat extends Model<BookFormatType> implements BookFormatType {
+    public bookId!: number; // Primary & Foreign Key
+    public formatId!: number; // Primary & Foreign Key
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+export class BookGenre extends Model<BookGenreType> implements BookGenreType {
+    public bookId!: number; // Primary & Foreign Key
+    public genreId!: number; // Primary & Foreign Key
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+export class Genre extends Model<GenreType> implements GenreType {
+    public id!: number;
+    public name!: string;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+export class Format extends Model<FormatType> implements FormatType {
+    public id!: number;
+    public name!: string;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+export class Author extends Model<AuthorType> implements AuthorType {
+    public id!: number;
+    public name!: string;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+//export class BoookAuthor
 
 
 const InitialiseDatabase = class {
@@ -274,6 +328,78 @@ const InitialiseDatabase = class {
             });
     }
 
+    static initBookAuthor = (sequelize: Sequelize) => {
+        BookAuthor.init(
+            {
+                bookId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                authorId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "BookAuthor"
+            });
+    }
+
+    static initBookFormat = (sequelize: Sequelize) => {
+        BookFormat.init(
+            {
+                bookId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                formatId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "BookFormat"
+            });
+    }
+
+    static initBookGenre = (sequelize: Sequelize) => {
+        BookGenre.init(
+            {
+                bookId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                genreId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "BookGenre"
+            });
+    }
+
+    static initGenre = (sequelize: Sequelize) => {
+        Genre.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                name: { type: DataTypes.STRING, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "Genre"
+            });
+    }
+
+    static initFormat = (sequelize: Sequelize) => {
+        Format.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                name: { type: DataTypes.STRING, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "Format"
+            });
+    }
+
+    static initAuthor = (sequelize: Sequelize) => {
+        Author.init(
+            {
+                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                name: { type: DataTypes.STRING, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "Author"
+            });
+    }
+
     /**
      * make a one to many relation between two models
      * 
@@ -323,9 +449,12 @@ const InitialiseDatabase = class {
         //ALTER TABLE item ADD FULLTEXT(itemName, description);
     }
 
-
-
+    static addBookAndLinks = async () => {
+        const bookItemModel = new BookItemModel();
+        await bookItemModel.addBooksAndLinks();
+    }
 }
+
 
 export const initialize = async () => {
     try {
@@ -337,83 +466,63 @@ export const initialize = async () => {
         initDB.initPaymentDetails(sequelize);
         initDB.initRentalsDetails(sequelize);
         initDB.initBookItems(sequelize);
+        initDB.initBookAuthor(sequelize);
+        initDB.initBookFormat(sequelize);
+        initDB.initBookGenre(sequelize);
+        initDB.initGenre(sequelize);
+        initDB.initFormat(sequelize);
+        initDB.initAuthor(sequelize);
 
 
-        // User.hasMany(Item, {
-        //     foreignKey: "ownerId",
-        //     onDelete: "CASCADE",// will delete all items that belong to user if user is deleted
-
-        // })
-        // Item.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' }) // that as is not working to redefine the name of the foreign key
+        // User has many Items
         initDB.hasManyRelationOnDelete({ model: User, otherModel: Item, foreignKey: "ownerId", onDelete: "CASCADE", modelAs: 'owner' })
 
         //User has many Rentals
-        // User.hasMany(Rental, {
-        //     foreignKey: "renterId",
-        //     as: "renter"
-        // })
-
-        // Rental.belongsTo(User, { foreignKey: 'renterId', as: 'renter' })
-
-        // User.hasMany(Rental, {
-        //     foreignKey: "letterId",
-        //     as: "letter"
-        // })
-        // Rental.belongsTo(User, { foreignKey: 'letterId', as: 'letter' })
-
         initDB.hasManyRelation({ model: User, otherModel: Rental, modelAs: "renter", otherAs: "renter", foreignKey: "renterId" })// NOTE: I think foreign key is wrong should be userID
         initDB.hasManyRelation({ model: User, otherModel: Rental, modelAs: "letter", otherAs: "letter", foreignKey: "letterId" })// NOTE: I think foreign key is wrong should be userID
-
-
         // //user <--> userPreference
-        // User.hasOne(UserPreference, {
-        //     foreignKey: "userId", // error here
-        // })
-        // UserPreference.belongsTo(User, { foreignKey: 'userId', as: 'user' })
+
         initDB.hasOneRelation({ model: User, otherModel: UserPreference, foreignKey: "preferenceId", otherAs: "preference" })
 
-
-
-
         // //Rental has one payment
-        // Rental.hasOne(PaymentDetail, {
-        //     foreignKey: "rental",
-        // })
-        // PaymentDetail.belongsTo(Rental, { as: "rentalPayment", foreignKey: "rental" })
         initDB.hasOneRelation({ model: Rental, otherModel: PaymentDetail, foreignKey: "rental", modelAs: "rentalPayment" })
         // //items has many Rental details
-        // Item.hasMany(RentalsDetails, {
-        //     foreignKey: "itemId"
-        // })
-        // RentalsDetails.belongsTo(Item, { as: "item", foreignKey: "itemId" })
+
         initDB.hasManyRelation({ model: Item, otherModel: RentalsDetails, foreignKey: "itemId", otherAs: "item" })
         // //Rentals has many Rental details
-        // Rental.hasMany(RentalsDetails, {
-        //     foreignKey: "rentalId"
-        // })
-        // RentalsDetails.belongsTo(Rental, { as: "rental", foreignKey: "rentalId" })
         initDB.hasManyRelation({ model: Rental, otherModel: RentalsDetails, foreignKey: "rentalId", otherAs: "rental" })
 
+        // //BookItem has many BookAuthors
+        initDB.hasManyRelation({ model: BookItem, otherModel: BookAuthor, foreignKey: "bookId", otherAs: "bookAuthors" })
 
+        // //BookItem has many BookFormats
+        initDB.hasManyRelation({ model: BookItem, otherModel: BookFormat, foreignKey: "bookId", otherAs: "bookFormats" })
+
+        // //BookItem has many BookGenres
+        initDB.hasManyRelation({ model: BookItem, otherModel: BookGenre, foreignKey: "bookId", otherAs: "bookGenres" })
+
+        // formats has many BookFormats
+        initDB.hasManyRelation({ model: Format, otherModel: BookFormat, foreignKey: "formatId", otherAs: "formatBooks" })
+
+        // genres has many BookGenres
+        initDB.hasManyRelation({ model: Genre, otherModel: BookGenre, foreignKey: "genreId", otherAs: "genreBooks" })
+
+        // authors has many BookAuthors
+        initDB.hasManyRelation({ model: Author, otherModel: BookAuthor, foreignKey: "authorId", otherAs: "authorBooks" })
 
         const options = deleteDatabase ? { force: true } : undefined;
         await sequelize.sync(options)// should init all models and reset the database
         console.log("Database models initialized")
         if (deleteDatabase) {
-            initDB.enableFullTextSearch();
+            await initDB.enableFullTextSearch();
+            await initDB.addBookAndLinks();
         }
-
     }
     catch (err: any) {
         console.log(err)
         throw new Error("Could not initialize database models!!!!!!!!!!!!!!!!!!!: " + err);
-
     }
-
-
 }
-
-
 
 
 

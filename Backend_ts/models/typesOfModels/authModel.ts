@@ -27,9 +27,9 @@ export class AuthModel extends BaseModel {
             userDetails.password = await bcrypt.hash(userDetails.password, salt);
 
             const { err, result } = await this.baseCreate(this.user, userDetails)
-           
+
             return { err: null, result: result }
-        }catch(err){
+        } catch (err) {
             console.log(err)
             throw new Error("AuthModel signUp() -----> " + err)
         }

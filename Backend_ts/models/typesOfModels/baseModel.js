@@ -28,7 +28,8 @@ class BaseModel {
                 throw new customError_1.DatabaseError("baseModels Create() Error " + err.message);
             }
         };
-        this.baseCreateMany = async (records, options) => {
+        this.baseCreateMany = async (records, // need to make this a generic
+        options) => {
             try {
                 const result = await this.model.bulkCreate(records, options); // Cast options to 'any' type
                 return { err: null, result };

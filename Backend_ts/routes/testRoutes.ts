@@ -19,9 +19,6 @@ const ctrl = new ItemController();
 
 // we are running into some refresh token issues, so access Token is going to be 15 days and refresh token is going to be 30 days
 // Then a force logout will happen 
-
-
-
 const getUserIdFromHeader = (req: Req, res: Res): string => { // need to change to header
     try {
         const bearerAccessToken = req.headers.authorization // contains "bearer"
