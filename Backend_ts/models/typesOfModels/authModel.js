@@ -3,12 +3,59 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthModel = void 0;
+exports.AuthModel = exports.UserModel = exports.UserPreferenceModel = void 0;
 const modelSetUp_1 = require("../modelSetUp");
 const baseModel_1 = require("./baseModel");
+const bookModel_1 = require("./bookModel");
 const bcrypt_1 = __importDefault(require("bcrypt"));
+class UserPreferenceModel extends baseModel_1.BaseModel {
+    constructor() {
+        super(modelSetUp_1.UserPreference);
+        this.createUserPreference = async (userID) => {
+            try {
+                const { err, result } = await this.baseCreate({ userID });
+                return { err, result };
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in createUserPreference");
+            }
+        };
+        this.updateUserPreference = async (newUserPreference, userID) => {
+            try {
+                await this.baseUpdate(newUserPreference, { where: { userID } });
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in updateUserPreference" + err);
+            }
+        };
+    }
+}
+exports.UserPreferenceModel = UserPreferenceModel;
+class UserModel extends baseModel_1.BaseModel {
+    constructor() {
+        super(...arguments);
+        this.createUser = async (userDetails) => {
+            try {
+                const bookPreference = new bookModel_1.BookPreferenceModel();
+                const userPreference = new UserPreferenceModel(); // Pass the model argument
+                const { err, result } = await this.baseCreate(userDetails);
+                // creates a prefrance for the user with default values
+                const bookPrefResult = await bookPreference.createBookPreference(result.id);
+                const userPrefResult = await userPreference.createUserPreference(result.id);
+                return { err, result };
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in createUser");
+            }
+        };
+    }
+}
+exports.UserModel = UserModel;
 // pre-processing & storage goes in here
-class AuthModel extends baseModel_1.BaseModel {
+class AuthModel extends UserModel {
     constructor() {
         super(...arguments);
         this.user = modelSetUp_1.User; // not specified which user just all Users
@@ -103,31 +150,31 @@ class AuthModel extends baseModel_1.BaseModel {
             }
         };
         // 
-        this.isRefreshTokenSame = async (obj) => {
-            try {
-                const { id, refreshToken } = obj;
-                console.log(id);
-                const { err, result } = await this.findUserByEmail(id);
-                const user = result;
-                console.log("err =" + err);
-                if (err) {
-                    console.log(err);
-                    throw new Error(`Couldn't check if refresh tokens are the same: ${err}`);
-                }
-                if (user.refreshToken === null) {
-                    console.log("User doesnt have a refresh token");
-                    return { err: true, result: false };
-                }
-                if (refreshToken !== user.refreshToken) {
-                    return { err: true, result: false };
-                }
-                return { err: false, result: true };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error(`coudn't check refresh tokens at this time ${err}`);
-            }
-        };
+        // public isRefreshTokenSame = async (obj: { id: string, refreshToken: string }): Promise<StdReturn> => {
+        //     try {
+        //         const { id, refreshToken } = obj;
+        //         console.log(id)
+        //         const { err:any, result } = await this.findUserByEmail(id);
+        //         const user = result
+        //         console.log("err =" + err)
+        //         if (err) {
+        //             console.log(err)
+        //             throw new Error(`Couldn't check if refresh tokens are the same: ${err}`)
+        //         }
+        //         if (user.refreshToken === null) {
+        //             console.log("User doesnt have a refresh token")
+        //             return { err: true, result: false }
+        //         }
+        //         if (refreshToken !== user.refreshToken) {
+        //             return { err: true, result: false }
+        //         }
+        //         return { err: false, result: true }
+        //     }
+        //     catch (err) {
+        //         console.log(err)
+        //         throw new Error(`coudn't check refresh tokens at this time ${err}`)
+        //     }
+        // }
         // public emailToken = async (email: string): Promise<StdReturn> => {
         //     try {
         //     }

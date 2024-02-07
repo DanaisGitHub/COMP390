@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseModel = void 0;
 const customError_1 = require("../../utils/customError");
-// if you string is retured in error then error == true
-// if error == null then error == false
+// cant perfrom circular imports
+// be careful with the types here
 //could be all statics and not need to instantiate
 /**
  * abstract Class that provides atomic action to the database
@@ -108,9 +108,9 @@ class BaseModel {
                 throw new customError_1.DatabaseError("Failed to perfrom findAll database Operation");
             }
         };
-        this.build = async (options) => {
+        this.build = async (record, options) => {
             try {
-                const result = await this.model.build(options);
+                const result = await this.model.build(record, options);
                 if (result === null || result === undefined) {
                     throw new customError_1.NotFoundError("User not found in 'build' ");
                 }
@@ -121,7 +121,7 @@ class BaseModel {
                 throw new Error("Failed to perfrom build database Operation");
             }
         };
-        this.findOrCreate = async (options) => {
+        this.baseFindOrCreate = async (options) => {
             try {
                 const result = await this.model.findCreateFind(options);
                 return { err: null, result };
@@ -209,6 +209,44 @@ class BaseModel {
             console.log(err);
             throw new customError_1.DatabaseError("Item Models findMany()::=> " + err);
         }
+    }
+    async baseBookLink(bookName, linkName, linkTable, bookTable) {
+        try {
+            let book, linkRes;
+            const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
+                : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "Id";
+            try {
+                book = await bookTable.find({
+                    where: { book: bookName },
+                    rejectOnEmpty: true
+                });
+            }
+            catch (err) {
+                throw new customError_1.NotFoundError("Book not found in 'baseBookLink' ");
+            }
+            try {
+                linkRes = await linkTable.find({
+                    where: { name: linkName },
+                    rejectOnEmpty: true
+                });
+            }
+            catch (err) {
+                throw new customError_1.NotFoundError("Link not found in 'baseBookLink' ");
+            }
+            if (book.result === null || linkRes.result === null) {
+                throw new customError_1.NotFoundError("Book or Link not found in 'baseBookLink' ");
+            }
+            let createObject = {
+                bookId: book.result.id,
+                [jsonName]: linkRes.result.id
+            };
+            await this.model.create(createObject); // might be creating duplicates // shouldn't be any}
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Failed to perfrom baseBookLink database Operation");
+        }
+        // 
     }
 }
 exports.BaseModel = BaseModel;

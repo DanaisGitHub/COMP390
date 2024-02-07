@@ -1,19 +1,18 @@
 import StdReturn from '../../types/baseTypes';
 import { DatabaseError, NotFoundError } from '../../utils/customError';
 import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference } from '../modelSetUp';
-import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier, BulkCreateOptions } from 'sequelize/types';
+import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier, BulkCreateOptions, BuildOptions, FindAndCountOptions } from 'sequelize/types';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
 import { mode } from 'crypto-js';
 import { Col, Fn, Literal, MakeNullishOptional } from 'sequelize/types/utils';
 import { ItemType } from '../../types/rentalType';
 
+// cant perfrom circular imports
 
 
 
-// if you string is retured in error then error == true
-// if error == null then error == false
-
+// be careful with the types here
 //could be all statics and not need to instantiate
 
 /**
@@ -126,8 +125,6 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
-
-
     protected baseFindAll = async (options: FindOptions<Attributes<T>> | undefined): Promise<StdReturn<T[]>> => {
         try {
             const result = await this.model.findAll(options)
@@ -143,9 +140,9 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
-    protected build = async (options: any): Promise<StdReturn> => { // if any defalut values not filled, filled with defulat already set
+    protected build = async (record?: MakeNullishOptional<T["_creationAttributes"]> | undefined, options?: BuildOptions | undefined): Promise<StdReturn> => { // if any defalut values not filled, filled with defulat already set
         try {
-            const result = await this.model.build(options)
+            const result = await this.model.build(record, options)
             if (result === null || result === undefined) {
                 throw new NotFoundError("User not found in 'build' ");
             }
@@ -159,7 +156,8 @@ export class BaseModel<T extends Model<any, any> = Models> {
 
 
 
-    protected findOrCreate = async (options: FindOrCreateOptions<Attributes<T>, MakeNullishOptional<T["_creationAttributes"]>>): Promise<StdReturn<[T, boolean]>> => {
+    protected baseFindOrCreate = async (options: FindOrCreateOptions<Attributes<T>, MakeNullishOptional<T["_creationAttributes"]>>)
+        : Promise<StdReturn<[T, boolean]>> => {
         try {
             const result = await this.model.findCreateFind(options)
             return { err: null, result };
@@ -182,7 +180,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
         throw new DatabaseError("Failed to perfrom findByPkey database Operation");
     }
 
-    protected findAndCountAll = async (options: any): Promise<StdReturn> => {
+    protected findAndCountAll = async (options?: Omit<FindAndCountOptions<Attributes<T>>, "group"> | undefined): Promise<StdReturn<{ rows: T[], count: number; }>> => {
         try {
             const result = await this.model.findAndCountAll(options)
             if (result.rows === null || result.rows === undefined) {
@@ -202,7 +200,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
     ///////////////////////////
     //PUBLIC FUNCTIONS
     ///////////////////////////
-    public async addNew(details: Attributes<T>): Promise<StdReturn<T>> {
+    public async addNew(details: Attributes<T>): Promise<StdReturn<T>> { // why do I need these
         try {
             const { err, result } = await this.baseCreate(details);
             return { err, result };
@@ -255,6 +253,48 @@ export class BaseModel<T extends Model<any, any> = Models> {
             console.log(err)
             throw new DatabaseError("Item Models findMany()::=> " + err);
         }
+    }
+
+    public async baseBookLink(bookName: string, linkName: string, linkTable: any, bookTable: any): Promise<void> {
+        try {
+            let book, linkRes;
+            const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
+                : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "Id";
+
+            try {
+                book = await bookTable.find({
+                    where: { book: bookName },
+                    rejectOnEmpty: true
+                });
+            } catch (err) {
+                throw new NotFoundError("Book not found in 'baseBookLink' ");
+            }
+
+            try {
+                linkRes = await linkTable.find({
+                    where: { name: linkName },
+                    rejectOnEmpty: true
+                });
+
+            } catch (err) {
+                throw new NotFoundError("Link not found in 'baseBookLink' ");
+            }
+
+            if (book.result === null || linkRes.result === null) {
+                throw new NotFoundError("Book or Link not found in 'baseBookLink' ");
+            }
+            let createObject: { bookId: number, genre?: number, format?: number, author?: number } = {
+                bookId: book.result.id,
+                [jsonName]: linkRes.result.id
+
+            };
+            await this.model.create(createObject as any); // might be creating duplicates // shouldn't be any}
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("Failed to perfrom baseBookLink database Operation");
+        }
+        // 
     }
 }
 

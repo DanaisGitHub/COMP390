@@ -1,18 +1,41 @@
 "use strict";
-// have a good feeling this needs to be file stream (Too big for memory)
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CSVtoSQLBook = void 0;
+// have a good feeling this needs to be file stream (Too big for memory)
+const fs_1 = __importDefault(require("fs"));
 const csvtojson_1 = __importDefault(require("csvtojson"));
+const csv_parser_1 = __importDefault(require("csv-parser"));
 const csvFilePath = '../Backend_py/DataSource/first10s.csv';
 const bookModel_1 = require("./typesOfModels/bookModel");
+// need to do this as a stream
 class ReadCSV {
-    static async readaSync() {
-        const csv = csvtojson_1.default;
-        const jsonArray = await csv().fromFile(csvFilePath);
-        return jsonArray;
+    static async readAsync() {
+        try {
+            const csv = csvtojson_1.default;
+            const csvStream = fs_1.default.createReadStream(csvFilePath, { encoding: 'utf8' }); // each row  // remove duplicates
+            csvStream.pipe((0, csv_parser_1.default)())
+                .on('data', async (row) => {
+                await CSVtoSQLBook.processEachRow(row); // not read properly 
+            })
+                .on('end', function () {
+                console.log('All Data loaded');
+            });
+        }
+        catch (error) {
+            console.log(error);
+            throw new Error("Error in CSVtoSQLBook.readAsync " + error);
+        }
+    }
+}
+class CSVtoSQLBook {
+    static dateProcessor(date) {
+        const dateArray = date.split(" "); // ["January", "1,", "1980"]
+        const year = dateArray[2];
+        const newDate = new Date(year);
+        return newDate;
     }
     static convertStringToArray(string) {
         let array = [];
@@ -26,103 +49,82 @@ class ReadCSV {
         return array;
     }
     static cleanString(string) {
-        string = string.replace(/[\[\]']+/g, ''); // remove brackets from string
+        string = string.replace(/[\[\]']+/g, ''); // remove brackets from string // error
         string = string.replace(/(^\s+|\s+$)+/g, ''); // removes whitespace aka trim()
         string = string.replace(/[\n]+/g, ''); // removes \n
         return string;
     }
-} // might make singleton
-class CSVtoSQLBook {
-    static setIntoArray(set) {
-        const array = Array.from(set).map((str) => {
-            return str;
-        });
-        return array;
+    static removeDuplicates(rawBook) {
+        rawBook.format = Array.from(new Set(rawBook.format));
+        rawBook.genres = Array.from(new Set(rawBook.genres));
+        return rawBook;
     }
-    static convertValues(bookRawArray) {
-        let returnValue = [];
-        bookRawArray.forEach(rawBook => {
-            var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-            const tempBookType = {
+    static async convertValue(rawBook) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        try {
+            let tempBookType = {
                 book: (_a = rawBook.book) !== null && _a !== void 0 ? _a : "",
                 series: (_b = rawBook.series) !== null && _b !== void 0 ? _b : "",
-                releaseNumber: Number.isNaN(parseInt(rawBook.releaseNumber)) ? -2 : (_c = parseInt(rawBook.releaseNumber)) !== null && _c !== void 0 ? _c : -1,
-                author: (_d = rawBook.author) !== null && _d !== void 0 ? _d : "",
-                description: (_e = ReadCSV.cleanString(rawBook.description)) !== null && _e !== void 0 ? _e : "",
-                numPages: (_f = parseInt(rawBook.numPages)) !== null && _f !== void 0 ? _f : 0,
-                format: (_g = ReadCSV.convertStringToArray(rawBook.format)) !== null && _g !== void 0 ? _g : [],
-                genres: (_h = ReadCSV.convertStringToArray(rawBook.genres)) !== null && _h !== void 0 ? _h : [],
-                publication: (_j = new Date(rawBook.publication)) !== null && _j !== void 0 ? _j : new Date("01-01-1970"),
-                rating: Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0 !== null && 0 !== void 0 ? 0 : 0.0,
-                numberOfVoters: (_k = parseInt(rawBook.numberOfVoters)) !== null && _k !== void 0 ? _k : 0
+                author: (_c = rawBook.author) !== null && _c !== void 0 ? _c : "",
+                description: (_d = this.cleanString(rawBook.description)) !== null && _d !== void 0 ? _d : "",
+                numPages: (_e = parseInt(rawBook.numPages)) !== null && _e !== void 0 ? _e : 0,
+                format: (_f = this.convertStringToArray(rawBook.format)) !== null && _f !== void 0 ? _f : [],
+                genres: (_g = this.convertStringToArray(rawBook.genres)) !== null && _g !== void 0 ? _g : [],
+                publication: (_h = this.dateProcessor(rawBook.publication)) !== null && _h !== void 0 ? _h : undefined,
+                rating: Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0.0 !== null && 0.0 !== void 0 ? 0.0 : 0.0,
+                numOfVoters: (_j = parseInt(rawBook.numberOfVoters)) !== null && _j !== void 0 ? _j : 0
             };
-            returnValue.push(tempBookType);
-            // get unique values for format, genres, and authors
-            tempBookType.format.forEach((format) => {
-                this.uniqueFormats.add(format);
-                console.log(format);
-            });
-            tempBookType.genres.forEach((genre) => {
-                this.uniqueGenres.add(genre);
-            });
-            this.uniqueAuthors.add(tempBookType.author);
-            this.bookGenreLink.set(tempBookType.book, tempBookType.genres); // starting the link to the other tables
-            this.bookFormatLink.set(tempBookType.book, tempBookType.format);
-            this.bookAuthorLink.set(tempBookType.book, [tempBookType.author]);
+            // tempBookType = CSVtoSQLBook.removeDuplicates(tempBookType);
+            return tempBookType;
+        } // for each new tempbook send a create request
+        catch (error) {
+            console.log(error);
+            throw new Error("Error in CSVtoSQLBook.convertValue " + error);
+        }
+    }
+    static async sendMetaData(book) {
+        const genreModel = new bookModel_1.GenreModel();
+        const formatModel = new bookModel_1.FormatModel();
+        const authorModel = new bookModel_1.AuthorModel();
+        const author = book.author;
+        book.format.forEach(async (format) => {
+            await formatModel.addFormat(format);
         });
-        return returnValue;
+        book.genres.forEach(async (genre) => {
+            await genreModel.addGenre(genre); // will have thousands of genres stoted in memory
+        });
+        await authorModel.addAuthor(author);
     }
-    // getters
-    static getUniqueFormats() {
-        return this.setIntoArray(this.uniqueFormats);
+    static async sendMetaDataLinks(book) {
+        const bookGenreModel = new bookModel_1.BookGenreModel();
+        const bookFormatModel = new bookModel_1.BookFormatModel();
+        const bookAuthorModel = new bookModel_1.BookAuthorModel();
+        book = CSVtoSQLBook.removeDuplicates(book);
+        book.format.forEach(async (format) => {
+            await bookFormatModel.addBookFormatLink(book.book, format);
+        });
+        book.genres.forEach(async (genre) => {
+            await bookGenreModel.addBookGenreLink(book.book, genre);
+        });
+        await bookAuthorModel.addBookAuthorLink(book.book, book.author);
     }
-    static getUniqueGenres() {
-        return this.setIntoArray(this.uniqueGenres);
-    }
-    static getUniqueAuthors() {
-        return this.setIntoArray(this.uniqueAuthors);
-    }
-    static getBookFormatLink() {
-        return this.bookFormatLink;
-    }
-    static getBookGenreLink() {
-        return this.bookGenreLink;
-    }
-    static getBookAuthorLink() {
-        return this.bookAuthorLink;
+    static async processEachRow(bookRowRaw) {
+        try {
+            const bookItemModel = new bookModel_1.BookItemModel();
+            const bookRow = await this.convertValue(bookRowRaw);
+            await bookItemModel.addBookItem(bookRow);
+            // get unique values for format, genres, and authors
+            await this.sendMetaData(bookRow);
+            await this.sendMetaDataLinks(bookRow);
+        }
+        catch (error) {
+            console.log(error);
+            throw new Error("Error in CSVtoSQLBook.convertValues " + error);
+        }
     }
     //badCoding but it works
-    static setGenreLink() {
-        const genreModel = new bookModel_1.GenreModel();
-        const bookGenreModel = new bookModel_1.BookGenreModel();
-        genreModel.setUniqueGenres(this.getUniqueGenres());
-        bookGenreModel.setBookGenreLink(this.getBookGenreLink());
-    }
-    static setFormatLink() {
-        const formatModel = new bookModel_1.FormatModel();
-        const bookFormatModel = new bookModel_1.BookFormatModel();
-        formatModel.setUniqueFormats(this.getUniqueFormats());
-        bookFormatModel.setBookFormatLink(this.getBookFormatLink());
-    }
-    static setAuthorLink() {
-        const authorModel = new bookModel_1.AuthorModel();
-        const bookAuthorModel = new bookModel_1.BookAuthorModel();
-        authorModel.setUniqueAuthor(this.getUniqueAuthors());
-        bookAuthorModel.setBookAuthorLink(this.getBookAuthorLink());
-    }
     static async run() {
-        const rawBookArray = await ReadCSV.readaSync();
-        const bookArray = this.convertValues(rawBookArray);
-        this.setGenreLink();
-        this.setFormatLink();
-        this.setAuthorLink();
-        return bookArray;
+        await ReadCSV.readAsync();
     }
 }
 exports.CSVtoSQLBook = CSVtoSQLBook;
-CSVtoSQLBook.uniqueFormats = new Set();
-CSVtoSQLBook.uniqueGenres = new Set();
-CSVtoSQLBook.uniqueAuthors = new Set();
-CSVtoSQLBook.bookFormatLink = new Map();
-CSVtoSQLBook.bookGenreLink = new Map();
-CSVtoSQLBook.bookAuthorLink = new Map();

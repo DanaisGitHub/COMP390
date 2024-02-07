@@ -2,7 +2,7 @@ import {coordiantes} from './baseTypes';
 
 // Since some id's is auto incremented input into db is not needed
 export interface UserType {
-    id?: string;//Primary key//Optinal to allow new users to be added to db
+    id?: number;//Primary key//Optinal to allow new users to be added to db
     firstName: string;
     lastName: string;
     password: string;
@@ -16,12 +16,11 @@ export interface UserType {
 }
 
 export interface UserPreferenceType {
-    id?: number;
-    maxDistance: number;
-    maxPrice: number;
-    minRating: number;
-    dateRange:{start:Date,end:Date};
-
+    userID?: number; // FK to user
+    distanceRange?: {min:number,max:number};
+    priceRange?: {min:number,max:number};
+    ratingRange?: {min:number,max:number};
+    dateRange?:{start:Date,end:Date};
 }
 
 

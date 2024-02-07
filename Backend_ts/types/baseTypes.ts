@@ -14,7 +14,7 @@ export type ModelTypes = UserType
 export type Models = User | UserPreference | Item | Rental | PaymentDetail | RentalsDetails
 
 
-export default interface StdReturn<T = any> {// so if no <Type> given assumed to be 'any'
+export default interface StdReturn<T = any> {
     err: null | string,
     result: T
 }
@@ -28,14 +28,7 @@ export interface RTokenModel {// don't think it's used
     token: string,
     expiryDate: Date
 }
-export interface UserModel {
-    firstName: string,
-    lastName: string,
-    email: string,
-    password: string,
-    refreshToken: string | null
-    username?: string
-}
+
 
 
 

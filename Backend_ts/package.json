@@ -7,8 +7,7 @@
     "start:ts": "tsc -w",
     "start:js": "nodemon index.js",
     "start": "concurrently npm:start:*",
-    
-    "dev": "concurrently npm:dev:*" ,
+    "dev": "concurrently npm:dev:*",
     "dev:ts": "tsc -w",
     "dev:js": "nodemon z_Dev.js"
   },
@@ -42,6 +41,7 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
+    "csv-parser": "^3.0.0",
     "csvtojson": "^2.0.10",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
