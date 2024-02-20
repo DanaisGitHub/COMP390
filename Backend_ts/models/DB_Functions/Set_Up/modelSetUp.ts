@@ -16,7 +16,7 @@ import { ItemModel } from "../../typesOfModels/Items/ItemsModel";
 
 import { TempUserType, UserPreferenceType, } from '../../../types/userType';
 import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../../types/rentalType';
-import { BookType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType, BookPreferenceType } from '../../../types/bookTypes';
+import { BookType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType, BookPreferenceType, UserBookRatingType } from '../../../types/bookTypes';
 import { coordiantes } from '../../../types/baseTypes';
 import { BookItemModel } from '../../typesOfModels/Items/bookModel';
 import { CSVtoSQLBook } from '../Process/CSVtoSQL';
@@ -25,7 +25,7 @@ import { UserModel } from '../../typesOfModels/Users/userModels';
 
 
 let dropDB = true; // delete most tables not book
-let dropBook = true; // delete book tables
+let dropBook = false; // delete book tables
 
 
 
@@ -222,6 +222,16 @@ export class Format extends Model<FormatType> implements FormatType {
 export class Author extends Model<AuthorType> implements AuthorType {
     public id!: number;
     public name!: string;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+}
+
+export class UserBookRating extends Model<UserBookRatingType> implements UserBookRatingType {
+
+    public bookId!: number;
+    public userId!: number;
+    public rating!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -447,6 +457,19 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
             });
     }
 
+    static initUserBookRating = (sequelize: Sequelize) => {
+        UserBookRating.init(
+            {
+                bookId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                userId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                rating: { type: DataTypes.INTEGER, allowNull: false },
+            },
+            {
+                sequelize,
+                modelName: "UserBookRating"
+            });
+    }
+
     static initAllTables = async (sequelize: Sequelize) => {
         this.initUserModel(sequelize);
         this.initUserPreferenceModel(sequelize);
@@ -462,7 +485,9 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         this.initFormat(sequelize);
         this.initAuthor(sequelize);
         this.initBookPreference(sequelize);
+        this.initUserBookRating(sequelize);
     }
+
 
     /**
      * make a one to many relation between two models
@@ -507,6 +532,7 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
     }
 
+    // not sure if done correctly, when querying we'll see
     static createAllRelations = () => {
         this.hasManyRelationOnDelete({ modelA: User, modelB: Item, foreignKey: "ownerId", onDelete: "CASCADE", modelAs: 'owner' })
 
@@ -544,6 +570,12 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
 
         // authors <-=> BookAuthors
         this.hasManyRelation({ modelA: Author, modelB: BookAuthor, foreignKey: "authorId", otherAs: "authorBooks" })
+
+        // user <-=> UserBookRating
+        this.hasManyRelation({ modelA: User, modelB: UserBookRating, foreignKey: "userId", otherAs: "userRatings" })
+
+        // BookItem <-=> UserBookRating
+        this.hasManyRelation({ modelA: BookItem, modelB: UserBookRating, foreignKey: "bookId", otherAs: "bookRatings" })
     }
 
     static dropDatabaseNotBooks = async () => {
@@ -586,6 +618,8 @@ const DBSetupListener = class {
             if (dropBook) {
                 await DBSetupListener.addBookAndLinks();
             }
+            // BOOKS have to be init before Users
+            await DBSetupListener.create10NewUsers();
         }
     }
 
@@ -595,7 +629,7 @@ const DBSetupListener = class {
 
     static runAfterCreation = async () => {
         await DBSetupListener.dropTables2();
-        await DBSetupListener.create10NewUsers();
+        
     }
 }
 

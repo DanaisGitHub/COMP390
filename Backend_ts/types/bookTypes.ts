@@ -70,3 +70,10 @@ export interface BookTypeRaw {
     rating: string;
     numberOfVoters: string;
 }
+
+export interface UserBookRatingType{
+    id?: number;
+    userId: number;
+    bookId: number;
+    rating: number;
+}

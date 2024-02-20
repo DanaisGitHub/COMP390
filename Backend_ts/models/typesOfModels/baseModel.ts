@@ -1,12 +1,13 @@
 import StdReturn from '../../types/baseTypes';
 import { DatabaseError, NotFoundError } from '../../utils/customError';
-import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference } from '../DB_Functions/Set_Up/modelSetUp';
+import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference, Author, Format, Genre } from '../DB_Functions/Set_Up/modelSetUp';
 import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier, BulkCreateOptions, BuildOptions, FindAndCountOptions } from 'sequelize/types';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
 import { mode } from 'crypto-js';
 import { Col, Fn, Literal, MakeNullishOptional } from 'sequelize/types/utils';
 import { ItemType } from '../../types/rentalType';
+import { AuthorModel } from './Items/bookModel';
 
 // cant perfrom circular imports
 
@@ -166,6 +167,12 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
+    /**
+     * 
+     * @param identifier if no identifier is passed, it will return all
+     * @param options 
+     * @returns 
+     */
     protected findByPkey = async (identifier?: Identifier | undefined, options?: Omit<FindOptions<Attributes<T>>, "where"> | undefined): Promise<StdReturn<T>> => {
         const result = await this.model.findByPk(identifier, options)
         if (result === null) {
@@ -198,6 +205,8 @@ export class BaseModel<T extends Model<any, any> = Models> {
     ///////////////////////////
     //PUBLIC FUNCTIONS
     ///////////////////////////
+    // why do these exist
+
     public async addNew(details: Attributes<T>): Promise<StdReturn<T>> { // why do I need these
         try {
             const { err, result } = await this.baseCreate(details);
@@ -253,6 +262,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
+    // should be in a sperate class
     public async baseBookLink(bookName: string, linkName: string, linkTable: any, bookTable: any): Promise<void> {
         try {
             let book, linkRes;
@@ -307,8 +317,3 @@ export class BaseModel<T extends Model<any, any> = Models> {
 
     }
 }
-
-
-
-
-

@@ -1,6 +1,6 @@
 import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetails, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
 import { BaseModel } from "../baseModel";
-import { BookPreferenceModel } from "../Items/bookModel";
+import { BookPreferenceModel , UserBookRatingModels} from "../Items/bookModel";
 import crypto from 'crypto';
 import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
 import { UserPreferenceType, TempUserType } from '../../../types/userType'
@@ -28,6 +28,7 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
     constructor() {
         super(UserPreference);
     }
+
     public createEmptyUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
         try {
             const { err, result } = await this.baseCreate({ userID })
@@ -64,6 +65,16 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
             throw new Error("Error in updateUserPreference" + err)
         }
     }
+
+    public getUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
+        try {
+            const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true})
+            return { err, result }
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in getUserPreference")
+        }
+    }
 }
 
 export class UserModel extends BaseModel<User> {  // most should NOT be public 
@@ -77,11 +88,15 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
         try {
             const bookPreference: BookPreferenceModel = new BookPreferenceModel();
             const userPreference: UserPreferenceModel = new UserPreferenceModel(); // Pass the model argument
-            const { err, result } = await this.baseCreate(userDetails)
+            const userBookRatingModels = new UserBookRatingModels();
+            const { err, result: user } = await this.baseCreate(userDetails)
             // creates a prefrance for the user with default values
-            const bookPrefResult = await bookPreference.createRandomBookPreference(result.id!);
-            const userPrefResult = await userPreference.createRandomUserPreference(result.id!);
-            return { err, result }
+            const bookPrefResult = await bookPreference.createRandomBookPreference(user.id!);
+            const userPrefResult = await userPreference.createRandomUserPreference(user.id!);
+            const userBookRatingResult = await userBookRatingModels.genRatingForAllBooks(user);
+            // need to create rating for each book
+            
+            return { err, result: user }
         } catch (err) {
             console.log(err)
             throw new Error("Error in createUser")
@@ -102,27 +117,6 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
             return { min: ran1, max: ran2 }
         }
     }
-
-    // private createRandomUser = async (): Promise<StdReturn<User>> => {
-    //     try {
-    //         const userDetails: UserType = {
-    //             userEmail: crypto.randomBytes(20).toString('hex') + "@test.com",
-    //             password: "password",
-    //             userName: crypto.randomBytes(20).toString('hex'),
-    //             userAge: Math.floor(Math.random() * 100),
-    //             birthDate: this.randomDate(new Date(1920, 1, 1), new Date(2004, 1, 1)),
-    //         }
-    //         const { err, result } = await this.createUser(userDetails);
-    //         return { err, result }
-    //     } catch (err) {
-    //         console.log(err)
-    //         throw new Error("Error in createRandomUser")
-    //     }
-    // }
-
-
-
-  
 
     public createRandomUser = async (): Promise<StdReturn<User>> => {
         try {
@@ -153,6 +147,37 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
         } catch (err) {
             console.log(err)
             throw new Error("Error in createManyRandomUsers")
+        }
+    }
+
+    public updateUser = async (newUserDetails: TempUserType, userID: number): Promise<void> => {
+        try {
+            await this.baseUpdate(newUserDetails, { where: { id: userID } })
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in updateUser")
+        }
+    }
+
+    public getUserPref = async (userID: number): Promise<StdReturn<UserPreferenceType>> => {
+        try {
+            const userPrefModel = new UserPreferenceModel();
+            const { err, result } = await userPrefModel.getUserPreference(userID);
+            return { err, result }
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in getUserPref")
+        }
+    }
+
+    public getUserBookPref = async (userID: number): Promise<StdReturn<BookPreferenceType>> => {
+        try {
+            const bookPrefModel = new BookPreferenceModel();
+            const { err, result } = await bookPrefModel.getBookPreference(userID);
+            return { err, result }
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in getUserBookPref")
         }
     }
 }
