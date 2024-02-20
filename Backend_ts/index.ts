@@ -10,7 +10,7 @@ import path from 'path';
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
 
 
-import { sequelize, initialize } from './models/modelSetUp'
+import { sequelize, initialize } from './models/DB_Functions/Set_Up/modelSetUp'
 
 import authRoutes from './routes/authRoutes';
 import apiRoutes from './API/googleMaps/googleMapsAPI';

@@ -1,62 +1,19 @@
-import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetails, UserPreference } from "../modelSetUp";
-import { BaseModel } from "./baseModel";
-import {BookPreferenceModel} from "./bookModel";
+import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetails, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
+import { BaseModel } from "../baseModel";
+import { BookPreferenceModel } from "../Items/bookModel";
 import crypto from 'crypto';
 import bcrypt from 'bcrypt'
 import passport from 'passport-jwt';
-import StdReturn, { Models } from "../../types/baseTypes"; // just changed make sure correct
-import { UserPreferenceType, UserType } from '../../types/userType'
-
-export class UserPreferenceModel extends BaseModel<UserPreference> {
-    constructor() {
-        super(UserPreference);
-    }
-    public createUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
-        try {
-            const { err, result } = await this.baseCreate({ userID })
-            return { err, result }
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in createUserPreference")
-        }
-    }
-
-    public updateUserPreference = async (newUserPreference:UserPreferenceType, userID:number): Promise<void> => {
-        try {
-            await this.baseUpdate(newUserPreference, {where: {userID}})
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in updateUserPreference"+err)
-        }
-    }
-}
-
-export class UserModel extends BaseModel<User> {  // most should NOT be public 
-
-    protected createUser = async (userDetails: UserType): Promise<StdReturn<User>> => {
-        try {
-            const bookPreference: BookPreferenceModel = new BookPreferenceModel();
-            const userPreference: UserPreferenceModel = new UserPreferenceModel(); // Pass the model argument
-            const { err, result } = await this.baseCreate(userDetails)
-            // creates a prefrance for the user with default values
-            const bookPrefResult = await bookPreference.createBookPreference(result.id!);
-            const userPrefResult = await userPreference.createUserPreference(result.id!);
-            return { err, result}
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in createUser")
-        }
-    }
-
-}
-
+import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
+import { UserPreferenceType, TempUserType } from '../../../types/userType'
+import {UserModel} from "./userModels";
 
 
 // pre-processing & storage goes in here
 export class AuthModel extends UserModel {
     user = User; // not specified which user just all Users
 
-    public signUp = async (userDetails: UserType): Promise<StdReturn> => {
+    public signUp = async (userDetails: TempUserType): Promise<StdReturn> => {
         // check to see if already exists
         // check data is correct (should use validator software)
         try {
@@ -71,7 +28,7 @@ export class AuthModel extends UserModel {
             const salt = await bcrypt.genSalt(10)
             userDetails.password = await bcrypt.hash(userDetails.password, salt);
 
-            const { err, result } = await this.baseCreate(this.user, userDetails)
+            const { err, result } = await this.baseCreate(userDetails)
 
             return { err: null, result: result }
         } catch (err) {
@@ -95,7 +52,7 @@ export class AuthModel extends UserModel {
                 return { err: "User Not Found", result: null }
             }
             const user = result;
-            await this.baseUpdate(user, { refreshToken: obj.refreshToken })
+            await this.baseUpdate({ refreshToken: obj.refreshToken }, { where: { userEmail: obj.email } })
             const passwordMatch = await this.comparePasswords(obj.rawPassword, user.password);
             if (!passwordMatch.result) {
                 console.log("passwords don't match")
@@ -113,7 +70,10 @@ export class AuthModel extends UserModel {
 
     private findUserByEmail = async (email: string): Promise<StdReturn> => { // don't need this if you have above
         try {
-            const { err, result } = await this.findOne(this.user, { where: { "userEmail": email } })
+            const { err, result } = await this.baseFindOne({
+                where: { "userEmail": email },
+                rejectOnEmpty: false
+            })
             if (result === null) {
                 console.log(err);
                 return { err: "User Not Found", result: null }

@@ -7,8 +7,8 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 //import self-written files
-const modelSetUp_1 = require("../../models/modelSetUp");
-const itemsModel_1 = require("../../models/typesOfModels/itemsModel");
+const modelSetUp_1 = require("../../models/DB_Functions/Set_Up/modelSetUp");
+const ItemsModel_1 = require("../../models/typesOfModels/Items/ItemsModel");
 const baseController_1 = require("../../controllers/_baseController/baseController");
 const pathToKey = path_1.default.join(__dirname, '..', '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
@@ -31,7 +31,7 @@ const getUserIdFromHeader = (req, res) => {
 };
 class ItemController extends baseController_1.BaseController {
     constructor() {
-        super(new itemsModel_1.ItemModel(), modelSetUp_1.Item);
+        super(new ItemsModel_1.ItemModel(), modelSetUp_1.Item);
         //works
         this.createItem = async (req, res, next) => {
             try {

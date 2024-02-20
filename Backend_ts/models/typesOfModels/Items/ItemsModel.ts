@@ -1,18 +1,18 @@
-import { sequelize, User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails, BookItem } from "../modelSetUp";
+import { sequelize, User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails, BookItem } from "../../DB_Functions/Set_Up/modelSetUp";
 import { Model, DataTypes, Sequelize, ModelCtor, QueryTypes, Attributes, InstanceUpdateOptions, NonNullFindOptions, ModelStatic, UpdateOptions } from "sequelize";
-import { BaseModel } from "./baseModel";
-import StdReturn from "../../types/baseTypes"; // just changed make sure correct
-import { UserType, UserPreferenceType, } from "../../types/userType";
-import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../types/rentalType";
-import { BookType } from "../../types/bookTypes";
-import { DatabaseError, NotFoundError } from '../../utils/customError';
-import { ModelTypes, Models } from '../../types/baseTypes'
+import { BaseModel } from "../baseModel";
+import StdReturn from "../../../types/baseTypes"; // just changed make sure correct
+import { TempUserType, UserPreferenceType, } from "../../../types/userType";
+import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../../types/rentalType";
+import { BookType } from "../../../types/bookTypes";
+import { DatabaseError, NotFoundError } from '../../../utils/customError';
+import { ModelTypes, Models } from '../../../types/baseTypes'
 import { Col, Fn, Literal } from "sequelize/types/utils";
 import { query } from "express";
 import { DestroyOptions } from "sequelize";
 import exp from "constants";
 
-import { CSVtoSQLBook } from '../CSVtoSQL';
+import { CSVtoSQLBook } from '../../DB_Functions/Process/CSVtoSQL';
 
 
 interface ItemModelI extends Model<ItemType>, ItemType {

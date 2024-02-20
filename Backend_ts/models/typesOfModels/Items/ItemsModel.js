@@ -1,10 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ItemModel = void 0;
-const modelSetUp_1 = require("../modelSetUp");
+const modelSetUp_1 = require("../../DB_Functions/Set_Up/modelSetUp");
 const sequelize_1 = require("sequelize");
-const baseModel_1 = require("./baseModel");
-const customError_1 = require("../../utils/customError");
+const baseModel_1 = require("../baseModel");
+const customError_1 = require("../../../utils/customError");
 // interface BasicCRUDI { // maybe get working but types are annoying
 //     // CRUD functions
 //     addNew: <T extends Model<any, any> = Models>(details: Attributes<T>) => Promise<StdReturn<Models>>; // would like to turn Models into a generic but can't

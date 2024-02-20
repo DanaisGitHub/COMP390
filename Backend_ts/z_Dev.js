@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const bookModel_1 = require("./models/typesOfModels/bookModel");
+const bookModel_1 = require("./models/typesOfModels/Items/bookModel");
 const genreModel = new bookModel_1.GenreModel();
 const formatModel = new bookModel_1.FormatModel();
 const authorModel = new bookModel_1.AuthorModel();

@@ -40,6 +40,42 @@ export class DateFunc {
 	public static stringToDate = (date: string): Date => {
 		return new Date(date);
 	}
+
+}
+
+
+export class UserLocations { // REALLY needs improvement, draws a square around liverpool 
+
+	private static minLat = 53.340;
+	private static maxLat = 53.477;
+	private static minLon = -2.977;
+	private static maxLon = -2.822;
+
+	public generateRandomCoordinate(
+		minLat = UserLocations.minLat,
+		maxLat = UserLocations.maxLat,
+		minLon = UserLocations.minLon,
+		maxLon = UserLocations.maxLon): [number, number] { // lat and lon are in the format '53.477', '-2.822
+		const latitude = Math.random() * (maxLat - minLat) + minLat;
+		const longitude = Math.random() * (maxLon - minLon) + minLon;
+		return [latitude, longitude];
+	}
+
+	public generateRandomCoordinates = (
+		minLat = UserLocations.minLat,
+		maxLat = UserLocations.maxLat,
+		minLon = UserLocations.minLon,
+		maxLon = UserLocations.maxLon,
+		amount: number): [number, number][] => {
+		let coordinates: [number, number][] = [];
+		for (let i = 0; i < amount; i++) {
+			coordinates.push(this.generateRandomCoordinate(minLat, maxLat, minLon, maxLon));
+		}
+		return coordinates;
+	}
+
+
+
 }
 
 

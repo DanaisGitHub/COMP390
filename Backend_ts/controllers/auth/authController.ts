@@ -11,11 +11,11 @@ import type { JwtPayload } from "jsonwebtoken"
 import express from 'express';
 
 //import self-written files
-import { AuthModel } from '../../models/typesOfModels/authModel';
-import { User } from '../../models/modelSetUp';
+import { AuthModel } from '../../models/typesOfModels/Users/authModel';
+import { User } from '../../models/DB_Functions/Set_Up/modelSetUp';
 import { issueJWT, authMiddleware } from '../../utils/authUtils'
 import { runPassport } from '../../config/passport'
-import { UserType } from '../../types/userType'
+import { TempUserType } from '../../types/userType'
 
 import StdReturn from '../../types/baseTypes';
 import { type } from 'os';
@@ -137,7 +137,7 @@ export class AuthController { // would be nice to use a singleton here
      */
     public static signUp = async (req: Req, res: Res, next: Next) => {
         try {
-            let user: UserType = req.body
+            let user: TempUserType = req.body
             user.birthDate = new Date();
             console.log(user)
 

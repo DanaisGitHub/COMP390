@@ -3,9 +3,9 @@ import fs from 'fs';
 import csvtojson from 'csvtojson';
 import csvParser from 'csv-parser';
 const csvFilePath = '../Backend_py/DataSource/first10s.csv';
-import { BookType, BookTypeRaw } from '../types/bookTypes';
-import { BookGenreModel, BookItemModel, GenreModel, FormatModel, AuthorModel, BookAuthorModel, BookFormatModel } from './typesOfModels/bookModel';
-import { GenreType, FormatType, AuthorType } from '../types/bookTypes';
+import { BookType, BookTypeRaw } from '../../../types/bookTypes';
+import { BookGenreModel, BookItemModel, GenreModel, FormatModel, AuthorModel, BookAuthorModel, BookFormatModel } from '../../typesOfModels/Items/bookModel';
+import { GenreType, FormatType, AuthorType } from '../../../types/bookTypes';
 
 // need to do this as a stream
 
@@ -17,19 +17,15 @@ class ReadCSV {
             csvStream.pipe(csvParser())
                 .on('data', async (row) => {
                     await CSVtoSQLBook.processEachRow(row); // not read properly 
-
                 })
                 .on('end', function () {
                     console.log('All Data loaded')
                 });
-
         } catch (error) {
             console.log(error);
             throw new Error("Error in CSVtoSQLBook.readAsync " + error);
         }
-
     }
-
 }
 
 
@@ -134,7 +130,6 @@ export class CSVtoSQLBook { // might make singleton
             // get unique values for format, genres, and authors
             await this.sendMetaData(bookRow);
             await this.sendMetaDataLinks(bookRow);
-
         }
         catch (error) {
             console.log(error);

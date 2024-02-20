@@ -1,10 +1,17 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookPreferenceModel = exports.AuthorModel = exports.FormatModel = exports.GenreModel = exports.BookGenreModel = exports.BookFormatModel = exports.BookAuthorModel = exports.BookItemModel = void 0;
-const CSVtoSQL_1 = require("../CSVtoSQL");
-const customError_1 = require("../../utils/customError");
-const baseModel_1 = require("./baseModel");
-const modelSetUp_1 = require("../modelSetUp");
+const CSVtoSQL_1 = require("../../DB_Functions/Process/CSVtoSQL");
+const customError_1 = require("../../../utils/customError");
+const baseModel_1 = require("../baseModel");
+const modelSetUp_1 = require("../../DB_Functions/Set_Up/modelSetUp");
+const crypto_1 = __importDefault(require("crypto"));
+const randomDate = (start, end) => {
+    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+};
 class BookItemModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.BookItem);
@@ -129,7 +136,7 @@ exports.AuthorModel = AuthorModel;
 class BookPreferenceModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.BookPreference);
-        this.updateUserPreference = async (newBookPreference, userID) => {
+        this.updateBookPreference = async (newBookPreference, userID) => {
             try {
                 await this.baseUpdate(newBookPreference, { where: { userID } });
             }
@@ -138,10 +145,38 @@ class BookPreferenceModel extends baseModel_1.BaseModel {
                 throw new Error("Error in updateBookPreference" + err);
             }
         };
+        this.createRandomBookPreference = async (userID) => {
+            try {
+                const bookPreference = {
+                    userID,
+                    authorPreference: [crypto_1.default.randomBytes(20).toString('hex'), crypto_1.default.randomBytes(20).toString('hex')],
+                    genrePreference: [crypto_1.default.randomBytes(20).toString('hex'), crypto_1.default.randomBytes(20).toString('hex')],
+                    formatPreference: [crypto_1.default.randomBytes(20).toString('hex'), crypto_1.default.randomBytes(20).toString('hex')],
+                    publicationRange: { min: randomDate(new Date(1920, 1, 1), new Date(2004, 1, 1)), max: new Date() },
+                    bookLengthRange: { min: Math.random() * 100, max: 100 }
+                };
+                const { err, result } = await this.createBookPreference(bookPreference);
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in createRandomBookPreference");
+            }
+        };
     }
-    async createBookPreference(userID) {
+    async createEmptyBookPreference(userID) {
         try {
             const newBookPreference = { userID };
+            const { err, result } = await this.baseCreate(newBookPreference);
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("addBookPreference()" + err);
+        }
+    }
+    async createBookPreference(bookPref) {
+        try {
+            const newBookPreference = bookPref;
             const { err, result } = await this.baseCreate(newBookPreference);
             return { err, result };
         }

@@ -9,7 +9,7 @@ const path_1 = __importDefault(require("path"));
 // SQL 
 const passport_jwt_1 = require("passport-jwt");
 const passport_local_1 = require("passport-local");
-const authModel_1 = require("../models/typesOfModels/authModel");
+const authModel_1 = require("../models/typesOfModels/Users/authModel");
 const db = new authModel_1.AuthModel();
 const pathToKey = path_1.default.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');

@@ -35,7 +35,7 @@ const fs_1 = __importDefault(require("fs"));
 const jwt = __importStar(require("jsonwebtoken"));
 const express_1 = __importDefault(require("express"));
 //import self-written files
-const authModel_1 = require("../../models/typesOfModels/authModel");
+const authModel_1 = require("../../models/typesOfModels/Users/authModel");
 const authUtils_1 = require("../../utils/authUtils");
 const passport_2 = require("../../config/passport");
 const errorController_1 = require("../errorController");

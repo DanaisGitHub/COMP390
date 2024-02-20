@@ -9,10 +9,10 @@ import FoodApiClass from '../../controllers/usdaApi/usdaApi';
 
 
 //import self-written files
-import { Item, User } from '../../models/modelSetUp';
+import { Item, User } from '../../models/DB_Functions/Set_Up/modelSetUp';
 import StdReturn, { Models } from '../../types/baseTypes';
-import { ItemModel } from '../../models/typesOfModels/itemsModel';
-import { UserType, UserPreferenceType } from '../../types/userType';
+import { ItemModel } from '../../models/typesOfModels/Items/ItemsModel';
+import { TempUserType, UserPreferenceType } from '../../types/userType';
 import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../types/rentalType';
 import { coordiantes } from '../../types/baseTypes';
 import { Attributes, Model, ModelStatic } from 'sequelize';

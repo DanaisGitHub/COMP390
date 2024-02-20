@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DateFunc = exports.random = void 0;
+exports.UserLocations = exports.DateFunc = exports.random = void 0;
 const random = (length) => {
     let result = "";
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -40,3 +40,24 @@ DateFunc.getYearOfDate = (date) => {
 DateFunc.stringToDate = (date) => {
     return new Date(date);
 };
+class UserLocations {
+    constructor() {
+        this.generateRandomCoordinates = (minLat = UserLocations.minLat, maxLat = UserLocations.maxLat, minLon = UserLocations.minLon, maxLon = UserLocations.maxLon, amount) => {
+            let coordinates = [];
+            for (let i = 0; i < amount; i++) {
+                coordinates.push(this.generateRandomCoordinate(minLat, maxLat, minLon, maxLon));
+            }
+            return coordinates;
+        };
+    }
+    generateRandomCoordinate(minLat = UserLocations.minLat, maxLat = UserLocations.maxLat, minLon = UserLocations.minLon, maxLon = UserLocations.maxLon) {
+        const latitude = Math.random() * (maxLat - minLat) + minLat;
+        const longitude = Math.random() * (maxLon - minLon) + minLon;
+        return [latitude, longitude];
+    }
+}
+exports.UserLocations = UserLocations;
+UserLocations.minLat = 53.340;
+UserLocations.maxLat = 53.477;
+UserLocations.minLon = -2.977;
+UserLocations.maxLon = -2.822;

@@ -248,5 +248,15 @@ class BaseModel {
         }
         // 
     }
+    async getAll() {
+        try {
+            const { err, result } = await this.baseFindAll({});
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("getAll()" + err);
+        }
+    }
 }
 exports.BaseModel = BaseModel;

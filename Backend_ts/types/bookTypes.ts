@@ -1,5 +1,5 @@
 
-export interface BookPreferenceType {
+export interface BookPreferenceType { // all are optional for ease of use
     userID?: number;// FK to user
     authorPreference?: string[]; // maybe we can get away with storing as JSON/Array of id's
     genrePreference?: string[];
@@ -7,7 +7,6 @@ export interface BookPreferenceType {
     publicationRange?: { min: Date, max: Date }; // may take out ranges if too hard to implement
     bookLengthRange?: { min: number, max: number };
 }
-
 
 export interface BookType {
     id?: number;

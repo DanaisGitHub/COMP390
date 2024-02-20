@@ -1,9 +1,9 @@
-import { UserType, UserPreferenceType } from '../types/userType';
+import { TempUserType, UserPreferenceType } from '../types/userType';
 import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../types/rentalType';
-import {User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails} from '../models/modelSetUp'
+import { User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails } from '../models/DB_Functions/Set_Up/modelSetUp'
 
 
-export type ModelTypes = UserType
+export type ModelTypes = TempUserType
     | UserPreferenceType
     | ItemType
     | RentalType
@@ -11,8 +11,12 @@ export type ModelTypes = UserType
     | RentalDetailType
 
 
-export type Models = User | UserPreference | Item | Rental | PaymentDetail | RentalsDetails
-
+export type Models = User
+    | UserPreference
+    | Item
+    | Rental
+    | PaymentDetail
+    | RentalsDetails
 
 export default interface StdReturn<T = any> {
     err: null | string,
@@ -28,9 +32,3 @@ export interface RTokenModel {// don't think it's used
     token: string,
     expiryDate: Date
 }
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 import StdReturn from '../../types/baseTypes';
 import { DatabaseError, NotFoundError } from '../../utils/customError';
-import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference } from '../modelSetUp';
+import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference } from '../DB_Functions/Set_Up/modelSetUp';
 import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier, BulkCreateOptions, BuildOptions, FindAndCountOptions } from 'sequelize/types';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
@@ -154,8 +154,6 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
-
-
     protected baseFindOrCreate = async (options: FindOrCreateOptions<Attributes<T>, MakeNullishOptional<T["_creationAttributes"]>>)
         : Promise<StdReturn<[T, boolean]>> => {
         try {
@@ -295,6 +293,18 @@ export class BaseModel<T extends Model<any, any> = Models> {
             throw new DatabaseError("Failed to perfrom baseBookLink database Operation");
         }
         // 
+    }
+
+    public async getAll(): Promise<StdReturn<T[]>> {
+        try {
+            const { err, result } = await this.baseFindAll({});
+            return { err, result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("getAll()" + err);
+        }
+
     }
 }
 

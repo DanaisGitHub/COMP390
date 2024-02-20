@@ -9,7 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const passport_1 = __importDefault(require("passport"));
 const cors_1 = __importDefault(require("cors"));
-const modelSetUp_1 = require("./models/modelSetUp");
+const modelSetUp_1 = require("./models/DB_Functions/Set_Up/modelSetUp");
 const baseRoutes_1 = __importDefault(require("./routes/baseRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();

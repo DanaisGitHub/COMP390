@@ -3,8 +3,8 @@ import path from 'path';
 // SQL 
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { Strategy as LocalStrategy } from 'passport-local';
-import { AuthModel } from '../models/typesOfModels/authModel';
-import { User } from '../models/modelSetUp';
+import { AuthModel } from '../models/typesOfModels/Users/authModel';
+import { User } from '../models/DB_Functions/Set_Up/modelSetUp';
 
 const db = new AuthModel();
 const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');

@@ -3,59 +3,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuthModel = exports.UserModel = exports.UserPreferenceModel = void 0;
-const modelSetUp_1 = require("../modelSetUp");
-const baseModel_1 = require("./baseModel");
-const bookModel_1 = require("./bookModel");
+exports.AuthModel = void 0;
+const modelSetUp_1 = require("../../DB_Functions/Set_Up/modelSetUp");
 const bcrypt_1 = __importDefault(require("bcrypt"));
-class UserPreferenceModel extends baseModel_1.BaseModel {
-    constructor() {
-        super(modelSetUp_1.UserPreference);
-        this.createUserPreference = async (userID) => {
-            try {
-                const { err, result } = await this.baseCreate({ userID });
-                return { err, result };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Error in createUserPreference");
-            }
-        };
-        this.updateUserPreference = async (newUserPreference, userID) => {
-            try {
-                await this.baseUpdate(newUserPreference, { where: { userID } });
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Error in updateUserPreference" + err);
-            }
-        };
-    }
-}
-exports.UserPreferenceModel = UserPreferenceModel;
-class UserModel extends baseModel_1.BaseModel {
-    constructor() {
-        super(...arguments);
-        this.createUser = async (userDetails) => {
-            try {
-                const bookPreference = new bookModel_1.BookPreferenceModel();
-                const userPreference = new UserPreferenceModel(); // Pass the model argument
-                const { err, result } = await this.baseCreate(userDetails);
-                // creates a prefrance for the user with default values
-                const bookPrefResult = await bookPreference.createBookPreference(result.id);
-                const userPrefResult = await userPreference.createUserPreference(result.id);
-                return { err, result };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Error in createUser");
-            }
-        };
-    }
-}
-exports.UserModel = UserModel;
+const userModels_1 = require("./userModels");
 // pre-processing & storage goes in here
-class AuthModel extends UserModel {
+class AuthModel extends userModels_1.UserModel {
     constructor() {
         super(...arguments);
         this.user = modelSetUp_1.User; // not specified which user just all Users
@@ -71,7 +24,7 @@ class AuthModel extends UserModel {
                 }
                 const salt = await bcrypt_1.default.genSalt(10);
                 userDetails.password = await bcrypt_1.default.hash(userDetails.password, salt);
-                const { err, result } = await this.baseCreate(this.user, userDetails);
+                const { err, result } = await this.baseCreate(userDetails);
                 return { err: null, result: result };
             }
             catch (err) {
@@ -91,7 +44,7 @@ class AuthModel extends UserModel {
                     return { err: "User Not Found", result: null };
                 }
                 const user = result;
-                await this.baseUpdate(user, { refreshToken: obj.refreshToken });
+                await this.baseUpdate({ refreshToken: obj.refreshToken }, { where: { userEmail: obj.email } });
                 const passwordMatch = await this.comparePasswords(obj.rawPassword, user.password);
                 if (!passwordMatch.result) {
                     console.log("passwords don't match");
@@ -106,7 +59,10 @@ class AuthModel extends UserModel {
         };
         this.findUserByEmail = async (email) => {
             try {
-                const { err, result } = await this.findOne(this.user, { where: { "userEmail": email } });
+                const { err, result } = await this.baseFindOne({
+                    where: { "userEmail": email },
+                    rejectOnEmpty: false
+                });
                 if (result === null) {
                     console.log(err);
                     return { err: "User Not Found", result: null };

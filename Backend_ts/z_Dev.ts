@@ -1,4 +1,4 @@
-import { AuthorModel, BookItemModel, FormatModel, GenreModel } from './models/typesOfModels/bookModel';
+import { AuthorModel, BookItemModel, FormatModel, GenreModel } from './models/typesOfModels/Items/bookModel';
 
 
 const genreModel = new GenreModel();

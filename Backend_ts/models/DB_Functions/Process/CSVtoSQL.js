@@ -9,7 +9,7 @@ const fs_1 = __importDefault(require("fs"));
 const csvtojson_1 = __importDefault(require("csvtojson"));
 const csv_parser_1 = __importDefault(require("csv-parser"));
 const csvFilePath = '../Backend_py/DataSource/first10s.csv';
-const bookModel_1 = require("./typesOfModels/bookModel");
+const bookModel_1 = require("../../typesOfModels/Items/bookModel");
 // need to do this as a stream
 class ReadCSV {
     static async readAsync() {
