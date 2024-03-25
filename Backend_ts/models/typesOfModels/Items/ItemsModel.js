@@ -4,7 +4,7 @@ exports.ItemModel = void 0;
 const modelSetUp_1 = require("../../DB_Functions/Set_Up/modelSetUp");
 const sequelize_1 = require("sequelize");
 const baseModel_1 = require("../baseModel");
-const customError_1 = require("../../../utils/customError");
+const customError_1 = require("../../../utils/other/customError");
 // interface BasicCRUDI { // maybe get working but types are annoying
 //     // CRUD functions
 //     addNew: <T extends Model<any, any> = Models>(details: Attributes<T>) => Promise<StdReturn<Models>>; // would like to turn Models into a generic but can't
@@ -28,8 +28,9 @@ class ItemModel extends baseModel_1.BaseModel {
     }
     static async makeItemsFullTextSearchable() {
         try {
-            const [result, metadata] = await modelSetUp_1.sequelize.query("ALTER TABLE items ADD FULLTEXT (itemName, description)", { type: sequelize_1.QueryTypes.RAW });
-            return { err: null, result: [result, metadata] };
+            const itemTable = await modelSetUp_1.sequelize.query("ALTER TABLE items ADD FULLTEXT (itemName, description)", { type: sequelize_1.QueryTypes.RAW });
+            const bookTable = await modelSetUp_1.sequelize.query("ALTER TABLE bookItems ADD FULLTEXT (book, description)", { type: sequelize_1.QueryTypes.RAW });
+            return { itemTable, bookTable };
         }
         catch (err) {
             console.log(err);

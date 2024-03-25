@@ -3,9 +3,12 @@ import fs from 'fs';
 import csvtojson from 'csvtojson';
 import csvParser from 'csv-parser';
 const csvFilePath = '../Backend_py/DataSource/first10s.csv';
-import { BookType, BookTypeRaw } from '../../../types/bookTypes';
-import { BookGenreModel, BookItemModel, GenreModel, FormatModel, AuthorModel, BookAuthorModel, BookFormatModel } from '../../typesOfModels/Items/bookModel';
-import { GenreType, FormatType, AuthorType } from '../../../types/bookTypes';
+import { BookType, BookTypeRaw } from '../../../types/DBTypes/BookTypes/bookTypes';
+import { BookItemModel } from '../../typesOfModels/Items/BookModels/bookModel';
+import { GenreModel, BookGenreModel } from '../../typesOfModels/Items/BookModels/GenreModels/GenreModels';
+import { FormatModel, BookFormatModel } from '../../typesOfModels/Items/BookModels/FormatModels/FormatModel';
+import { AuthorModel, BookAuthorModel } from '../../typesOfModels/Items/BookModels/AuthorModels/AuthorModels';
+import { GenreType, FormatType, AuthorType } from '../../../types/DBTypes/BookTypes/bookTypes';
 
 // need to do this as a stream
 
@@ -47,13 +50,17 @@ export class CSVtoSQLBook { // might make singleton
         array = string.split(',');
         for (let i = 0; i < array.length; i++) {
             array[i] = array[i].trim();
+            array[i] = this.cleanString(array[i]);
         }
         return array;
     }
     private static cleanString(string: string): string {
         string = string.replace(/[\[\]']+/g, ''); // remove brackets from string // error
         string = string.replace(/(^\s+|\s+$)+/g, ''); // removes whitespace aka trim()
-        string = string.replace(/[\n]+/g, ''); // removes \n
+        string = string.replace(/[\n]+/g, '');// removes \n
+        string = string.toLowerCase();
+        var string = string.replace(/[^\w\s]/gi, '')
+
         return string;
     }
     private static removeDuplicates(rawBook: BookType): BookType {
@@ -64,22 +71,24 @@ export class CSVtoSQLBook { // might make singleton
 
 
 
-    protected static async convertValue(rawBook: BookTypeRaw): Promise<BookType> {
+    protected static async convertStrBook(rawBook: BookTypeRaw): Promise<BookType> {
         try {
+            console.log(rawBook);
+            const num: number = !Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0.0;
             let tempBookType: BookType = {
-                book: rawBook.book ?? "",
-                series: rawBook.series ?? "",
-                author: rawBook.author ?? "",
+                book: this.cleanString(rawBook.book) ?? "",
+                series: this.cleanString(rawBook.series) ?? "",
+                author: this.cleanString(rawBook.author) ?? "",
                 description: this.cleanString(rawBook.description) ?? "", // contains \n
                 numPages: parseInt(rawBook.numPages) ?? 0,
                 format: this.convertStringToArray(rawBook.format) ?? [],
                 genres: this.convertStringToArray(rawBook.genres) ?? [],
                 publication: this.dateProcessor(rawBook.publication) ?? undefined, // could be dated better // string = "January 1, 1980"
-                rating: Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0.0 ?? 0.0,
+                rating: num,
                 numOfVoters: parseInt(rawBook.numberOfVoters) ?? 0
             }
 
-           // tempBookType = CSVtoSQLBook.removeDuplicates(tempBookType);
+            // tempBookType = CSVtoSQLBook.removeDuplicates(tempBookType);
 
             return tempBookType;
         }// for each new tempbook send a create request
@@ -90,20 +99,26 @@ export class CSVtoSQLBook { // might make singleton
     }
 
 
-    private static async sendMetaData(book: BookType) {
+    private static async sendMetaData(book: BookType) { // should be removing duplicates
         const genreModel = new GenreModel();
         const formatModel = new FormatModel();
         const authorModel = new AuthorModel();
-        const author = book.author;
+        let author = book.author;
 
         book.format!.forEach(async (format) => {
-            await formatModel.addFormat(format);
+            format = this.cleanString(format);
+            await formatModel.addAttribute(format);
         })
         book.genres!.forEach(async (genre) => {
-            await genreModel.addGenre(genre) // will have thousands of genres stoted in memory
+            genre = this.cleanString(genre);
+            await genreModel.addAttribute(genre) // will have thousands of genres stoted in memory
         })
 
-        await authorModel.addAuthor(author!);
+        author = this.cleanString(author!);
+        await authorModel.addAttribute(author!);
+
+
+        //TODO: REMOVE DUPLICATES
     }
 
     private static async sendMetaDataLinks(book: BookType) {
@@ -119,14 +134,16 @@ export class CSVtoSQLBook { // might make singleton
         book.genres!.forEach(async (genre) => {
             await bookGenreModel.addBookGenreLink(book.book, genre);
         })
+        
         await bookAuthorModel.addBookAuthorLink(book.book, book.author!);
     }
 
     public static async processEachRow(bookRowRaw: BookTypeRaw) { // for each new tempbook send a create request
         try {
             const bookItemModel = new BookItemModel();
-            const bookRow: BookType = await this.convertValue(bookRowRaw);
+            const bookRow: BookType = await this.convertStrBook(bookRowRaw);
             await bookItemModel.addBookItem(bookRow);
+            
             // get unique values for format, genres, and authors
             await this.sendMetaData(bookRow);
             await this.sendMetaDataLinks(bookRow);

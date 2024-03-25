@@ -1,11 +1,11 @@
-import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetails, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
+import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetail, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
 import { BaseModel } from "../baseModel";
-import { BookPreferenceModel } from "../Items/bookModel";
+import { BookPreferenceModel } from "../Items/BookModels/bookModel";
 import crypto from 'crypto';
 import bcrypt from 'bcrypt'
 import passport from 'passport-jwt';
 import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
-import { UserPreferenceType, TempUserType } from '../../../types/userType'
+import { UserPreferenceType, TempUserType } from '../../../types/UserTypes/userType'
 import {UserModel} from "./userModels";
 
 

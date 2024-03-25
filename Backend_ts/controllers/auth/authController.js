@@ -36,12 +36,12 @@ const jwt = __importStar(require("jsonwebtoken"));
 const express_1 = __importDefault(require("express"));
 //import self-written files
 const authModel_1 = require("../../models/typesOfModels/Users/authModel");
-const authUtils_1 = require("../../utils/authUtils");
+const authUtils_1 = require("../../utils/auth/authUtils");
 const passport_2 = require("../../config/passport");
 const errorController_1 = require("../errorController");
 // constants
-const pathToKey = path_1.default.join(__dirname, '..', '..', 'id_rsa_pub.pem');
-const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
+const pathToKey = path_1.default.join(__dirname, '..', '..', '..', 'id_rsa_pub.pem');
+const PUB_KEY = fs_1.default.readFileSync('C:/Users/DZera/Documents/UOL offine/COMP 390/Backend_ts/id_rsa_pub.pem', 'utf8'); // error
 const db = new authModel_1.AuthModel();
 const accessTime = 900000 * 4 * 24 * 30; // 15 days
 const refreshTime = 900000 * 4 * 24 * 30; // 30 days

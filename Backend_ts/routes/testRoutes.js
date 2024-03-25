@@ -7,9 +7,10 @@ const express_1 = require("express");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
-const pathToKey = path_1.default.join(__dirname, '..', 'id_rsa_pub.pem');
+const pathToKey = path_1.default.join(__dirname, "..", 'id_rsa_pub.pem');
+console.log(pathToKey);
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
-const testController_1 = __importDefault(require("../controllers/test/testController"));
+const testController_1 = __importDefault(require("../controllers/Others/test/testController"));
 const router = (0, express_1.Router)();
 const ctrl = new testController_1.default();
 // we are running into some refresh token issues, so access Token is going to be 15 days and refresh token is going to be 30 days

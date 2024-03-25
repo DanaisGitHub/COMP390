@@ -12,9 +12,8 @@ import { Router, Request as Req, Response as Res, NextFunction as Next } from 'e
 
 import { sequelize, initialize } from './models/DB_Functions/Set_Up/modelSetUp'
 
-import authRoutes from './routes/authRoutes';
-import apiRoutes from './API/googleMaps/googleMapsAPI';
-import baseRoutes from './routes/baseRoutes';
+import authRoutes from './routes/zzPrevRoutes/authRoutes';
+import baseRoutes from './routes/zzPrevRoutes/baseRoutes';
 
 dotenv.config();
 const app = express();

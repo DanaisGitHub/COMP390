@@ -1,26 +1,15 @@
-import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetails, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
+import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetail, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
 import { BaseModel } from "../baseModel";
-import { BookPreferenceModel , UserBookRatingModels} from "../Items/bookModel";
+import { BookPreferenceModel, UserBookRatingModels } from "../Items/BookModels/bookModel";
 import crypto from 'crypto';
 import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
-import { UserPreferenceType, TempUserType } from '../../../types/userType'
-import { BookPreferenceType } from "../../../types/bookTypes";
+import { UserPreferenceType, TempUserType } from '../../../types/DBTypes/UserTypes/userTypes'
+import { BookPreferenceType } from "../../../types/DBTypes/BookTypes/bookTypes";
+import { randomDate, randomDateRange, randomNumber, randomRange } from '../../../utils/other/random'
+import { random } from "../../../utils/other/utils";
+import {generateRandomLatLng} from'../../../utils/locationUtils'
 
 
-const randomDate = (start: Date, end: Date): Date => {
-    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-}
-
-const randomRange = (min: number, max: number): { min: number, max: number } => {
-    const ran1 = Math.random() * (max - min) + min;
-    const ran2 = Math.random() * (max - min) + min;
-    if (ran1 > ran2) {
-        return { min: ran2, max: ran1 }
-    }
-    else {
-        return { min: ran1, max: ran2 }
-    }
-}
 
 
 
@@ -41,13 +30,20 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
 
     public createRandomUserPreference = async (userID: number): Promise<void> => {
         try {
-
+            const { min: distanceMin, max: distanceMax } = randomRange(0, 100)
+            const { min: priceMin, max: priceMax } = randomRange(0, 1000)
+            const { min: ratingMin, max: ratingMax } = randomRange(0, 5, true)
+            const { min: dateMin, max: dateMax } = randomDateRange(new Date(1920, 1, 1), new Date(2020, 1, 1))
             const userPreference: UserPreferenceType = {
                 userID,
-                distanceRange: randomRange(0, 100),
-                priceRange: randomRange(0, 100),
-                ratingRange: randomRange(0, 100),
-                dateRange: { start: new Date(), end: new Date() }
+                distanceRangeMin: distanceMin,
+                distanceRangeMax: distanceMax,
+                priceRangeMin: priceMin,
+                priceRangeMax: priceMax,
+                ratingRangeMin: ratingMin,
+                ratingRangeMax: ratingMax,
+                dateRangeMin: dateMin,
+                dateRangeMax: dateMax
             }
             const userPreferenceModel = new UserPreferenceModel();
             await userPreferenceModel.baseCreate(userPreference);
@@ -68,7 +64,7 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
 
     public getUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
         try {
-            const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true})
+            const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true })
             return { err, result }
         } catch (err) {
             console.log(err)
@@ -95,7 +91,7 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
             const userPrefResult = await userPreference.createRandomUserPreference(user.id!);
             const userBookRatingResult = await userBookRatingModels.genRatingForAllBooks(user);
             // need to create rating for each book
-            
+
             return { err, result: user }
         } catch (err) {
             console.log(err)
@@ -103,29 +99,19 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
         }
     }
 
-    private randomDate = (start: Date, end: Date): Date => {
-        return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-    }
-
-    private randomRange = (min: number, max: number): { min: number, max: number } => {
-        const ran1 = Math.random() * (max - min) + min;
-        const ran2 = Math.random() * (max - min) + min;
-        if (ran1 > ran2) {
-            return { min: ran2, max: ran1 }
-        }
-        else {
-            return { min: ran1, max: ran2 }
-        }
-    }
-
+  
     public createRandomUser = async (): Promise<StdReturn<User>> => {
         try {
+            const { lat, lng } = generateRandomLatLng(10);
             const userDetails: TempUserType = {
                 firstName: crypto.randomBytes(10).toString('hex'),
                 lastName: crypto.randomBytes(10).toString('hex'),
                 userEmail: crypto.randomBytes(20).toString('hex') + "@test.com",
                 password: "password",
-                birthDate: this.randomDate(new Date(1920, 1, 1), new Date(2004, 1, 1)),
+                birthDate: randomDate(new Date(1920, 1, 1), new Date(2004, 1, 1)),
+                sex:randomNumber(0, 1) === 0 ? false : true,
+                lat: lat,
+                lng: lng
             }
             const { err, result } = await this.createUser(userDetails); // book and user pref created too
             return { err, result }

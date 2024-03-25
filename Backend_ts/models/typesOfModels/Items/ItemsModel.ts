@@ -1,11 +1,11 @@
-import { sequelize, User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails, BookItem } from "../../DB_Functions/Set_Up/modelSetUp";
+import { sequelize, User, UserPreference, Item, Rental, PaymentDetail, RentalsDetail, BookItem } from "../../DB_Functions/Set_Up/modelSetUp";
 import { Model, DataTypes, Sequelize, ModelCtor, QueryTypes, Attributes, InstanceUpdateOptions, NonNullFindOptions, ModelStatic, UpdateOptions } from "sequelize";
 import { BaseModel } from "../baseModel";
 import StdReturn from "../../../types/baseTypes"; // just changed make sure correct
-import { TempUserType, UserPreferenceType, } from "../../../types/userType";
-import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../../types/rentalType";
-import { BookType } from "../../../types/bookTypes";
-import { DatabaseError, NotFoundError } from '../../../utils/customError';
+import { TempUserType, UserPreferenceType, } from "../../../types/DBTypes/UserTypes/userTypes";
+import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../../types/DBTypes/RentalTypes/rentalType";
+import { BookType } from "../../../types/DBTypes/BookTypes/bookTypes";
+import { DatabaseError, NotFoundError } from '../../../utils/other/customError';
 import { ModelTypes, Models } from '../../../types/baseTypes'
 import { Col, Fn, Literal } from "sequelize/types/utils";
 import { query } from "express";
@@ -54,10 +54,11 @@ export class ItemModel extends BaseModel<Item> {
 
     }
 
-    public static async makeItemsFullTextSearchable(): Promise<StdReturn> {
+    public static async makeItemsFullTextSearchable(): Promise<{itemTable:any,bookTable:any}> {
         try {
-            const [result, metadata] = await sequelize.query("ALTER TABLE items ADD FULLTEXT (itemName, description)", { type: QueryTypes.RAW })
-            return { err: null, result: [result, metadata] }
+            const itemTable = await sequelize.query("ALTER TABLE items ADD FULLTEXT (itemName, description)", { type: QueryTypes.RAW })
+            const bookTable = await sequelize.query("ALTER TABLE bookItems ADD FULLTEXT (book, description)", { type: QueryTypes.RAW })
+            return {itemTable, bookTable}
         }
         catch (err) {
             console.log(err)

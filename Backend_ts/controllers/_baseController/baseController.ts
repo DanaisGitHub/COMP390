@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 
-import FoodApiClass from '../../controllers/usdaApi/usdaApi';
+import FoodApiClass from './usdaApi/usdaApi';
 
 
 
@@ -12,20 +12,14 @@ import FoodApiClass from '../../controllers/usdaApi/usdaApi';
 import { Item, User } from '../../models/DB_Functions/Set_Up/modelSetUp';
 import StdReturn, { Models } from '../../types/baseTypes';
 import { ItemModel } from '../../models/typesOfModels/Items/ItemsModel';
-import { TempUserType, UserPreferenceType } from '../../types/userType';
-import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../types/rentalType';
+import { TempUserType, UserPreferenceType } from '../../types/UserTypes/userType';
+import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../types/DBTypes/RentalTypes/rentalType';
 import { coordiantes } from '../../types/baseTypes';
 import { Attributes, Model, ModelStatic } from 'sequelize';
 import { BaseModel } from '../../models/typesOfModels/baseModel';
 
 
-// export interface BasicCRUDControllerI { // all Working
-//     create: (res: Res, newData: Attributes<Models>) => Promise<void>;
-//     remove: (req: Req, res: Res, next: Next) => Promise<void>;
-//     update: (req: Req, res: Res, next: Next, model: ModelStatic<Models>) => Promise<void>;
-//     getOne: (req: Req, res: Res, next: Next) => Promise<void>;
-//     getMany: (req: Req, res: Res, next: Next) => Promise<void>;
-// }
+// THE ONLY THING YOU CAN PARENT CLASS IS SECURITY, AUTHORIZATION, AND ERROR HANDLING, AND LOGGING ... THINK OF MORE LATER
 
 type ModelClass = ItemModel;
 
@@ -73,7 +67,7 @@ export abstract class BaseController<T extends ModelClass, M extends Model<any, 
     protected getMany = async (req: Req, res: Res, next: Next) => { // user is not going to call this directly
         try {
             const { price } = req.body;
-            const { err, result }: StdReturn<Models[]> = await this.db.findMany({ // need to figure out what to with search ter
+            const { err, result }: StdReturn<Models[]> = await this.db.findAll({ // need to figure out what to with search ter
                 where: { pricePerDay: price },
                 rejectOnEmpty: false
             })

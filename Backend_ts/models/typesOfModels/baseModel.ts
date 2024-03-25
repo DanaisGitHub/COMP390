@@ -1,13 +1,15 @@
 import StdReturn from '../../types/baseTypes';
-import { DatabaseError, NotFoundError } from '../../utils/customError';
-import { RentalsDetails, User, Item, Rental, PaymentDetail, UserPreference, Author, Format, Genre } from '../DB_Functions/Set_Up/modelSetUp';
+import { DatabaseError, NotFoundError } from '../../utils/other/customError';
+import { RentalsDetail, User, Item, Rental, PaymentDetail, UserPreference, Author, Format, Genre, BookAuthor, BookFormat, BookGenre } from '../DB_Functions/Set_Up/modelSetUp';
 import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier, BulkCreateOptions, BuildOptions, FindAndCountOptions } from 'sequelize/types';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
 import { mode } from 'crypto-js';
 import { Col, Fn, Literal, MakeNullishOptional } from 'sequelize/types/utils';
-import { ItemType } from '../../types/rentalType';
-import { AuthorModel } from './Items/bookModel';
+import { ItemType } from '../../types/DBTypes/RentalTypes/rentalType';
+import { AuthorModel } from './Items/BookModels/AuthorModels/AuthorModels';
+import { AuthorType, BookAuthorType, BookFormatType, BookGenreType, FormatType, GenreType } from '../../types/DBTypes/BookTypes/bookTypes';
+import { CountOptions } from 'sequelize';
 
 // cant perfrom circular imports
 
@@ -84,11 +86,11 @@ export class BaseModel<T extends Model<any, any> = Models> {
     }
 
     /**
- * 
- * @param model ModelStatic<T> = Table you want to update
- * @param searchTerm for ALL items you want to update
- * @param updatingFields update 
- */
+     * Updates a row in the database
+     * 
+     * @param values = object of values to be updated
+     * @param searchTerm = object of conditions/ how to find row
+     */
     protected baseUpdate = async (
         values: { [key in keyof Attributes<T>]?: Fn | Col | Literal | Attributes<T>[key] | undefined },
         searchTerm: Omit<UpdateOptions<Attributes<T>>, "returning">): Promise<void> => { // if any defalut values not filled, filled with defulat already set.
@@ -173,7 +175,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
      * @param options 
      * @returns 
      */
-    protected findByPkey = async (identifier?: Identifier | undefined, options?: Omit<FindOptions<Attributes<T>>, "where"> | undefined): Promise<StdReturn<T>> => {
+    public findByPkey = async (identifier?: Identifier | undefined, options?: Omit<FindOptions<Attributes<T>>, "where"> | undefined): Promise<StdReturn<T>> => {
         const result = await this.model.findByPk(identifier, options)
         if (result === null) {
             throw new NotFoundError("not found in findByPkey")
@@ -251,7 +253,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
             throw new DatabaseError("Item Models find()::=> " + err);
         }
     }
-    public async findMany(options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T[]>> {
+    public async findAll(options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T[]>> {
         try {
             const { err, result } = await this.baseFindAll(options)
             return { err, result }
@@ -262,13 +264,15 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
-    // should be in a sperate class
+    // should be in a sperate class // is creating twice
     public async baseBookLink(bookName: string, linkName: string, linkTable: any, bookTable: any): Promise<void> {
         try {
             let book, linkRes;
             const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
                 : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "Id";
 
+
+                // searching for book
             try {
                 book = await bookTable.find({
                     where: { book: bookName },
@@ -278,6 +282,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
                 throw new NotFoundError("Book not found in 'baseBookLink' ");
             }
 
+            // seraching for attribute
             try {
                 linkRes = await linkTable.find({
                     where: { name: linkName },
@@ -316,4 +321,150 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
 
     }
+
+    public async count(options: Omit<CountOptions<Attributes<T>>, "group"> | undefined): Promise<number> {
+        try {
+            const num = await this.model.count(options);
+            return num;
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("count()" + err);
+        }
+    }
+
+    public async entryExists(options: Omit<CountOptions<Attributes<T>>, "group"> | undefined): Promise<boolean> {
+        try {
+            const result = await this.model.count(options);
+            if (result > 0) {
+                console.log("entryExists()::=> Entry Exists");
+                return true;
+            }
+            return false;
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("entryExists()" + err);
+        }
+    }
+
+    public async performOnAllRows(action: (item: any) => void, limit = 100, offset = 0,): Promise<void> {
+        try {
+            let result: T[];
+            do {
+                result = await this.model.findAll({
+                    limit, offset,
+                });
+                result?.forEach(action);
+                offset += limit;
+
+            } while (result.length === limit);
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("performOnAll()" + err);
+        }
+    }
+
+
+
+}
+
+type BaseBookAttributes = BookAuthor | BookFormat | BookGenre;
+
+
+export class BaseBookAttributesModel<T extends BaseBookAttributes> extends BaseModel<T> {
+
+
+    /**
+     * For given bookId, returns all the attributes of the book eg all formats book is in
+     * 
+     * @param id BookId
+     * @param returnIds weather you want the ids or the actual objects
+     * @returns 
+     */
+    public async getAllBookAttributesForSpecficBook(id: number, returnIds = true): Promise<StdReturn</*T[]*/ | number[]>> {
+        try {
+            let findAllAttributes: any/*: FindOptions<Attributes<T>> | undefined*/, attributeId: string, model: ModelStatic<T>;
+            if (this.model === BookAuthor) {
+                attributeId = "authorId";
+                const authorId = id;
+                findAllAttributes = {
+                    include: [{
+                        model: Author,
+                        as: 'authorBooks',
+                        where: { id: authorId }, // here we say: where Genre.id = genreId
+                        attributes: []
+                    }]
+                };
+            } else if (this.model === BookFormat) {
+                attributeId = "formatId";
+                const formatId = id;
+                findAllAttributes = {
+                    include: [{
+                        model: Format,
+                        as: 'formatBooks',
+                        where: { id: formatId }, // here we say: where Genre.id = genreId
+                        attributes: []
+                    }]
+                };
+            }
+            else if (this.model === BookGenre) {
+                attributeId = "genreId";
+                const genreId = id;
+                findAllAttributes = {
+                    include: [{
+                        model: Genre,
+                        as: 'genreBooks',
+                        where: { id: genreId }, // here we say: where Genre.id = genreId
+                        attributes: []
+                    }]
+                };
+            };
+            const { err, result: attributes } = await this.baseFindAll(findAllAttributes);
+            //if (returnIds) {
+            return {
+                err,
+                result: attributes?.map((attribute) => {
+                    return ((attribute.dataValues as Record<string, any>)[attributeId]) as number;
+                }),
+            };
+            //            }
+
+            // return { // probs wrong here
+            //     err, result: await Promise.all(attributes?.map(async (attribute) => {
+            //         const { err, result } = await this.genreTable.find({ where: { id: attributes[attributeId] }, rejectOnEmpty: true });// I think here
+            //         if (err) {
+            //             throw new DatabaseError(`getAllBookAttribuesForSpecficBook() for ${this.model.toString()}` + err);
+            //         }
+            //         return result;
+            //     }))
+            // }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("getAllBookGenresForSpecficBook()" + err);
+        }
+    }
+
+}
+
+export type BaseAttributeType = Genre | Format | Author;
+
+export class BaseAttributeModel<T extends BaseAttributeType> extends BaseModel<T> {
+
+
+    public async addAttribute(name: string): Promise<void> { // if we group by name, we can remove duplicates
+        try {
+            const { err, result: findOrCreate } = await this.baseFindOrCreate({ where: { name } } as any);
+
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("addAttribute()" + err);
+        }
+    }
+
+
+
 }

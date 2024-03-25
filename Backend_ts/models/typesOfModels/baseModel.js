@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BaseModel = void 0;
-const customError_1 = require("../../utils/customError");
+exports.BaseAttributeModel = exports.BaseBookAttributesModel = exports.BaseModel = void 0;
+const customError_1 = require("../../utils/other/customError");
+const modelSetUp_1 = require("../DB_Functions/Set_Up/modelSetUp");
 // cant perfrom circular imports
 // be careful with the types here
 //could be all statics and not need to instantiate
@@ -59,11 +60,11 @@ class BaseModel {
             }
         };
         /**
-     *
-     * @param model ModelStatic<T> = Table you want to update
-     * @param searchTerm for ALL items you want to update
-     * @param updatingFields update
-     */
+         * Updates a row in the database
+         *
+         * @param values = object of values to be updated
+         * @param searchTerm = object of conditions/ how to find row
+         */
         this.baseUpdate = async (values, searchTerm) => {
             try {
                 await this.model.update(values, searchTerm);
@@ -131,6 +132,12 @@ class BaseModel {
                 throw new customError_1.DatabaseError("Failed to perfrom findOrCreate database Operation");
             }
         };
+        /**
+         *
+         * @param identifier if no identifier is passed, it will return all
+         * @param options
+         * @returns
+         */
         this.findByPkey = async (identifier, options) => {
             const result = await this.model.findByPk(identifier, options);
             if (result === null) {
@@ -161,6 +168,7 @@ class BaseModel {
     ///////////////////////////
     //PUBLIC FUNCTIONS
     ///////////////////////////
+    // why do these exist
     async addNew(details) {
         try {
             const { err, result } = await this.baseCreate(details);
@@ -200,7 +208,7 @@ class BaseModel {
             throw new customError_1.DatabaseError("Item Models find()::=> " + err);
         }
     }
-    async findMany(options) {
+    async findAll(options) {
         try {
             const { err, result } = await this.baseFindAll(options);
             return { err, result };
@@ -210,11 +218,13 @@ class BaseModel {
             throw new customError_1.DatabaseError("Item Models findMany()::=> " + err);
         }
     }
+    // should be in a sperate class // is creating twice
     async baseBookLink(bookName, linkName, linkTable, bookTable) {
         try {
             let book, linkRes;
             const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
                 : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "Id";
+            // searching for book
             try {
                 book = await bookTable.find({
                     where: { book: bookName },
@@ -224,6 +234,7 @@ class BaseModel {
             catch (err) {
                 throw new customError_1.NotFoundError("Book not found in 'baseBookLink' ");
             }
+            // seraching for attribute
             try {
                 linkRes = await linkTable.find({
                     where: { name: linkName },
@@ -258,5 +269,131 @@ class BaseModel {
             throw new customError_1.DatabaseError("getAll()" + err);
         }
     }
+    async count(options) {
+        try {
+            const num = await this.model.count(options);
+            return num;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("count()" + err);
+        }
+    }
+    async entryExists(options) {
+        try {
+            const result = await this.model.count(options);
+            if (result > 0) {
+                console.log("entryExists()::=> Entry Exists");
+                return true;
+            }
+            return false;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("entryExists()" + err);
+        }
+    }
+    async performOnAllRows(action, limit = 100, offset = 0) {
+        try {
+            let result;
+            do {
+                result = await this.model.findAll({
+                    limit, offset,
+                });
+                result === null || result === void 0 ? void 0 : result.forEach(action);
+                offset += limit;
+            } while (result.length === limit);
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("performOnAll()" + err);
+        }
+    }
 }
 exports.BaseModel = BaseModel;
+class BaseBookAttributesModel extends BaseModel {
+    /**
+     * For given bookId, returns all the attributes of the book eg all formats book is in
+     *
+     * @param id BookId
+     * @param returnIds weather you want the ids or the actual objects
+     * @returns
+     */
+    async getAllBookAttributesForSpecficBook(id, returnIds = true) {
+        try {
+            let findAllAttributes /*: FindOptions<Attributes<T>> | undefined*/, attributeId, model;
+            if (this.model === modelSetUp_1.BookAuthor) {
+                attributeId = "authorId";
+                const authorId = id;
+                findAllAttributes = {
+                    include: [{
+                            model: modelSetUp_1.Author,
+                            as: 'authorBooks',
+                            where: { id: authorId },
+                            attributes: []
+                        }]
+                };
+            }
+            else if (this.model === modelSetUp_1.BookFormat) {
+                attributeId = "formatId";
+                const formatId = id;
+                findAllAttributes = {
+                    include: [{
+                            model: modelSetUp_1.Format,
+                            as: 'formatBooks',
+                            where: { id: formatId },
+                            attributes: []
+                        }]
+                };
+            }
+            else if (this.model === modelSetUp_1.BookGenre) {
+                attributeId = "genreId";
+                const genreId = id;
+                findAllAttributes = {
+                    include: [{
+                            model: modelSetUp_1.Genre,
+                            as: 'genreBooks',
+                            where: { id: genreId },
+                            attributes: []
+                        }]
+                };
+            }
+            ;
+            const { err, result: attributes } = await this.baseFindAll(findAllAttributes);
+            //if (returnIds) {
+            return {
+                err,
+                result: attributes === null || attributes === void 0 ? void 0 : attributes.map((attribute) => {
+                    return (attribute.dataValues[attributeId]);
+                }),
+            };
+            //            }
+            // return { // probs wrong here
+            //     err, result: await Promise.all(attributes?.map(async (attribute) => {
+            //         const { err, result } = await this.genreTable.find({ where: { id: attributes[attributeId] }, rejectOnEmpty: true });// I think here
+            //         if (err) {
+            //             throw new DatabaseError(`getAllBookAttribuesForSpecficBook() for ${this.model.toString()}` + err);
+            //         }
+            //         return result;
+            //     }))
+            // }
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("getAllBookGenresForSpecficBook()" + err);
+        }
+    }
+}
+exports.BaseBookAttributesModel = BaseBookAttributesModel;
+class BaseAttributeModel extends BaseModel {
+    async addAttribute(name) {
+        try {
+            const { err, result: findOrCreate } = await this.baseFindOrCreate({ where: { name } });
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("addAttribute()" + err);
+        }
+    }
+}
+exports.BaseAttributeModel = BaseAttributeModel;

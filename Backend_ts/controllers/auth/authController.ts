@@ -13,9 +13,9 @@ import express from 'express';
 //import self-written files
 import { AuthModel } from '../../models/typesOfModels/Users/authModel';
 import { User } from '../../models/DB_Functions/Set_Up/modelSetUp';
-import { issueJWT, authMiddleware } from '../../utils/authUtils'
+import { issueJWT, authMiddleware } from '../../utils/auth/authUtils'
 import { runPassport } from '../../config/passport'
-import { TempUserType } from '../../types/userType'
+import { TempUserType } from '../../types/DBTypes/UserTypes/userTypes'
 
 import StdReturn from '../../types/baseTypes';
 import { type } from 'os';
@@ -24,10 +24,10 @@ import {errorHandler, asyncErrorHandler} from '../errorController'
 
 
 
-
 // constants
-const pathToKey = path.join(__dirname, '..', '..', 'id_rsa_pub.pem');
-const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
+
+const pathToKey = path.join(__dirname, '..', '..', '..','id_rsa_pub.pem');
+const PUB_KEY = fs.readFileSync('C:/Users/DZera/Documents/UOL offine/COMP 390/Backend_ts/id_rsa_pub.pem', 'utf8'); // error
 const db = new AuthModel();
 const accessTime = 900000 * 4 * 24 * 30  // 15 days
 const refreshTime = 900000 * 4 * 24 * 30 // 30 days

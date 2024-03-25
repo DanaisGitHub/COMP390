@@ -34,7 +34,7 @@ class BaseController {
         this.getMany = async (req, res, next) => {
             try {
                 const { price } = req.body;
-                const { err, result } = await this.db.findMany({
+                const { err, result } = await this.db.findAll({
                     where: { pricePerDay: price },
                     rejectOnEmpty: false
                 });

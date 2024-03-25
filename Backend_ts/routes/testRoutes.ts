@@ -1,15 +1,16 @@
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
-import { authMiddleware } from '../utils/authUtils'
+import { authMiddleware } from '../utils/auth/authUtils'
 
 import { User } from '../models/DB_Functions/Set_Up/modelSetUp';
 import jwt from 'jsonwebtoken';
 
 import path from 'path';
 import fs from 'fs';
-const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
+const pathToKey = path.join(__dirname,"..",'id_rsa_pub.pem');
+console.log(pathToKey)
 const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
-import ItemController from '../controllers/test/testController';
+import ItemController from '../controllers/Others/test/testController';
 import test from 'node:test';
 
 const router = Router();

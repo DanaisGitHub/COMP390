@@ -1,6 +1,6 @@
-import { TempUserType, UserPreferenceType } from '../types/userType';
-import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../types/rentalType';
-import { User, UserPreference, Item, Rental, PaymentDetail, RentalsDetails } from '../models/DB_Functions/Set_Up/modelSetUp'
+import { TempUserType, UserPreferenceType } from './DBTypes/UserTypes/userTypes';
+import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from './DBTypes/RentalTypes/rentalType';
+import { User, UserPreference, Item, Rental, PaymentDetail, RentalsDetail } from '../models/DB_Functions/Set_Up/modelSetUp'
 
 
 export type ModelTypes = TempUserType
@@ -16,7 +16,7 @@ export type Models = User
     | Item
     | Rental
     | PaymentDetail
-    | RentalsDetails
+    | RentalsDetail
 
 export default interface StdReturn<T = any> {
     err: null | string,

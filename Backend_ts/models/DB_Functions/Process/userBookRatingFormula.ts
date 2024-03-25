@@ -1,7 +1,11 @@
-import { TempUserType, UserPreferenceType } from '../../../types/userType';
-import { BookType, BookPreferenceType } from '../../../types/bookTypes';
+import { TempUserType, UserPreferenceType } from '../../../types/UserTypes/userType';
+import { BookType, BookPreferenceType } from '../../../types/DBTypes/BookTypes/bookTypes';
 import { UserModel, UserPreferenceModel } from '../../typesOfModels/Users/userModels';
-import { AuthorModel, BookItemModel as BookModel, BookPreferenceModel, FormatModel, GenreModel } from '../../typesOfModels/Items/bookModel';
+import { BookItemModel as BookModel, BookPreferenceModel, } from '../../typesOfModels/Items/BookModels/bookModel';
+import { GenreModel } from '../../typesOfModels/Items/BookModels/GenreModels/GenreModels';
+import { FormatModel } from '../../typesOfModels/Items/BookModels/FormatModels/FormatModel';
+import { AuthorModel } from '../../typesOfModels/Items/BookModels/AuthorModels/AuthorModels';
+
 import { User, BookItem as Book } from '../Set_Up/modelSetUp';
 
 // TODO: 1) Add userRating Table to db 
@@ -9,8 +13,10 @@ import { User, BookItem as Book } from '../Set_Up/modelSetUp';
 // 3) before moving to next user normalise scores
 
 export class CreateUserBookRatingFormula { // needs to be done for each user
-    private lowestScore: number = Infinity;
-    private highestScore: number = -Infinity;
+    private lowestScore: number = 40000;
+
+    private highestScore: number = -40000;
+
     public getLowestScore(): number {
         return this.lowestScore;
     }
@@ -27,93 +33,95 @@ export class CreateUserBookRatingFormula { // needs to be done for each user
     // 1 keep track of non-normalised scores
     // 2 only at then end with last lowest and hightest Score normalise scores
 
-    public async createUserRating(book: Book): Promise<number> {
-        let score = 0;
-        const userModel = new UserModel();
-        const bookModel = new BookModel();
+    /**
+     * For each book, calulate the user rating
+     * 
+     * @param book the book
+     * @returns the user rating
+     */
+    public async createUserRating(book: BookType): Promise<number> { //book = 0 coming in 
+        try {
+            let score = 1;
+            const userModel = new UserModel();
+            const bookModel = new BookModel();
+            const genreModel = new GenreModel();
+            const formatModel = new FormatModel();
+            const authorModel = new AuthorModel();
+            const bookPrefModel = new BookPreferenceModel();
+            const userPrefModel = new UserPreferenceModel();
 
-        const genreModel = new GenreModel();
-        const formatModel = new FormatModel();
-        const authorModel = new AuthorModel();
-
-        const bookAuthors = await bookModel.getBookAuthors(book.id);
-        const bookFormats = await bookModel.getBookFormats(book.id);
-        const bookGenres = await bookModel.getBookGenres(book.id);
+            // Book Meta-Data
+            // book.id = undefined
+            //const bookFormatsArrReturn = await bookModel.getBookFormats(book.id!);// book.id = undefined
+            //const bookAuthorsArrReturn = await bookModel.getBookAuthors(book.id!);// book.id = undefined
 
 
-        const bookPrefModel = new BookPreferenceModel();
-        const userPrefModel = new UserPreferenceModel();
+            // get user preference
+            const userPrefReturn = await userPrefModel.getUserPreference(this.user.id);
+            // get book preference
+            const { err: bookPrefErr, result: bookPref } = await bookPrefModel.getBookPreference(this.user.id); // wrong id
+            const userFormatsPref = bookPref.formatPreference;
+            const userAuthorsPref = bookPref.authorPreference; // TODO: author match using arrs
 
-        // Book Meta-Data
-        const bookGenresArrReturn = await bookModel.getBookGenres(book.id);
-        const bookFormatsArrReturn = await bookModel.getBookFormats(book.id);
-        const bookAuthorsArrReturn = await bookModel.getBookAuthors(book.id);
+            if (bookPrefErr) {
+                throw new Error("Error in createUserRating");
+            }
+            const userPref: UserPreferenceType = userPrefReturn.result!;
 
 
-        // get user preference
-        const userPrefReturn = await userPrefModel.getUserPreference(this.user.id);
-        // get book preference
-        const bookPrefReturn = await bookPrefModel.getBookPreference(book.id);
-        const userGenresPref = bookPrefReturn.result.genrePreference;
-        const userFormatsPref = bookPrefReturn.result.formatPreference;
-        const userAuthorsPref = bookPrefReturn.result.authorPreference;
+            // Rating Impact
+            const ratingImpact = Math.log10(book.numOfVoters + 1);
+            score += book.rating * ratingImpact;
 
-        if (userPrefReturn.err || bookPrefReturn.err) {
+            // REMEMBER bookPref = bookPreference set by user
+
+            const userBookGenrePrefArr = bookPref.genrePreference; // 
+            const { err, result: bookGenresArr } = await bookModel.getAllGenresForBookId(book.id!); //just getting the same number/id mutliple times eg [1,1,1,1,1,1,1,1]
+            //console.log("bookGenresArrReturn: ", bookGenresArr);
+            bookGenresArr.map(async (genrePref) => {
+                const { err, result: genre } = await genreModel.find({ where: { id: genrePref }, rejectOnEmpty: true }); // ensures genre exists
+                if (userBookGenrePrefArr.includes(genre.id!)) {
+                    score += 1;
+                }
+            });
+
+            const userBookAuthorPrefArr = bookPref.authorPreference; //
+            const { err: authorErr, result: bookAuthorsArr } = await bookModel.getAllAuthorsForBookId(book.id!);
+            bookAuthorsArr.map(async (authorPref) => {
+                const { err, result: author } = await authorModel.find({ where: { id: authorPref }, rejectOnEmpty: true });
+                if (userBookAuthorPrefArr.includes(author.id!)) {
+                    score += 1;
+                }
+            });
+
+
+            if (this.lowestScore === 40000) {
+                this.lowestScore = score;
+            }
+            if (this.highestScore === -40000) {
+                this.highestScore = score;
+            }
+            if (this.lowestScore > score) {
+                this.lowestScore = score;
+            }
+            if (this.highestScore < score) {
+                this.highestScore = score;
+            }
+            return score ? score : 0;
+            
+        } catch (err) {
+            console.log(err);
             throw new Error("Error in createUserRating");
         }
-        const userPref: UserPreferenceType = userPrefReturn.result!;
-        const bookPref: BookPreferenceType = bookPrefReturn.result!;
-
-
-        // Rating Impact
-        const ratingImpact = Math.log10(book.numOfVoters + 1);
-        score += book.rating * ratingImpact;
-
-        // book genre match
-        // for each match add x to score (may)
-
-
-        // lazly converting id's to name
-
-        bookGenresArrReturn.result.forEach(async (genrePref) => {
-            const { err, result } = await genreModel.find({ where: { id: genrePref }, rejectOnEmpty: true });
-            if (userGenresPref.includes(result.name)) {
-                score += 10;
-            }
-        });
-        // book format match
-        // for each match add x to score (may )
-
-
-        bookFormatsArrReturn.result.forEach(async (formatPref) => {
-            const { err, result } = await formatModel.find({ where: { id: formatPref }, rejectOnEmpty: true });
-            if (userFormatsPref.includes(result.name)) {
-                score += 10;
-            }
-        });
-
-        // book author match
-        // for each match add x to score (may ) // TODO: author match using arrs
-
-        bookAuthorsArrReturn.result.forEach(async (authorPref) => {
-            const { err, result } = await authorModel.find({ where: { id: authorPref }, rejectOnEmpty: true });
-            if (userAuthorsPref.includes(result.name)) {
-                score += 10;
-            }
-        });
-
-        if (this.lowestScore > score) {
-            this.lowestScore = score;
-        }
-        if (this.highestScore < score) {
-            this.highestScore = score;
-        }
-        return score;
     }
 
 
 
-    public normaliseRating(x: number, min = this.lowestScore, max = this.highestScore): number {
-        return (x - min) / (max - min);
+    public normaliseRating(x: number, min: number, max: number): number {
+        console.log("x: ", x);
+        console.log("min: ", min);
+        console.log("max: ", max);
+
+        return ((x - min) / (max - min) * 5).toFixed(2) as unknown as number;
     }
 }
