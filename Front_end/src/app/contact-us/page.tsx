@@ -1,6 +1,7 @@
 
 import image from '../../assets/websitesFront2.jpg'
 import Image from 'next/image'
+
 export default function contactUs() {
     const handleSubmit = async (event: any) => {
         event.preventDefault()

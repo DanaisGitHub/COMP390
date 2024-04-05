@@ -5,9 +5,11 @@ import {Loader} from '@googlemaps/js-api-loader'
 
 
 
-export function GoogleMaps (props:{lat?:number,lng?:number}){
-    const mapRef = React.useRef<HTMLDivElement>(null);
 
+ export default function GoogleMaps (){
+    const mapRef = React.useRef<HTMLDivElement>(null);
+    const lat = 1
+    const lng = -1
     useEffect(  ()=>{
         const initMap = async ()=>{
 
@@ -19,8 +21,8 @@ export function GoogleMaps (props:{lat?:number,lng?:number}){
             const {Map} = await loader.importLibrary('maps')
 
             const posistion = {
-                lat:props.lat??1,
-                lng:props.lng??-1
+                lat:lat??1,
+                lng:lng??-1
             }
 
             const mapOptions:google.maps.MapOptions = {
@@ -34,8 +36,6 @@ export function GoogleMaps (props:{lat?:number,lng?:number}){
         }
         initMap();
     },[])
-
-
 
     return <div className="h-full w-full" ref = {mapRef}/>
 }
