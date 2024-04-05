@@ -10,7 +10,7 @@ export interface BookPreferenceType { // all are optional for ease of use
     bookLengthRangeMax?: number;
 }
 
-export interface BookType {
+export interface BookItemType {
     id?: number;
     book: string;
     series: string | undefined | null;
@@ -26,20 +26,20 @@ export interface BookType {
 
 export interface BookAuthorType {
     id?: number;
-    bookId: number; // Primary & Foreign Key
-    authorId: number; // Primary & Foreign Key
+    bookID: number; // Primary & Foreign Key
+    authorID: number; // Primary & Foreign Key
 }
 
 export interface BookFormatType {
     id?: number;
-    bookId: number; // Primary & Foreign Key
-    formatId: number; // Primary & Foreign Key
+    bookID: number; // Primary & Foreign Key
+    formatID: number; // Primary & Foreign Key
 }
 
 export interface BookGenreType {
     id?: number;
-    bookId: number; // Primary & Foreign Key
-    genreId: number; // Primary & Foreign Key
+    bookID: number; // Primary & Foreign Key
+    genreID: number; // Primary & Foreign Key
 }
 
 export interface GenreType {
@@ -75,7 +75,7 @@ export interface BookTypeRaw {
 
 export interface UserBookRatingType{
     id?: number;
-    userId: number;
-    bookId: number;
+    userID: number;
+    bookID: number;
     rating: number;
 }

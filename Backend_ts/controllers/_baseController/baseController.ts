@@ -4,15 +4,13 @@ import jwt from 'jsonwebtoken';
 import path from 'path';
 import fs from 'fs';
 
-import FoodApiClass from './usdaApi/usdaApi';
 
 
 
 //import self-written files
-import { Item, User } from '../../models/DB_Functions/Set_Up/modelSetUp';
+import { UserItem, User } from '../../models/DB_Functions/Set_Up/modelSetUp';
 import StdReturn, { Models } from '../../types/baseTypes';
-import { ItemModel } from '../../models/typesOfModels/Items/ItemsModel';
-import { TempUserType, UserPreferenceType } from '../../types/UserTypes/userType';
+import { UserItemModel } from '../../models/typesOfModels/Items/UserItemModel';
 import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../types/DBTypes/RentalTypes/rentalType';
 import { coordiantes } from '../../types/baseTypes';
 import { Attributes, Model, ModelStatic } from 'sequelize';
@@ -21,7 +19,7 @@ import { BaseModel } from '../../models/typesOfModels/baseModel';
 
 // THE ONLY THING YOU CAN PARENT CLASS IS SECURITY, AUTHORIZATION, AND ERROR HANDLING, AND LOGGING ... THINK OF MORE LATER
 
-type ModelClass = ItemModel;
+type ModelClass = UserItemModel;
 
 /**
  * Base Controller 
@@ -68,7 +66,7 @@ export abstract class BaseController<T extends ModelClass, M extends Model<any, 
         try {
             const { price } = req.body;
             const { err, result }: StdReturn<Models[]> = await this.db.findAll({ // need to figure out what to with search ter
-                where: { pricePerDay: price },
+                where: { price: price },
                 rejectOnEmpty: false
             })
             res.status(200).json({ err, result })

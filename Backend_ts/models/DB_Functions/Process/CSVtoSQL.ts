@@ -2,8 +2,8 @@
 import fs from 'fs';
 import csvtojson from 'csvtojson';
 import csvParser from 'csv-parser';
-const csvFilePath = '../Backend_py/DataSource/first10s.csv';
-import { BookType, BookTypeRaw } from '../../../types/DBTypes/BookTypes/bookTypes';
+const csvFilePath = '../Backend_py/ML/DataSource/first10s.csv';
+import { BookItemType, BookTypeRaw } from '../../../types/DBTypes/BookTypes/bookTypes';
 import { BookItemModel } from '../../typesOfModels/Items/BookModels/bookModel';
 import { GenreModel, BookGenreModel } from '../../typesOfModels/Items/BookModels/GenreModels/GenreModels';
 import { FormatModel, BookFormatModel } from '../../typesOfModels/Items/BookModels/FormatModels/FormatModel';
@@ -22,7 +22,7 @@ class ReadCSV {
                     await CSVtoSQLBook.processEachRow(row); // not read properly 
                 })
                 .on('end', function () {
-                    console.log('All Data loaded')
+                    console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!£££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% All BOOKS CREATED")
                 });
         } catch (error) {
             console.log(error);
@@ -63,7 +63,7 @@ export class CSVtoSQLBook { // might make singleton
 
         return string;
     }
-    private static removeDuplicates(rawBook: BookType): BookType {
+    private static removeDuplicates(rawBook: BookItemType): BookItemType {
         rawBook.format = Array.from(new Set(rawBook.format));
         rawBook.genres = Array.from(new Set(rawBook.genres));
         return rawBook;
@@ -71,11 +71,11 @@ export class CSVtoSQLBook { // might make singleton
 
 
 
-    protected static async convertStrBook(rawBook: BookTypeRaw): Promise<BookType> {
+    protected static async convertStrBook(rawBook: BookTypeRaw): Promise<BookItemType> {
         try {
             console.log(rawBook);
             const num: number = !Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0.0;
-            let tempBookType: BookType = {
+            let tempBookType: BookItemType = {
                 book: this.cleanString(rawBook.book) ?? "",
                 series: this.cleanString(rawBook.series) ?? "",
                 author: this.cleanString(rawBook.author) ?? "",
@@ -99,7 +99,7 @@ export class CSVtoSQLBook { // might make singleton
     }
 
 
-    private static async sendMetaData(book: BookType) { // should be removing duplicates
+    private static async sendMetaData(book: BookItemType) { // should be removing duplicates
         const genreModel = new GenreModel();
         const formatModel = new FormatModel();
         const authorModel = new AuthorModel();
@@ -121,7 +121,7 @@ export class CSVtoSQLBook { // might make singleton
         //TODO: REMOVE DUPLICATES
     }
 
-    private static async sendMetaDataLinks(book: BookType) {
+    private static async sendMetaDataLinks(book: BookItemType) {
         const bookGenreModel = new BookGenreModel();
         const bookFormatModel = new BookFormatModel();
         const bookAuthorModel = new BookAuthorModel();
@@ -141,7 +141,7 @@ export class CSVtoSQLBook { // might make singleton
     public static async processEachRow(bookRowRaw: BookTypeRaw) { // for each new tempbook send a create request
         try {
             const bookItemModel = new BookItemModel();
-            const bookRow: BookType = await this.convertStrBook(bookRowRaw);
+            const bookRow: BookItemType = await this.convertStrBook(bookRowRaw);
             await bookItemModel.addBookItem(bookRow);
             
             // get unique values for format, genres, and authors

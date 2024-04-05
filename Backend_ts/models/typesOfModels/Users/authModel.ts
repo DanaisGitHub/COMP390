@@ -1,16 +1,19 @@
-import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetail, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
+import { sequelize, User, UserItem, Rental, PaymentDetail, RentalsDetail, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
 import { BaseModel } from "../baseModel";
 import { BookPreferenceModel } from "../Items/BookModels/bookModel";
 import crypto from 'crypto';
 import bcrypt from 'bcrypt'
 import passport from 'passport-jwt';
 import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
-import { UserPreferenceType, TempUserType } from '../../../types/UserTypes/userType'
+import { UserPreferenceType, TempUserType } from '../../../types/DBTypes/UserTypes/userTypes'
 import {UserModel} from "./userModels";
 
 
 // pre-processing & storage goes in here
 export class AuthModel extends UserModel {
+    isAlreadyAUserObj(username: string): { err: any; result: any; } | PromiseLike<{ err: any; result: any; }> {
+        throw new Error('Method not implemented.');
+    }
     user = User; // not specified which user just all Users
 
     public signUp = async (userDetails: TempUserType): Promise<StdReturn> => {

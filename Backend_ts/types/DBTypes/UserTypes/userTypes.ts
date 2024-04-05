@@ -11,9 +11,9 @@ import {BookPreferenceType} from '../BookTypes/bookTypes';
 //     birthDate: Date;
 //     profilePicture?: string;
 //     location: coordiantes;
-//     paymentDetailsId: number;
+//     paymentDetailsID: number;
 //     userEmail: string;
-//     CryptoPaymentsId:number;
+//     CryptoPaymentsID:number;
 // }
 
 export interface TempUserType { // might need to add more fields
@@ -28,7 +28,7 @@ export interface TempUserType { // might need to add more fields
     profilePicture?: string;
     lat:number;
     lng:number;
-    paymentDetailsId?: number;
+    paymentDetailsID?: number;
 }
 
 export interface UserPreferenceType {

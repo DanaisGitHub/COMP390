@@ -20,21 +20,21 @@ class BookAuthorModel extends baseModel_1.BaseBookAttributesModel {
             throw new customError_1.DatabaseError("addBookAuthorLink() FUNC ERROR " + err);
         }
     }
-    async getAllBookAuthorsForSpecficBook(bookId, returnIds = true) {
+    async getAllBookAuthorsForSpecficBook(bookID, returnIDs = true) {
         try {
             const authorTable = new AuthorModel();
             const { err, result } = await this.baseFindAll({
                 include: [{
-                        where: { bookId },
+                        where: { bookID },
                         attributes: []
                     }]
             });
-            if (returnIds) {
-                return { err, result: result === null || result === void 0 ? void 0 : result.map((author) => author.authorId) };
+            if (returnIDs) {
+                return { err, result: result === null || result === void 0 ? void 0 : result.map((author) => author.authorID) };
             }
             return {
                 err, result: await Promise.all(result === null || result === void 0 ? void 0 : result.map(async (author) => {
-                    const { err, result } = await authorTable.find({ where: { id: author.authorId }, rejectOnEmpty: true });
+                    const { err, result } = await authorTable.find({ where: { id: author.authorID }, rejectOnEmpty: true });
                     if (err) {
                         throw new customError_1.DatabaseError("getAllBookAuthorsForSpecficBook()" + err);
                     }

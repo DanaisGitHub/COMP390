@@ -10,7 +10,7 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const passport_1 = __importDefault(require("passport"));
 const cors_1 = __importDefault(require("cors"));
 const modelSetUp_1 = require("./models/DB_Functions/Set_Up/modelSetUp");
-const baseRoutes_1 = __importDefault(require("./routes/zzPrevRoutes/baseRoutes"));
+const baseRoutes_1 = __importDefault(require("./routes/baseRoutes"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 // all routes run through the middleware def app.use(X)
@@ -26,6 +26,13 @@ modelSetUp_1.sequelize.authenticate()
     .then(async () => {
     await (0, modelSetUp_1.initialize)();
     console.log('DB connection successful');
+    // setTimeout(async () => { //works
+    //     try {
+    //         await DBSetupListener.createUserItems(); // need to be able to toggle
+    //     } catch (err) {
+    //         console.log(err)
+    //     }
+    // }, 1000)
 })
     .catch((error) => {
     console.log('DB connection Failed becuase: ', error);

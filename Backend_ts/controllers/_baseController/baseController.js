@@ -35,7 +35,7 @@ class BaseController {
             try {
                 const { price } = req.body;
                 const { err, result } = await this.db.findAll({
-                    where: { pricePerDay: price },
+                    where: { price: price },
                     rejectOnEmpty: false
                 });
                 res.status(200).json({ err, result });

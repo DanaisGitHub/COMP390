@@ -1,5 +1,5 @@
-import { TempUserType, UserPreferenceType } from '../../../types/UserTypes/userType';
-import { BookType, BookPreferenceType } from '../../../types/DBTypes/BookTypes/bookTypes';
+import { TempUserType, UserPreferenceType } from '../../../types/DBTypes/UserTypes/userTypes';
+import { BookItemType, BookPreferenceType } from '../../../types/DBTypes/BookTypes/bookTypes';
 import { UserModel, UserPreferenceModel } from '../../typesOfModels/Users/userModels';
 import { BookItemModel as BookModel, BookPreferenceModel, } from '../../typesOfModels/Items/BookModels/bookModel';
 import { GenreModel } from '../../typesOfModels/Items/BookModels/GenreModels/GenreModels';
@@ -39,7 +39,7 @@ export class CreateUserBookRatingFormula { // needs to be done for each user
      * @param book the book
      * @returns the user rating
      */
-    public async createUserRating(book: BookType): Promise<number> { //book = 0 coming in 
+    public async createUserRating(book: BookItemType): Promise<number> { //book = 0 coming in 
         try {
             let score = 1;
             const userModel = new UserModel();
@@ -70,13 +70,14 @@ export class CreateUserBookRatingFormula { // needs to be done for each user
 
 
             // Rating Impact
+            const randomImpact = Math.random()
             const ratingImpact = Math.log10(book.numOfVoters + 1);
-            score += book.rating * ratingImpact;
+            score += book.rating * ratingImpact * randomImpact;
 
             // REMEMBER bookPref = bookPreference set by user
 
             const userBookGenrePrefArr = bookPref.genrePreference; // 
-            const { err, result: bookGenresArr } = await bookModel.getAllGenresForBookId(book.id!); //just getting the same number/id mutliple times eg [1,1,1,1,1,1,1,1]
+            const { err, result: bookGenresArr } = await bookModel.getAllGenresForBookID(book.id!); //just getting the same number/id mutliple times eg [1,1,1,1,1,1,1,1]
             //console.log("bookGenresArrReturn: ", bookGenresArr);
             bookGenresArr.map(async (genrePref) => {
                 const { err, result: genre } = await genreModel.find({ where: { id: genrePref }, rejectOnEmpty: true }); // ensures genre exists
@@ -86,7 +87,7 @@ export class CreateUserBookRatingFormula { // needs to be done for each user
             });
 
             const userBookAuthorPrefArr = bookPref.authorPreference; //
-            const { err: authorErr, result: bookAuthorsArr } = await bookModel.getAllAuthorsForBookId(book.id!);
+            const { err: authorErr, result: bookAuthorsArr } = await bookModel.getAllAuthorsForBookID(book.id!);
             bookAuthorsArr.map(async (authorPref) => {
                 const { err, result: author } = await authorModel.find({ where: { id: authorPref }, rejectOnEmpty: true });
                 if (userBookAuthorPrefArr.includes(author.id!)) {
@@ -107,6 +108,9 @@ export class CreateUserBookRatingFormula { // needs to be done for each user
             if (this.highestScore < score) {
                 this.highestScore = score;
             }
+            if (score === Infinity || score === -Infinity) {
+                score = 0;
+            }
             return score ? score : 0;
             
         } catch (err) {
@@ -122,6 +126,35 @@ export class CreateUserBookRatingFormula { // needs to be done for each user
         console.log("min: ", min);
         console.log("max: ", max);
 
-        return ((x - min) / (max - min) * 5).toFixed(2) as unknown as number;
+        const result = ((x - min) / (max - min) * 5).toFixed(2) as unknown as number;
+        if (result === Infinity || result === -Infinity) {
+            return 0;
+        }
+        return result
     }
 }
+
+export class CreateUserBookRatingFormula2 { // needs to be done for each use
+
+
+
+    public normaliseRating(x: number, min: number, max: number): number {
+        console.log("x: ", x);
+        console.log("min: ", min);
+        console.log("max: ", max);
+
+        const result = ((x - min) / (max - min) * 5).toFixed(2) as unknown as number;
+        if (result === Infinity || result === -Infinity) {
+            return 0;
+        }
+        if (result >= 5) {
+            return 5;
+        }
+        if (result <= 0) {
+            return 0;
+        }
+
+        return result
+    }
+}
+

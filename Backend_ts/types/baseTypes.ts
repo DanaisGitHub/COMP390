@@ -1,6 +1,6 @@
 import { TempUserType, UserPreferenceType } from './DBTypes/UserTypes/userTypes';
 import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from './DBTypes/RentalTypes/rentalType';
-import { User, UserPreference, Item, Rental, PaymentDetail, RentalsDetail } from '../models/DB_Functions/Set_Up/modelSetUp'
+import { User, UserPreference, UserItem, Rental, PaymentDetail, RentalsDetail } from '../models/DB_Functions/Set_Up/modelSetUp'
 
 
 export type ModelTypes = TempUserType
@@ -13,7 +13,7 @@ export type ModelTypes = TempUserType
 
 export type Models = User
     | UserPreference
-    | Item
+    | UserItem
     | Rental
     | PaymentDetail
     | RentalsDetail

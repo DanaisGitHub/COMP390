@@ -9,7 +9,9 @@
     "start": "concurrently npm:start:*",
     "dev": "concurrently npm:dev:*",
     "dev:ts": "tsc -w",
-    "dev:js": "nodemon z_Dev.js"
+    "dev:js": "nodemon z_Dev.js",
+    "alt" :"tsc && nodemon z_Dev.js",
+    "alt-Start" :"tsc -w && nodemon index.js"
   },
   "author": "Danai Zerai",
   "license": "ISC",
@@ -51,6 +53,7 @@
     "mysql2": "^2.3.3",
     "nodemailer": "^6.8.0",
     "nodemailer-express-handlebars": "^5.0.0",
+    "nodemon": "^3.1.0",
     "npm": "^10.2.1",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",

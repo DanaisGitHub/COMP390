@@ -12,11 +12,11 @@ import {
 
 import StdReturn from '../../../types/baseTypes';
 import mysql from "mysql2";
-import { ItemModel } from "../../typesOfModels/Items/ItemsModel";
+import { UserItemModel } from "../../typesOfModels/Items/UserItemModel";
 
 import { TempUserType, UserPreferenceType, } from '../../../types/DBTypes/UserTypes/userTypes';
-import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../../types/DBTypes/RentalTypes/rentalType';
-import { BookType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType, BookPreferenceType, UserBookRatingType } from '../../../types/DBTypes/BookTypes/bookTypes';
+import { ItemType as UserItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../../types/DBTypes/RentalTypes/rentalType';
+import { BookItemType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType, BookPreferenceType, UserBookRatingType } from '../../../types/DBTypes/BookTypes/bookTypes';
 import { coordiantes } from '../../../types/baseTypes';
 import { BookItemModel } from '../../typesOfModels/Items/BookModels/bookModel';
 import { CSVtoSQLBook } from '../Process/CSVtoSQL';
@@ -27,7 +27,6 @@ import { UserModel } from '../../typesOfModels/Users/userModels';
 let dropDB = true; // delete most tables not book
 let dropUsers = true; // delete user tables // does nothing
 let dropBook = true; // delete book tables
-
 
 
 /**
@@ -57,9 +56,9 @@ export const sequelize = new Sequelize('Sprint1BasicEComDb', 'root', 'mysql', {
 //     public birthDate!: Date;
 //     public profilePicture?: string;
 //     public location!: coordiantes;
-//     public paymentDetailsId!: number;
+//     public paymentDetailsID!: number;
 //     public userEmail!: string;
-//     public CryptoPaymentsId!: number;
+//     public CryptoPaymentsID!: number;
 
 //     public readonly createdAt!: Date;
 //     public readonly updatedAt!: Date;
@@ -78,8 +77,8 @@ export class User extends Model<TempUserType> implements TempUserType {
     public profilePicture?: string;
     public lat!: number;
     public lng!: number;
-    public paymentDetailsId?: number;
-    public CryptoPaymentsId?: number;
+    public paymentDetailsID?: number;
+    public CryptoPaymentsID?: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -98,30 +97,28 @@ export class UserPreference extends Model<UserPreferenceType> implements UserPre
     public readonly updatedAt!: Date;
 }
 
-export class Item extends Model<ItemType> implements ItemType {
+export class UserItem extends Model<UserItemType> implements UserItemType {
     public id!: number;
-    public itemName!: string;
-    public description!: string;
-    public ownerId!: number;
-    public thumbnail!: string;
-    public pricePerDay!: number;
-    public itemLocation?: coordiantes;
+    public ownerID!: number;
+    public thumbnail?: string;
+    public price!: number;
     public quantity!: number;
+    public itemID!: number;
+
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
 }
 
 export class Rental extends Model<RentalType> implements RentalType {
-    public id!: number;
-    public renterId!: number;
-    public letterId!: number;
-    public rentalStartDate!: Date;
-    public rentalEndDate!: Date;
+    public orderNumber!: number;
+    public renterID!: number;
+    public ownerID!: number;
+    public startDate!: Date;
+    public endDate!: Date;
     public rentalStatus!: string;
     public paid!: boolean;
     public paymentDate!: Date;
-    public orderNumber!: number;
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -139,8 +136,8 @@ export class PaymentDetail extends Model<PaymentDetailType> implements PaymentDe
 
 export class RentalsDetail extends Model<RentalDetailType> implements RentalDetailType {
     public id!: number;
-    public itemId!: number;
-    public rentalId!: number;
+    public itemID!: number;
+    public rentalID!: number;
     public price!: number;
     public total!: number;
     public discount!: number;
@@ -157,7 +154,7 @@ export class BookPreference extends Model<BookPreferenceType> implements BookPre
     public userID!: number;
     public authorPreference!: number[];
     public genrePreference!: number[];
-    public formatPreference!:number[];
+    public formatPreference!: number[];
 
     public publicationRangeMin!: Date;
     public publicationRangeMax!: Date;
@@ -168,7 +165,7 @@ export class BookPreference extends Model<BookPreferenceType> implements BookPre
     public readonly updatedAt!: Date;
 }
 
-export class BookItem extends Model<BookType> implements BookType {
+export class BookItem extends Model<BookItemType> implements BookItemType {
     public id!: number;
     public book!: string;
     public series!: string | undefined | null;
@@ -184,8 +181,8 @@ export class BookItem extends Model<BookType> implements BookType {
 
 export class BookAuthor extends Model<BookAuthorType> implements BookAuthorType {
     public id!: number;
-    public bookId!: number; // Primary & Foreign Key
-    public authorId!: number; // Primary & Foreign Key
+    public bookID!: number; // Primary & Foreign Key
+    public authorID!: number; // Primary & Foreign Key
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -193,8 +190,8 @@ export class BookAuthor extends Model<BookAuthorType> implements BookAuthorType 
 
 export class BookFormat extends Model<BookFormatType> implements BookFormatType {
     public id!: number;
-    public bookId!: number; // Primary & Foreign Key
-    public formatId!: number; // Primary & Foreign Key
+    public bookID!: number; // Primary & Foreign Key
+    public formatID!: number; // Primary & Foreign Key
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -202,8 +199,8 @@ export class BookFormat extends Model<BookFormatType> implements BookFormatType 
 
 export class BookGenre extends Model<BookGenreType> implements BookGenreType {
     public id!: number;
-    public bookId!: number; // Primary & Foreign Key
-    public genreId!: number; // Primary & Foreign Key
+    public bookID!: number; // Primary & Foreign Key
+    public genreID!: number; // Primary & Foreign Key
 
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;
@@ -235,8 +232,8 @@ export class Author extends Model<AuthorType> implements AuthorType {
 
 export class UserBookRating extends Model<UserBookRatingType> implements UserBookRatingType {
 
-    public bookId!: number;
-    public userId!: number;
+    public bookID!: number;
+    public userID!: number;
     public rating!: number;
 
     public readonly createdAt!: Date;
@@ -246,7 +243,7 @@ export class UserBookRating extends Model<UserBookRatingType> implements UserBoo
 //export class BoookAuthor
 
 
-const InitialiseDatabase = class { // initalises database (Only nessesary / semi nessesary for the first time)
+const InitialiseDatabase = class { // initalises database // all FK are done in relations
 
     static initUserModel = (sequelize: Sequelize) => { // so why does this not all the other definitions but the others do
         User.init(
@@ -262,7 +259,7 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
                 profilePicture: { type: DataTypes.STRING, allowNull: true, },
                 lat: { type: DataTypes.DOUBLE, allowNull: false, },
                 lng: { type: DataTypes.DOUBLE, allowNull: false, },
-                paymentDetailsId: { type: DataTypes.INTEGER, allowNull: true, },
+                paymentDetailsID: { type: DataTypes.INTEGER, allowNull: true, },
             },
             {
                 sequelize,
@@ -291,20 +288,19 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         );
     }
 
-    static initItems = (sequelize: Sequelize) => {
-        Item.init(
+    static initUserItem = (sequelize: Sequelize) => {
+        UserItem.init(
             {
                 id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-                itemName: { type: DataTypes.STRING, allowNull: false },
-                description: { type: DataTypes.STRING, allowNull: false },
-                thumbnail: { type: DataTypes.STRING, allowNull: false },
-                pricePerDay: { type: DataTypes.INTEGER, allowNull: false },
-                itemLocation: { type: DataTypes.JSON, allowNull: true },
+                thumbnail: { type: DataTypes.STRING, allowNull: true },
+                price: { type: DataTypes.INTEGER, allowNull: false },
                 quantity: { type: DataTypes.INTEGER, allowNull: false },
+                ownerID: { type: DataTypes.INTEGER, allowNull: false },
+                itemID: { type: DataTypes.INTEGER, allowNull: false },
             },
             {
                 sequelize,
-                modelName: 'Item'
+                modelName: 'UserItem'
             }
         );
     };
@@ -312,13 +308,14 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
     static initRentals = (sequelize: Sequelize) => {
         Rental.init(
             {
-                id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-                rentalStartDate: { type: DataTypes.DATE, allowNull: false },
-                rentalEndDate: { type: DataTypes.DATE, allowNull: false },
-                rentalStatus: { type: DataTypes.STRING, allowNull: false },
-                paid: { type: DataTypes.BOOLEAN, allowNull: false },
-                paymentDate: { type: DataTypes.DATE, allowNull: false },
-                orderNumber: { type: DataTypes.INTEGER, allowNull: false },
+                orderNumber: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+                renterID: { type: DataTypes.INTEGER, allowNull: false },
+                ownerID: { type: DataTypes.INTEGER, allowNull: false },
+                startDate: { type: DataTypes.DATE, allowNull: false },
+                endDate: { type: DataTypes.DATE, allowNull: false },
+                rentalStatus: { type: DataTypes.STRING, allowNull: true },
+                paid: { type: DataTypes.BOOLEAN, allowNull: true },
+                paymentDate: { type: DataTypes.DATE, allowNull: true },
             },
             {
                 sequelize,
@@ -346,12 +343,12 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
             {
                 id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
                 price: { type: DataTypes.INTEGER, allowNull: false },
-                total: { type: DataTypes.INTEGER, allowNull: false },
-                discount: { type: DataTypes.INTEGER, allowNull: false },
-                paymentDetails: { type: DataTypes.STRING, allowNull: false },
-                billDate: { type: DataTypes.DATE, allowNull: false },
-                quantity: { type: DataTypes.INTEGER, allowNull: false },
-                orderNumber: { type: DataTypes.INTEGER, allowNull: false },
+                itemID: { type: DataTypes.INTEGER, allowNull: false },
+                discount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+                paymentDetails: { type: DataTypes.STRING, allowNull: true },
+                billDate: { type: DataTypes.DATE, allowNull: true },
+                quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+                orderNumber: { type: DataTypes.INTEGER, allowNull: false }
             },
             {
                 sequelize,
@@ -399,8 +396,8 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         BookAuthor.init(
             {
                 id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-                bookId: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
-                authorId: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
+                bookID: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
+                authorID: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
             },
             {
                 sequelize,
@@ -412,8 +409,8 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         BookFormat.init(
             {
                 id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-                bookId: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
-                formatId: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
+                bookID: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
+                formatID: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
             },
             {
                 sequelize,
@@ -425,8 +422,8 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         BookGenre.init(
             {
                 id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-                bookId: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
-                genreId: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
+                bookID: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
+                genreID: { type: DataTypes.INTEGER, primaryKey: false, allowNull: false },
             },
             {
                 sequelize,
@@ -473,8 +470,8 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
     static initUserBookRating = (sequelize: Sequelize) => {
         UserBookRating.init(
             {
-                bookId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
-                userId: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                bookID: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
+                userID: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false },
                 rating: { type: DataTypes.DOUBLE, allowNull: false },
             },
             {
@@ -486,7 +483,7 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
     static initAllTables = (sequelize: Sequelize) => {
         this.initUserModel(sequelize);
         this.initUserPreferenceModel(sequelize);
-        this.initItems(sequelize);
+        this.initUserItem(sequelize);
         this.initRentals(sequelize);
         this.initPaymentDetails(sequelize);
         this.initRentalsDetails(sequelize);
@@ -501,18 +498,16 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         this.initUserBookRating(sequelize);
     }
 
-
     /**
      * make a one to many relation between two models
      * 
      * @param options 
      */
-    static hasManyRelation = (options: { modelA: ModelDefined<any, any>, modelB: ModelDefined<any, any>, modelAs?: string, otherAs?: string, foreignKey: string }) => {
-        const { modelA: model, modelB: otherModel, modelAs, otherAs, foreignKey } = options;
+    static hasManyRelation = (options: { modelA: ModelDefined<any, any>, modelB: ModelDefined<any, any>, as?: string, otherAs?: string, foreignKey: string }) => {
+        const { modelA: model, modelB: otherModel, as, otherAs, foreignKey } = options;
         model.hasMany(otherModel, {
             foreignKey: foreignKey,
-            as: modelAs,
-            onDelete: "CASCADE"
+            as
         })
         otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
     }
@@ -522,11 +517,11 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
      * 
      * @param options 
      */
-    static hasManyRelationOnDelete = (options: { modelA: ModelDefined<any, any>, modelB: ModelDefined<any, any>, modelAs?: string, otherAs?: string, foreignKey: string, onDelete: string }) => {
-        const { modelA: model, modelB: otherModel, modelAs, otherAs, foreignKey, onDelete } = options;
+    static hasManyRelationOnDelete = (options: { modelA: ModelDefined<any, any>, modelB: ModelDefined<any, any>, as?: string, otherAs?: string, foreignKey: string, onDelete: string }) => {
+        const { modelA: model, modelB: otherModel, as, otherAs, foreignKey, onDelete } = options;
         model.hasMany(otherModel, {
             foreignKey: foreignKey,
-            as: modelAs,
+            as,
             onDelete: onDelete
         })
         otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
@@ -537,11 +532,11 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
      * 
      * @param options 
      */
-    static hasOneRelation = (options: { modelA: ModelDefined<any, any>, modelB: ModelDefined<any, any>, modelAs?: string, otherAs?: string, foreignKey: string }) => {
-        const { modelA: model, modelB: otherModel, modelAs, otherAs, foreignKey } = options;
+    static hasOneRelation = (options: { modelA: ModelDefined<any, any>, modelB: ModelDefined<any, any>, as?: string, otherAs?: string, foreignKey: string }) => {
+        const { modelA: model, modelB: otherModel, as, otherAs, foreignKey } = options;
         model.hasOne(otherModel, {
             foreignKey: foreignKey,
-            as: modelAs,
+            as,
             onDelete: "CASCADE"
         })
         otherModel.belongsTo(model, { foreignKey: foreignKey, as: otherAs })
@@ -549,48 +544,53 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
 
     // not sure if done correctly, when querying we'll see
     static createAllRelations = () => {
-        this.hasManyRelationOnDelete({ modelA: User, modelB: Item, foreignKey: "ownerId", onDelete: "CASCADE", modelAs: 'owner' })
-
+        // User <-=> Items
+        this.hasManyRelationOnDelete({ modelA: User, modelB: UserItem, foreignKey: "ownerID", onDelete: "CASCADE", as: 'owner' })
         // User <-=> Rentals * 2
-        this.hasManyRelation({ modelA: User, modelB: Rental, modelAs: "renter", otherAs: "renter", foreignKey: "renterId" })// NOTE: I think foreign key is wrong should be userID
-        this.hasManyRelation({ modelA: User, modelB: Rental, modelAs: "letter", otherAs: "letter", foreignKey: "letterId" })// NOTE: I think foreign key is wrong should be userID
+        this.hasManyRelation({ modelA: User, modelB: Rental, as: "renter", otherAs: "renter", foreignKey: "renterID" })// NOTE: I think foreign key is wrong should be userID
+        this.hasManyRelation({ modelA: User, modelB: Rental, as: "letter", otherAs: "letter", foreignKey: "ownerID" })// NOTE: I think foreign key is wrong should be userID
 
         // user <--> userPreference
-        this.hasOneRelation({ modelA: User, modelB: UserPreference, foreignKey: "userID", otherAs: "userPreference" }) // pk is userID
+        this.hasOneRelation({ modelA: User, modelB: UserPreference, foreignKey: "userID", otherAs: "userPreference", as: 'userPreference' }) // pk is userID
         // user <--> bookPreference
-        this.hasOneRelation({ modelA: User, modelB: BookPreference, foreignKey: "userID", otherAs: "bookPreference" }) // pk is userID
+        this.hasOneRelation({ modelA: User, modelB: BookPreference, foreignKey: "userID", otherAs: "bookPreference", as: 'bookPreference' }) // pk is userID
 
         // Rental <--> payment
-        this.hasOneRelation({ modelA: Rental, modelB: PaymentDetail, foreignKey: "rental", modelAs: "rentalPayment" })
+        this.hasOneRelation({ modelA: Rental, modelB: PaymentDetail, foreignKey: "rental", as: "rentalPayment" })
 
-        //items <-=> Rental details
-        this.hasManyRelation({ modelA: Item, modelB: RentalsDetail, foreignKey: "itemId", otherAs: "item" })
+        // UserItems <-=> Rental details
+        this.hasManyRelation({ modelA: UserItem, modelB: RentalsDetail, foreignKey: "rentalID", otherAs: "userRental" })
+
         // Rentals <-=> Rental details
-        this.hasManyRelation({ modelA: Rental, modelB: RentalsDetail, foreignKey: "rentalId", otherAs: "rental" })
+        this.hasManyRelation({ modelA: Rental, modelB: RentalsDetail, foreignKey: "rentalID", otherAs: "rentalDetails" })
+
+
+        // bookItem <-=> UserItems
+        this.hasManyRelation({ modelA: BookItem, modelB: UserItem, foreignKey: "itemID", otherAs: "userBooks" })
 
         // BookItem <-=> BookAuthors
-        this.hasManyRelation({ modelA: BookItem, modelB: BookAuthor, foreignKey: "bookId", otherAs: "bookAuthors" })
+        this.hasManyRelation({ modelA: BookItem, modelB: BookAuthor, foreignKey: "bookID", otherAs: "bookAuthors" })
 
         // BookItem <-=> BookFormats
-        this.hasManyRelation({ modelA: BookItem, modelB: BookFormat, foreignKey: "bookId", otherAs: "bookFormats" })
+        this.hasManyRelation({ modelA: BookItem, modelB: BookFormat, foreignKey: "bookID", otherAs: "bookFormats" })
 
         // BookItem <-=> BookGenres
-        this.hasManyRelation({ modelA: BookItem, modelB: BookGenre, foreignKey: "bookId", otherAs: "bookGenres" })
+        this.hasManyRelation({ modelA: BookItem, modelB: BookGenre, foreignKey: "bookID", otherAs: "bookGenres" })
 
         // formats <-=> BookFormats
-        this.hasManyRelation({ modelA: Format, modelB: BookFormat, foreignKey: "formatId", otherAs: "formatBooks" })
+        this.hasManyRelation({ modelA: Format, modelB: BookFormat, foreignKey: "formatID", otherAs: "formatBooks" })
 
         // genres <-=> BookGenres
-        this.hasManyRelation({ modelA: Genre, modelB: BookGenre, foreignKey: "genreId", otherAs: "genreBooks"})
+        this.hasManyRelation({ modelA: Genre, modelB: BookGenre, foreignKey: "genreID", otherAs: "genreBooks" })
 
         // authors <-=> BookAuthors
-        this.hasManyRelation({ modelA: Author, modelB: BookAuthor, foreignKey: "authorId", otherAs: "authorBooks" })
+        this.hasManyRelation({ modelA: Author, modelB: BookAuthor, foreignKey: "authorID", otherAs: "authorBooks" })
 
         // user <-=> UserBookRating
-        this.hasManyRelation({ modelA: User, modelB: UserBookRating, foreignKey: "userId", otherAs: "userRatings" })
+        this.hasManyRelation({ modelA: User, modelB: UserBookRating, foreignKey: "userID", otherAs: "userRatings" })
 
         // BookItem <-=> UserBookRating
-        this.hasManyRelation({ modelA: BookItem, modelB: UserBookRating, foreignKey: "bookId", otherAs: "bookRatings" })
+        this.hasManyRelation({ modelA: BookItem, modelB: UserBookRating, foreignKey: "bookID", otherAs: "bookRatings" })
     }
 
     static dropDatabaseNotBooks = async () => {
@@ -599,32 +599,37 @@ const InitialiseDatabase = class { // initalises database (Only nessesary / semi
         await PaymentDetail.drop({});
         await RentalsDetail.drop({});
         await Rental.drop({});
-        await Item.drop({});
+        await UserItem.drop({});
         await BookPreference.drop({});
         if (dropUsers) {
             await UserBookRating.drop({});
             await User.drop({});
         }
     }
-    
+
 }
 
-class DBSetupListener {
+export class DBSetupListener {
     /**
      * Enable full text search on all items, MAY NOT BE WORKING
      */
     static enableFullTextSearch = async () => {
-        await ItemModel.makeItemsFullTextSearchable();
+        await UserItemModel.makeItemsFullTextSearchable();
     }
 
     static addBookAndLinks = async () => {
         const bookItem = new BookItemModel();
-        bookItem.addAllBookItems();
+        await bookItem.addAllBookItems();
     }
 
-    static createUsers = async () => {
+    static createUsers = async (num = 10) => {
         const userModel = new UserModel();
-        userModel.createManyRandomUsers(10);
+        await userModel.createManyRandomUsers(num);
+    }
+
+    static createUserItems = async () => {
+        const userItemModel = new UserItemModel();
+        await userItemModel.createNewRandomItems(100);
     }
 
     static dropTables1 = async () => { // put anything you want to run before tables get dropped
@@ -641,15 +646,15 @@ class DBSetupListener {
                 await DBSetupListener.addBookAndLinks();
             }
             // BOOKS have to be init before Users
-            await DBSetupListener.createUsers();
+            await DBSetupListener.createUsers(10);
         }
     }
 
-    static runBeforeCreation = async () => {
+    static runBeforeDBInit = async () => {
         await DBSetupListener.dropTables1();
     }
 
-    static runAfterCreation = async () => {
+    static runAfterDbInit = async () => {
         await DBSetupListener.dropTables2();
 
     }
@@ -657,15 +662,23 @@ class DBSetupListener {
 
 export const initialize = async () => {
     try {
+
         InitialiseDatabase.initAllTables(sequelize);
-        await DBSetupListener.runBeforeCreation();
+        if (!dropDB) {
+            await sequelize.sync()
+
+            return;
+        }
+        await DBSetupListener.runBeforeDBInit();
         InitialiseDatabase.createAllRelations();
 
-        let options: SyncOptions | undefined = dropDB && dropBook ? { force: true } : {};
+        let options: SyncOptions = dropDB && dropBook ? { force: true } : {};
         await sequelize.sync(options)
-        await DBSetupListener.runAfterCreation();
-
-        console.log("Database models initialized")
+        await DBSetupListener.runAfterDbInit();
+        setTimeout(async () => {
+            await DBSetupListener.createUserItems();
+            await sequelize.sync()
+        }, 10000)
     }
     catch (err: any) {
         console.log(err)

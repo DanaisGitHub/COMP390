@@ -28,5 +28,4 @@ export class GenreModel extends BaseAttributeModel<Genre> {
     public constructor() {
         super(Genre)
     }
-
 }

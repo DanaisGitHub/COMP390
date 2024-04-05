@@ -96,6 +96,19 @@ class BaseModel {
                 throw new customError_1.DatabaseError("Failed to perform 'findOne'");
             }
         };
+        this.baseFindOneNotTyped = async (options) => {
+            try {
+                const result = await this.model.findOne(options);
+                if (result === null || result === undefined) {
+                    throw new customError_1.NotFoundError("User not found in 'findOne' ");
+                }
+                return result;
+            }
+            catch (err) {
+                console.error(err);
+                throw new customError_1.DatabaseError("Failed to perform 'findOne'");
+            }
+        };
         this.baseFindAll = async (options) => {
             try {
                 const result = await this.model.findAll(options);
@@ -156,6 +169,20 @@ class BaseModel {
             catch (err) {
                 console.log(err);
                 throw new customError_1.DatabaseError("Failed to perfrom findByPkey database Operation");
+            }
+        };
+        this.getRandom = async (options) => {
+            var _a;
+            try {
+                const result = await this.model.findOne(Object.assign(Object.assign({}, options), { order: (_a = this.model.sequelize) === null || _a === void 0 ? void 0 : _a.random() }));
+                if (result === null) {
+                    throw new customError_1.NotFoundError("not found in getRandom");
+                }
+                return result;
+            }
+            catch (err) {
+                console.log(err);
+                throw new customError_1.DatabaseError("Failed to perfrom getRandom database Operation");
             }
         };
         this.model = model;
@@ -223,7 +250,7 @@ class BaseModel {
         try {
             let book, linkRes;
             const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
-                : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "Id";
+                : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "ID";
             // searching for book
             try {
                 book = await bookTable.find({
@@ -248,7 +275,7 @@ class BaseModel {
                 throw new customError_1.NotFoundError("Book or Link not found in 'baseBookLink' ");
             }
             let createObject = {
-                bookId: book.result.id,
+                bookID: book.result.id,
                 [jsonName]: linkRes.result.id
             };
             await this.model.create(createObject); // might be creating duplicates // shouldn't be any}
@@ -309,68 +336,90 @@ class BaseModel {
             throw new customError_1.DatabaseError("performOnAll()" + err);
         }
     }
+    async getObjFromID(id) {
+        try {
+            const { err, result } = await this.findByPkey(id);
+            return result;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("idToObj()" + err);
+        }
+    }
+    async getObjsFromIDs(id) {
+        try {
+            const objs = await Promise.all(id.map(async (id) => {
+                return await this.getObjFromID(id);
+            }));
+            return objs;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("idsToObjs()" + err);
+        }
+    }
 }
 exports.BaseModel = BaseModel;
 class BaseBookAttributesModel extends BaseModel {
     /**
-     * For given bookId, returns all the attributes of the book eg all formats book is in
+     * For given bookID, returns all the attributes of the book eg all formats book is in
      *
-     * @param id BookId
-     * @param returnIds weather you want the ids or the actual objects
+     * @param id BookID
+     * @param returnIDs weather you want the ids or the actual objects
      * @returns
      */
-    async getAllBookAttributesForSpecficBook(id, returnIds = true) {
+    async getAllBookAttributesForSpecficBook(id, returnIDs = true) {
         try {
-            let findAllAttributes /*: FindOptions<Attributes<T>> | undefined*/, attributeId, model;
+            let findAllAttributes /*: FindOptions<Attributes<T>> | undefined*/, attributeID, model;
             if (this.model === modelSetUp_1.BookAuthor) {
-                attributeId = "authorId";
-                const authorId = id;
+                attributeID = "authorID";
+                const authorID = id;
                 findAllAttributes = {
                     include: [{
                             model: modelSetUp_1.Author,
                             as: 'authorBooks',
-                            where: { id: authorId },
+                            where: { id: authorID },
                             attributes: []
                         }]
                 };
             }
             else if (this.model === modelSetUp_1.BookFormat) {
-                attributeId = "formatId";
-                const formatId = id;
+                attributeID = "formatID";
+                const formatID = id;
                 findAllAttributes = {
                     include: [{
                             model: modelSetUp_1.Format,
                             as: 'formatBooks',
-                            where: { id: formatId },
+                            where: { id: formatID },
                             attributes: []
                         }]
                 };
             }
             else if (this.model === modelSetUp_1.BookGenre) {
-                attributeId = "genreId";
-                const genreId = id;
+                attributeID = "genreID";
+                const genreID = id;
                 findAllAttributes = {
                     include: [{
                             model: modelSetUp_1.Genre,
                             as: 'genreBooks',
-                            where: { id: genreId },
+                            where: { id: genreID },
                             attributes: []
                         }]
                 };
             }
             ;
             const { err, result: attributes } = await this.baseFindAll(findAllAttributes);
-            //if (returnIds) {
+            //if (returnIDs) {
             return {
                 err,
                 result: attributes === null || attributes === void 0 ? void 0 : attributes.map((attribute) => {
-                    return (attribute.dataValues[attributeId]);
+                    return (attribute.dataValues[attributeID]);
                 }),
             };
             //            }
             // return { // probs wrong here
             //     err, result: await Promise.all(attributes?.map(async (attribute) => {
-            //         const { err, result } = await this.genreTable.find({ where: { id: attributes[attributeId] }, rejectOnEmpty: true });// I think here
+            //         const { err, result } = await this.genreTable.find({ where: { id: attributes[attributeID] }, rejectOnEmpty: true });// I think here
             //         if (err) {
             //             throw new DatabaseError(`getAllBookAttribuesForSpecficBook() for ${this.model.toString()}` + err);
             //         }
@@ -393,6 +442,33 @@ class BaseAttributeModel extends BaseModel {
         catch (err) {
             console.log(err);
             throw new customError_1.DatabaseError("addAttribute()" + err);
+        }
+    }
+    async getAttributeNameFromID(id) {
+        try {
+            const { err, result } = await this.findByPkey(id);
+            return result.dataValues.name;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("getAttributeNameFromID()" + err);
+        }
+    }
+    async getAttributeNameFromIDs(ids) {
+        try {
+            let list = [];
+            for (let id of ids) {
+                const att = await this.getAttributeNameFromID(id);
+                console.log(att);
+                list.push(att);
+            }
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            console.log(list);
+            return list;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("getAttributeNameFromIDs()" + err);
         }
     }
 }

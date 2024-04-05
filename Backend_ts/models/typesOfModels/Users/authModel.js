@@ -165,5 +165,8 @@ class AuthModel extends userModels_1.UserModel {
         //     }
         // }
     }
+    isAlreadyAUserObj(username) {
+        throw new Error('Method not implemented.');
+    }
 }
 exports.AuthModel = AuthModel;

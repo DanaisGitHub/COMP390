@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateUserBookRatingFormula = void 0;
+exports.CreateUserBookRatingFormula2 = exports.CreateUserBookRatingFormula = void 0;
 const userModels_1 = require("../../typesOfModels/Users/userModels");
 const bookModel_1 = require("../../typesOfModels/Items/BookModels/bookModel");
 const GenreModels_1 = require("../../typesOfModels/Items/BookModels/GenreModels/GenreModels");
@@ -54,11 +54,12 @@ class CreateUserBookRatingFormula {
             }
             const userPref = userPrefReturn.result;
             // Rating Impact
+            const randomImpact = Math.random();
             const ratingImpact = Math.log10(book.numOfVoters + 1);
-            score += book.rating * ratingImpact;
+            score += book.rating * ratingImpact * randomImpact;
             // REMEMBER bookPref = bookPreference set by user
             const userBookGenrePrefArr = bookPref.genrePreference; // 
-            const { err, result: bookGenresArr } = await bookModel.getAllGenresForBookId(book.id); //just getting the same number/id mutliple times eg [1,1,1,1,1,1,1,1]
+            const { err, result: bookGenresArr } = await bookModel.getAllGenresForBookID(book.id); //just getting the same number/id mutliple times eg [1,1,1,1,1,1,1,1]
             //console.log("bookGenresArrReturn: ", bookGenresArr);
             bookGenresArr.map(async (genrePref) => {
                 const { err, result: genre } = await genreModel.find({ where: { id: genrePref }, rejectOnEmpty: true }); // ensures genre exists
@@ -67,7 +68,7 @@ class CreateUserBookRatingFormula {
                 }
             });
             const userBookAuthorPrefArr = bookPref.authorPreference; //
-            const { err: authorErr, result: bookAuthorsArr } = await bookModel.getAllAuthorsForBookId(book.id);
+            const { err: authorErr, result: bookAuthorsArr } = await bookModel.getAllAuthorsForBookID(book.id);
             bookAuthorsArr.map(async (authorPref) => {
                 const { err, result: author } = await authorModel.find({ where: { id: authorPref }, rejectOnEmpty: true });
                 if (userBookAuthorPrefArr.includes(author.id)) {
@@ -86,6 +87,9 @@ class CreateUserBookRatingFormula {
             if (this.highestScore < score) {
                 this.highestScore = score;
             }
+            if (score === Infinity || score === -Infinity) {
+                score = 0;
+            }
             return score ? score : 0;
         }
         catch (err) {
@@ -97,7 +101,30 @@ class CreateUserBookRatingFormula {
         console.log("x: ", x);
         console.log("min: ", min);
         console.log("max: ", max);
-        return ((x - min) / (max - min) * 5).toFixed(2);
+        const result = ((x - min) / (max - min) * 5).toFixed(2);
+        if (result === Infinity || result === -Infinity) {
+            return 0;
+        }
+        return result;
     }
 }
 exports.CreateUserBookRatingFormula = CreateUserBookRatingFormula;
+class CreateUserBookRatingFormula2 {
+    normaliseRating(x, min, max) {
+        console.log("x: ", x);
+        console.log("min: ", min);
+        console.log("max: ", max);
+        const result = ((x - min) / (max - min) * 5).toFixed(2);
+        if (result === Infinity || result === -Infinity) {
+            return 0;
+        }
+        if (result >= 5) {
+            return 5;
+        }
+        if (result <= 0) {
+            return 0;
+        }
+        return result;
+    }
+}
+exports.CreateUserBookRatingFormula2 = CreateUserBookRatingFormula2;

@@ -20,20 +20,20 @@ class BookFormatModel extends baseModel_1.BaseModel {
             throw new customError_1.DatabaseError("BookFormatModel() FUNC ERROR " + err);
         }
     }
-    async getAllBookFormatsForSpecficBook(formatId, returnIds = true) {
+    async getAllBookFormatsForSpecficBook(formatID, returnIDs = true) {
         try {
             const { err, result } = await this.baseFindAll({
                 include: [{
-                        where: { formatId: formatId },
+                        where: { formatID: formatID },
                         attributes: []
                     }]
             });
-            if (returnIds) {
-                return { err, result: result === null || result === void 0 ? void 0 : result.map((format) => format.formatId) };
+            if (returnIDs) {
+                return { err, result: result === null || result === void 0 ? void 0 : result.map((format) => format.formatID) };
             }
             return {
-                err, result: await Promise.all(result === null || result === void 0 ? void 0 : result.map(async (formatId) => {
-                    const { err, result } = await this.formatTable.find({ where: { id: formatId.formatId }, rejectOnEmpty: true });
+                err, result: await Promise.all(result === null || result === void 0 ? void 0 : result.map(async (formatID) => {
+                    const { err, result } = await this.formatTable.find({ where: { id: formatID.formatID }, rejectOnEmpty: true });
                     if (err) {
                         throw new customError_1.DatabaseError("getAllBookFormatsForSpecficBook()" + err);
                     }

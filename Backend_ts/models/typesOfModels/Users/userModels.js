@@ -10,6 +10,7 @@ const bookModel_1 = require("../Items/BookModels/bookModel");
 const crypto_1 = __importDefault(require("crypto"));
 const random_1 = require("../../../utils/other/random");
 const locationUtils_1 = require("../../../utils/locationUtils");
+const userBookRatingFormula_1 = require("../../DB_Functions/Process/userBookRatingFormula");
 class UserPreferenceModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.UserPreference);
@@ -82,7 +83,7 @@ class UserModel extends baseModel_1.BaseModel {
                 // creates a prefrance for the user with default values
                 const bookPrefResult = await bookPreference.createRandomBookPreference(user.id);
                 const userPrefResult = await userPreference.createRandomUserPreference(user.id);
-                const userBookRatingResult = await userBookRatingModels.genRatingForAllBooks(user);
+                const userBookRatingResult = await userBookRatingModels.genRatingForAllBooks(user); // too early
                 // need to create rating for each book
                 return { err, result: user };
             }
@@ -115,12 +116,15 @@ class UserModel extends baseModel_1.BaseModel {
         this.createManyRandomUsers = async (amount) => {
             try {
                 for (let i = 0; i < amount; i++) {
-                    const { err, result } = await this.createRandomUser();
+                    const { err, result: user } = await this.createRandomUser();
                     if (err) {
                         console.log(err);
                         throw new Error("Error in createManyRandomUsers");
                     }
                 }
+                setTimeout(async () => {
+                    await this.allUsersCreatedListener(); // not happening for last user
+                }, 2000);
             }
             catch (err) {
                 console.log(err);
@@ -156,6 +160,53 @@ class UserModel extends baseModel_1.BaseModel {
             catch (err) {
                 console.log(err);
                 throw new Error("Error in getUserBookPref");
+            }
+        };
+        /**
+         * Get all user Details including foreign keys (userPreference, bookPreference, )
+         *
+         * @param userID user Id
+         * @returns
+         */
+        this.getUserFullDetails = async (userID, options) => {
+            try {
+                let include = [];
+                if (options.userPref)
+                    include.push('userPreference');
+                if (options.bookPref)
+                    include.push('bookPreference');
+                if (options.ratings)
+                    include.push('ratings');
+                const user = await this.baseFindOne({ where: { id: userID }, include, rejectOnEmpty: false }); // return type is wrong
+                console.log(user);
+                return user;
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in getUserFullDetails");
+            }
+        };
+        this.allUsersCreatedListener = async () => {
+            try {
+                const userRatingModel = new bookModel_1.UserBookRatingModels();
+                const userBookRatingModel = new bookModel_1.UserBookRatingModels();
+                const bookFormula = new userBookRatingFormula_1.CreateUserBookRatingFormula2();
+                // normalise ratings
+                // get smallest rating
+                // get largest rating
+                // normalise all ratings
+                const min = await userRatingModel.getMinRating();
+                const max = await userRatingModel.getMaxRating();
+                const normaliseRating = async (eachRating) => {
+                    const rating = eachRating.dataValues;
+                    rating.rating = bookFormula.normaliseRating(rating.rating, min, max);
+                    await userBookRatingModel.updateUserRating(rating, rating.userID, rating.bookID);
+                };
+                await userRatingModel.performOnAllRows(normaliseRating);
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in allUsersCreatedListener");
             }
         };
     }

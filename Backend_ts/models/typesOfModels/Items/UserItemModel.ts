@@ -1,10 +1,10 @@
-import { sequelize, User, UserPreference, Item, Rental, PaymentDetail, RentalsDetail, BookItem } from "../../DB_Functions/Set_Up/modelSetUp";
+import { sequelize, User, UserPreference, UserItem, Rental, PaymentDetail, RentalsDetail, BookItem } from "../../DB_Functions/Set_Up/modelSetUp";
 import { Model, DataTypes, Sequelize, ModelCtor, QueryTypes, Attributes, InstanceUpdateOptions, NonNullFindOptions, ModelStatic, UpdateOptions } from "sequelize";
 import { BaseModel } from "../baseModel";
 import StdReturn from "../../../types/baseTypes"; // just changed make sure correct
 import { TempUserType, UserPreferenceType, } from "../../../types/DBTypes/UserTypes/userTypes";
 import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../../types/DBTypes/RentalTypes/rentalType";
-import { BookType } from "../../../types/DBTypes/BookTypes/bookTypes";
+import { BookItemType, UserBookRatingType } from "../../../types/DBTypes/BookTypes/bookTypes";
 import { DatabaseError, NotFoundError } from '../../../utils/other/customError';
 import { ModelTypes, Models } from '../../../types/baseTypes'
 import { Col, Fn, Literal } from "sequelize/types/utils";
@@ -13,6 +13,10 @@ import { DestroyOptions } from "sequelize";
 import exp from "constants";
 
 import { CSVtoSQLBook } from '../../DB_Functions/Process/CSVtoSQL';
+import { random } from "../../../utils/other/utils";
+import { randomNumber } from "../../../utils/other/random";
+import { BookItemModel } from "./BookModels/bookModel";
+import { UserModel } from "../Users/userModels";
 
 
 interface ItemModelI extends Model<ItemType>, ItemType {
@@ -38,10 +42,10 @@ interface ItemModelI extends Model<ItemType>, ItemType {
 
 
 
-export class ItemModel extends BaseModel<Item> {
+export class UserItemModel extends BaseModel<UserItem> {
 
     public constructor() {
-        super(Item)
+        super(UserItem)
     }
 
     public async querySearchItems(query: string): Promise<StdReturn> {
@@ -54,15 +58,68 @@ export class ItemModel extends BaseModel<Item> {
 
     }
 
-    public static async makeItemsFullTextSearchable(): Promise<{itemTable:any,bookTable:any}> {
+    public static async makeItemsFullTextSearchable(): Promise<[unknown[], unknown]> {
         try {
-            const itemTable = await sequelize.query("ALTER TABLE items ADD FULLTEXT (itemName, description)", { type: QueryTypes.RAW })
             const bookTable = await sequelize.query("ALTER TABLE bookItems ADD FULLTEXT (book, description)", { type: QueryTypes.RAW })
-            return {itemTable, bookTable}
+            return bookTable
         }
         catch (err) {
             console.log(err)
             throw new DatabaseError(" makeItemsFullTextSearchable() " + err);
+        }
+    }
+
+    public async addNewItem(itemDetails: ItemType): Promise<UserItem> {
+        try {
+            const newItem = await UserItem.create(itemDetails)
+            return newItem
+        } catch (err) {
+            console.log(err)
+            throw new DatabaseError("Error in addNewItem")
+        }
+    }
+
+    public async addRandomItem(options: { ownerID: number, itemID: number }): Promise<UserItem> {
+        try {
+            const { ownerID, itemID } = options
+            const quantity = randomNumber(1, 100)
+            const price = randomNumber(1, 100)
+            const newItem = await UserItem.create({ ownerID, itemID, quantity, price })
+            return newItem
+        } catch (err) {
+            console.log(err)
+            throw new DatabaseError("Error in addRandomItem")
+        }
+    }
+
+    public async createNewRandomItems(quant = 200): Promise<void> {
+        try {
+            const bookModel = new BookItemModel()
+            const usersModel = new UserModel()
+            let i = 0
+            for (; i < quant; i++) {//10 items
+                const book = await bookModel.getRandom({})
+                const user = await usersModel.getRandom({})
+
+                const newUserItem = await this.addRandomItem({ ownerID: user.dataValues.id!, itemID: book.dataValues.id! })
+
+            }
+
+        } catch (err) {
+            console.log(err)
+            throw new DatabaseError("Error in createNewRandomItems")
+        }
+    }
+
+    public async checkIfEnoughQuantity(options: { ownerID: number, itemID: number, quantity: number }): Promise<boolean> {
+        try {
+            const { ownerID, itemID, quantity } = options
+            const { err, result: userItemObj } = await this.find({ where: { ownerID, itemID }, rejectOnEmpty: true })
+            if (userItemObj.quantity < quantity) return false;
+            return true;
+        } catch (err: any) {
+            console.error(err)
+            throw new DatabaseError(`Error in checkIfEnoughQuantity ${err}`)
         }
     }
 }

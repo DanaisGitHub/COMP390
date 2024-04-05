@@ -1,6 +1,6 @@
 import StdReturn from '../../types/baseTypes';
 import { DatabaseError, NotFoundError } from '../../utils/other/customError';
-import { RentalsDetail, User, Item, Rental, PaymentDetail, UserPreference, Author, Format, Genre, BookAuthor, BookFormat, BookGenre } from '../DB_Functions/Set_Up/modelSetUp';
+import { RentalsDetail, User, UserItem, Rental, PaymentDetail, UserPreference, Author, Format, Genre, BookAuthor, BookFormat, BookGenre } from '../DB_Functions/Set_Up/modelSetUp';
 import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, InstanceUpdateOptions, NonNullFindOptions, FindOptions, UpdateOptions, FindOrCreateOptions, Identifier, BulkCreateOptions, BuildOptions, FindAndCountOptions } from 'sequelize/types';
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
@@ -10,6 +10,7 @@ import { ItemType } from '../../types/DBTypes/RentalTypes/rentalType';
 import { AuthorModel } from './Items/BookModels/AuthorModels/AuthorModels';
 import { AuthorType, BookAuthorType, BookFormatType, BookGenreType, FormatType, GenreType } from '../../types/DBTypes/BookTypes/bookTypes';
 import { CountOptions } from 'sequelize';
+import { GenreModel } from './Items/BookModels/GenreModels/GenreModels';
 
 // cant perfrom circular imports
 
@@ -128,6 +129,20 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
+    public baseFindOneNotTyped = async <P>(options: NonNullFindOptions<Attributes<T>>): Promise<P> => {
+        try {
+            const result = await this.model.findOne(options)
+            if (result === null || result === undefined) {
+                throw new NotFoundError("User not found in 'findOne' ");
+            }
+            return result as unknown as P;
+        }
+        catch (err) {
+            console.error(err);
+            throw new DatabaseError("Failed to perform 'findOne'");
+        }
+    }
+
     protected baseFindAll = async (options: FindOptions<Attributes<T>> | undefined): Promise<StdReturn<T[]>> => {
         try {
             const result = await this.model.findAll(options)
@@ -201,6 +216,20 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
     }
 
+    public getRandom = async (options?: Omit<FindOptions<Attributes<T>>, "order"> | undefined): Promise<T> => {
+        try {
+            const result = await this.model.findOne({ ...options, order: this.model.sequelize?.random() })
+            if (result === null) {
+                throw new NotFoundError("not found in getRandom")
+            }
+            return result as T;
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("Failed to perfrom getRandom database Operation");
+        }
+    }
+
     // TODO: Custom Query
 
 
@@ -208,6 +237,17 @@ export class BaseModel<T extends Model<any, any> = Models> {
     //PUBLIC FUNCTIONS
     ///////////////////////////
     // why do these exist
+
+    public customQuery = async (query: string): Promise<any> => {
+        try {
+            const result = await this.model.sequelize?.query(query);
+            return result;
+        }
+        catch (err:any) {
+            console.error(err);
+            throw new DatabaseError(`Failed to perfrom customQuery database Operation: ${err}`);
+        }
+    }
 
     public async addNew(details: Attributes<T>): Promise<StdReturn<T>> { // why do I need these
         try {
@@ -269,10 +309,10 @@ export class BaseModel<T extends Model<any, any> = Models> {
         try {
             let book, linkRes;
             const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
-                : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "Id";
+                : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "ID";
 
 
-                // searching for book
+            // searching for book
             try {
                 book = await bookTable.find({
                     where: { book: bookName },
@@ -296,8 +336,8 @@ export class BaseModel<T extends Model<any, any> = Models> {
             if (book.result === null || linkRes.result === null) {
                 throw new NotFoundError("Book or Link not found in 'baseBookLink' ");
             }
-            let createObject: { bookId: number, genre?: number, format?: number, author?: number } = {
-                bookId: book.result.id,
+            let createObject: { bookID: number, genre?: number, format?: number, author?: number } = {
+                bookID: book.result.id,
                 [jsonName]: linkRes.result.id
 
             };
@@ -367,6 +407,31 @@ export class BaseModel<T extends Model<any, any> = Models> {
     }
 
 
+    private async getObjFromID(id: number): Promise<T> {
+        try {
+            const { err, result } = await this.findByPkey(id);
+            return result;
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("idToObj()" + err);
+        }
+    }
+
+    public async getObjsFromIDs(id: number[]): Promise<T[]> {
+        try {
+            const objs = await Promise.all(id.map(async (id) => {
+                return await this.getObjFromID(id);
+            }));
+            return objs;
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("idsToObjs()" + err);
+        }
+    }
+
+
 
 }
 
@@ -377,63 +442,63 @@ export class BaseBookAttributesModel<T extends BaseBookAttributes> extends BaseM
 
 
     /**
-     * For given bookId, returns all the attributes of the book eg all formats book is in
+     * For given bookID, returns all the attributes of the book eg all formats book is in
      * 
-     * @param id BookId
-     * @param returnIds weather you want the ids or the actual objects
+     * @param id BookID
+     * @param returnIDs weather you want the ids or the actual objects
      * @returns 
      */
-    public async getAllBookAttributesForSpecficBook(id: number, returnIds = true): Promise<StdReturn</*T[]*/ | number[]>> {
+    public async getAllBookAttributesForSpecficBook(id: number, returnIDs = true): Promise<StdReturn</*T[]*/ | number[]>> {
         try {
-            let findAllAttributes: any/*: FindOptions<Attributes<T>> | undefined*/, attributeId: string, model: ModelStatic<T>;
+            let findAllAttributes: any/*: FindOptions<Attributes<T>> | undefined*/, attributeID: string, model: ModelStatic<T>;
             if (this.model === BookAuthor) {
-                attributeId = "authorId";
-                const authorId = id;
+                attributeID = "authorID";
+                const authorID = id;
                 findAllAttributes = {
                     include: [{
                         model: Author,
                         as: 'authorBooks',
-                        where: { id: authorId }, // here we say: where Genre.id = genreId
+                        where: { id: authorID }, // here we say: where Genre.id = genreID
                         attributes: []
                     }]
                 };
             } else if (this.model === BookFormat) {
-                attributeId = "formatId";
-                const formatId = id;
+                attributeID = "formatID";
+                const formatID = id;
                 findAllAttributes = {
                     include: [{
                         model: Format,
                         as: 'formatBooks',
-                        where: { id: formatId }, // here we say: where Genre.id = genreId
+                        where: { id: formatID }, // here we say: where Genre.id = genreID
                         attributes: []
                     }]
                 };
             }
             else if (this.model === BookGenre) {
-                attributeId = "genreId";
-                const genreId = id;
+                attributeID = "genreID";
+                const genreID = id;
                 findAllAttributes = {
                     include: [{
                         model: Genre,
                         as: 'genreBooks',
-                        where: { id: genreId }, // here we say: where Genre.id = genreId
+                        where: { id: genreID }, // here we say: where Genre.id = genreID
                         attributes: []
                     }]
                 };
             };
             const { err, result: attributes } = await this.baseFindAll(findAllAttributes);
-            //if (returnIds) {
+            //if (returnIDs) {
             return {
                 err,
                 result: attributes?.map((attribute) => {
-                    return ((attribute.dataValues as Record<string, any>)[attributeId]) as number;
+                    return ((attribute.dataValues as Record<string, any>)[attributeID]) as number;
                 }),
             };
             //            }
 
             // return { // probs wrong here
             //     err, result: await Promise.all(attributes?.map(async (attribute) => {
-            //         const { err, result } = await this.genreTable.find({ where: { id: attributes[attributeId] }, rejectOnEmpty: true });// I think here
+            //         const { err, result } = await this.genreTable.find({ where: { id: attributes[attributeID] }, rejectOnEmpty: true });// I think here
             //         if (err) {
             //             throw new DatabaseError(`getAllBookAttribuesForSpecficBook() for ${this.model.toString()}` + err);
             //         }
@@ -446,6 +511,25 @@ export class BaseBookAttributesModel<T extends BaseBookAttributes> extends BaseM
             throw new DatabaseError("getAllBookGenresForSpecficBook()" + err);
         }
     }
+
+    // public async getAttributeNamesFromIDs(ids: number[]): Promise<string[]> {
+    //     try {
+    //         let list: string[] = [];
+    //         if (this.model === BookGenre) {
+    //             list = ids.map(async (id) => {
+    //                 const res = await this.model.findOne({ where: { id }, include: [Genre, Format, Author] }) as T;
+    //                 return res?.name as string;
+    //             });
+
+    //         }
+
+    //         return list;
+    //     }
+    //     catch (err) {
+    //         console.log(err)
+    //         throw new DatabaseError("getAttributeFromIDs()" + err);
+    //     }
+    // }
 
 }
 
@@ -462,6 +546,36 @@ export class BaseAttributeModel<T extends BaseAttributeType> extends BaseModel<T
         catch (err) {
             console.log(err);
             throw new DatabaseError("addAttribute()" + err);
+        }
+    }
+
+    public async getAttributeNameFromID(id: number): Promise<string> {
+        try {
+            const { err, result } = await this.findByPkey(id);
+            return result.dataValues.name as string;
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("getAttributeNameFromID()" + err);
+        }
+    }
+
+    public async getAttributeNameFromIDs(ids: number[]): Promise<string[]> {
+        try {
+            let list: string[] = [];
+            for (let id of ids) {
+                const att = await this.getAttributeNameFromID(id)
+                console.log(att);
+                list.push(att);
+            }
+            console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+            )
+            console.log(list);
+            return list;
+        }
+        catch (err) {
+            console.log(err);
+            throw new DatabaseError("getAttributeNameFromIDs()" + err);
         }
     }
 

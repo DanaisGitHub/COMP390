@@ -1,9 +1,9 @@
-import { AuthorType, BookAuthorType, BookFormatType, BookGenreType, BookPreferenceType, BookType, FormatType, GenreType, UserBookRatingType } from "../../../../types/DBTypes/BookTypes/bookTypes";
+import { AuthorType, BookAuthorType, BookFormatType, BookGenreType, BookPreferenceType, BookItemType, FormatType, GenreType, UserBookRatingType } from "../../../../types/DBTypes/BookTypes/bookTypes";
 import { CSVtoSQLBook } from "../../../DB_Functions/Process/CSVtoSQL";
 import { DatabaseError, NotFoundError } from "../../../../utils/other/customError";
 import { BaseModel, BaseBookAttributesModel, BaseAttributeModel } from "../../baseModel";
 import StdReturn from "../../../../types/baseTypes";
-import { BookItem, BookAuthor, BookFormat, BookGenre, Genre, Format, Author, BookPreference, UserBookRating, User } from "../../../DB_Functions/Set_Up/modelSetUp";
+import { BookItem, BookAuthor, BookFormat, BookGenre, Genre, Format, Author, BookPreference, UserBookRating, User, UserItem } from "../../../DB_Functions/Set_Up/modelSetUp";
 import crypto from 'crypto';
 import { CreateUserBookRatingFormula as RatingFormula } from '../../../DB_Functions/Process/userBookRatingFormula'
 import { UserModel } from "../../Users/userModels";
@@ -14,6 +14,36 @@ import { BookGenreModel, GenreModel } from "./GenreModels/GenreModels";
 import { randomDate, randomDateRange, randomNumber, randomRange } from '../../../../utils/other/random'
 import { calculateDistance } from '../../../../utils/locationUtils'
 import { ProductPreview } from "../../../../types/Product/ProductsTy";
+import { UserItemModel } from "../UserItemModel";
+interface BookItemPreviewDetails {
+    bookID: number,
+    series: string,
+    description: string,
+    numPages: number,
+    publication: Date,
+    preRating: number,
+    price: number,
+    lat: number,
+    lng: number,
+    ownerID: number,
+
+}
+
+export interface FullBookDetails extends BookItemType {
+    authorList: string[],
+    genreList: string[],
+    formatList: string[],
+
+}
+export interface FullBookDetail extends BookItemType {
+    BookAuthors: BookAuthor[],
+    BookGenres: BookGenre[],
+    BookFormats: BookFormat[]
+
+}
+interface BookPreviewRanked extends BookItemPreviewDetails {
+    rank: number
+}
 
 
 export class BookItemModel extends BaseModel<BookItem> { // BookItem should really extend itemModel, and item 
@@ -21,37 +51,104 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         super(BookItem)
     }
 
-    // public async getFullBookDetailsForBookId(bookID: number): Promise<StdReturn<BookItem>> {
-    //     try {
-    //         const { err, result:bookBasicDetails } = await this.baseFindOne({ where: { id: bookID }, rejectOnEmpty: true }); // we didn't do assossiations properly here
-    //         bookBasicDetails.;
-    //         const fullBookDetails = {
-    //             id:,
-    //             book_title: ,
-    //             series:,
-    //             description:,
-    //             numPages:,
-    //             publication:,
-    //             preRating:,
-    //             author:,
-    //             genres:,
-    //             format:,
-                
-    //         }
-    //         return { err, result }
-    //     }
-    //     catch (err) {
-    //         console.log(err)
-    //         throw new DatabaseError("getAllBookDetailsForBookId()" + err);
-    //     }
-    // }
-
-    private async fullTextSearch(searchQuery: string): Promise<BookItem[]> {
+    public async getFullBookDetailsForBookID(bookID: number, options?: { ownerID: number, rating: number }): Promise<any> { // op is from query
         try {
-            const query = `SELECT * FROM bookitems WHERE MATCH(title, description) 
-            AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE);`
+            const genreModel = new GenreModel()
+            const formatModel = new FormatModel()
+            const authorModel = new AuthorModel()
+            let fullBookDeails: FullBookDetail =
+                await this.baseFindOneNotTyped<FullBookDetail>({
+                    where: { id: bookID },
+                    include: [BookAuthor, BookFormat, BookGenre], // this only return the id's
+                    rejectOnEmpty: true
+
+                });
+            if (!fullBookDeails) {
+                throw new NotFoundError("Book not found")
+            }
+            const genresID = fullBookDeails.BookGenres.map((genre) => genre.genreID);
+            const formatsID = fullBookDeails.BookFormats.map((format) => format.formatID);
+            const authorsID = fullBookDeails.BookAuthors.map((author) => author.authorID);
+            console.log(genresID)
+            const genreNames = await genreModel.getAttributeNameFromIDs(genresID);
+            const formatNames = await formatModel.getAttributeNameFromIDs(formatsID);
+            const authorNames = await authorModel.getAttributeNameFromIDs(authorsID);
+
+            fullBookDeails.genres = genreNames;
+            fullBookDeails.format = formatNames;
+
+            const fullBook = {
+                id: fullBookDeails.id,
+                book: fullBookDeails.book,
+                author: authorNames[0],
+                series: fullBookDeails.series,
+                description: fullBookDeails.description,
+                numPages: fullBookDeails.numPages,
+                publication: fullBookDeails.publication,
+                rating: fullBookDeails.rating,
+                numOfVoters: fullBookDeails.numOfVoters,
+                genres: genreNames,
+                format: formatNames,
+
+            }
+
+            fullBookDeails.BookAuthors = []
+            fullBookDeails.BookGenres = []
+            fullBookDeails.BookFormats = []
+            //fullBookDeails.genres = await Promise.all(namedGenres);
+            return fullBook;
+        } catch (err) {
+            console.log(err as Error)
+            throw new DatabaseError("getFullBookDetailsForBookID()" + err);
+        }
+    }
+
+
+    public async findAllBooksForIDs(bookIDs: number[]): Promise<BookItem[]> {
+        try {
+            let books: BookItem[] = [];
+            for (let id in bookIDs) {
+                const { err, result: book } = await this.baseFindOne({ where: { id }, rejectOnEmpty: false });
+                if (!book) {
+                    throw new NotFoundError("Book not found")
+                }
+                books.push(book);
+            }
+            return books;
+        } catch (err) {
+            console.log(err)
+            throw new DatabaseError("findAllBooksForIDs()" + err);
+        }
+    }
+
+    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string): Promise<BookItemPreviewDetails[]> {
+        try {
+            const query = `SELECT 
+            bk.id AS bookID, 
+            bk.series, 
+            bk.description, 
+            bk.numPages, 
+            bk.publication, 
+            bk.rating AS preRating, 
+            ui.price, 
+            usr.lat, 
+            usr.lng, 
+            usr.id AS ownerID
+          FROM 
+            BookItems bk
+          JOIN 
+            UserItems ui ON bk.id = ui.ItemID
+          JOIN 
+            Users usr ON ui.OwnerID = usr.id
+          WHERE 
+            MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE)
+            AND bk.rating >= ${minRating}
+            AND ui.price <= ${maxPrice}
+          ORDER BY 
+            bk.rating DESC, 
+            ui.price ASC;`
             const result = await this.model.sequelize!.query(query); // maybe wrong, we need sequelize instance
-            return result[0] as BookItem[]
+            return result[0] as BookItemPreviewDetails[]
         }
         catch (err) {
             console.log(err)
@@ -59,28 +156,30 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    private async pyRankBooks(books: BookItem[]): Promise<ProductPreview[]> {
+    private async pyRankBooks(books: BookItemPreviewDetails[]): Promise<BookPreviewRanked[]> { // WHY here
         // send to python for ranking
         return [];
     }
 
-    public async findAllBooksWithinRadiusAndSearchQuery(
-        location: { lat: number, lng: number },
+    public async findAllBooksWithinRadiusAndSearchQuery(options: {
+        locationOfUser: { lat: number, lng: number },
         maxDistance: number,
-        searchQuery: string): Promise<ProductPreview[]> {
+        searchQuery: string,
+        minRating: number,
+        maxPrice: number
+    }): Promise<BookPreviewRanked[]> {
         try {
-            const userModel = new UserModel()
-            const serchedBooks = await this.fullTextSearch(searchQuery);
-            const booksWithinRadius = serchedBooks.filter(async (book) => { // book might
-                // find out who owns the book
-                const { err, result: user } = await userModel.findByPkey(book.ownerId);
-                const bookLat = user.dataValues.lat;
-                const bookLong = user.dataValues.lng;
-                const distance = calculateDistance(location.lat, location.lng, bookLat, bookLong);
-                return distance <= maxDistance;
-            })
-            // now send to python for ranking
-            const rankedBooks = await this.pyRankBooks(booksWithinRadius);
+            let rankedBooks: BookPreviewRanked[] = [];
+            const { locationOfUser, maxDistance, searchQuery, minRating, maxPrice } = options;
+            const booksWithoutRadius = await this.fullTextSearch(minRating, maxPrice, searchQuery);
+            const booksWithinRadius = booksWithoutRadius.filter(book => {
+                calculateDistance(locationOfUser.lat, locationOfUser.lng, book.lat, book.lng)
+                    <= maxDistance
+            });
+
+            // SEND TO PYTHON FOR RANKING.
+            rankedBooks = await this.pyRankBooks(booksWithinRadius);
+
             return rankedBooks
         }
         catch (err) {
@@ -89,7 +188,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    public async getAllAuthorsForBookId(bookID: number): Promise<StdReturn<number[]>> {
+    public async getAllAuthorsForBookID(bookID: number): Promise<StdReturn<number[]>> {
         try {
             const bookAuthorTable = new BookAuthorModel();
             const { err, result } = await bookAuthorTable.getAllBookAttributesForSpecficBook(bookID);
@@ -104,7 +203,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    public async getAllGenresForBookId(bookID: number): Promise<StdReturn<number[]>> {
+    public async getAllGenresForBookID(bookID: number): Promise<StdReturn<number[]>> {
         try {
             const bookGenreTable = new BookGenreModel();
             const { err, result } = await bookGenreTable.getAllBookAttributesForSpecficBook(bookID);
@@ -120,7 +219,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
     }
 
 
-    public async addBookItem(book: BookType): Promise<StdReturn<BookItem>> {
+    public async addBookItem(book: BookItemType): Promise<StdReturn<BookItem>> {
         try {
             const { err, result } = await this.baseCreate(book);
             return { err, result }
@@ -254,9 +353,9 @@ export class UserBookRatingModels extends BaseModel<UserBookRating> {
         }
     }
 
-    public async getUserRating(userId: number, bookId: number): Promise<StdReturn<UserBookRating>> {
+    public async getUserRating(userID: number, bookID: number): Promise<StdReturn<UserBookRating>> {
         try {
-            const { err, result } = await this.baseFindOne({ where: { userId, bookId }, rejectOnEmpty: true })
+            const { err, result } = await this.baseFindOne({ where: { userID, bookID }, rejectOnEmpty: true })
             return { err, result }
         } catch (err) {
             console.log(err)
@@ -264,18 +363,18 @@ export class UserBookRatingModels extends BaseModel<UserBookRating> {
         }
     }
 
-    public async updateUserRating(userRating: UserBookRatingType, userId: number, bookId: number): Promise<void> {
+    public async updateUserRating(userRating: UserBookRatingType, userID: number, bookID: number): Promise<void> {
         try {
-            await this.baseUpdate(userRating, { where: { userId, bookId } })
+            await this.baseUpdate(userRating, { where: { userID, bookID } })
         } catch (err) {
             console.log(err)
             throw new Error("Error in updateUserRating")
         }
     }
 
-    public async deleteUserRating(userId: number, bookId: number): Promise<void> {
+    public async deleteUserRating(userID: number, bookID: number): Promise<void> {
         try {
-            await this.baseDestroy({ where: { userId, bookId } })
+            await this.baseDestroy({ where: { userID, bookID } })
         } catch (err) {
             console.log(err)
             throw new Error("Error in deleteUserRating")
@@ -291,51 +390,57 @@ export class UserBookRatingModels extends BaseModel<UserBookRating> {
             const bookModel = new BookItemModel()
             const bookFormula = new RatingFormula(user);
             const userRatingModel = new UserBookRatingModels();
-
-
-            // cycle 
+            // cycle // lets do the same for UserItems
             const createRatingFunc = async (eachBook: BookItem) => {
                 const book = eachBook.dataValues;
                 const userRating: number = await bookFormula.createUserRating(book!);
-                const userBookRating: UserBookRatingType = { userId: user.id, bookId: book.id!, rating: userRating }
+                const userBookRating: UserBookRatingType = { userID: user.id, bookID: book.id!, rating: userRating }
                 const { err, result } = await this.createUserRating(userBookRating);
             }
-
-
-
-            // cycle Books
             const waiting = await bookModel.performOnAllRows(createRatingFunc);
-
-
-
-            let min = await userRatingModel.getMinRating(user.id);
-            let max = await userRatingModel.getMaxRating(user.id);
-
-            const normaliseRating = async (eachRating: UserBookRating) => {
-                const rating = eachRating.dataValues;
-                let min = await userRatingModel.getMinRating(rating.userId);
-                let max = await userRatingModel.getMaxRating(rating.userId);
-                rating.rating = bookFormula.normaliseRating(rating.rating, min, max);
-                await this.updateUserRating(rating, rating.userId, rating.bookId);
-            }
-
-            await userRatingModel.performOnAllRows(normaliseRating)
+            //let min, max;
+            //const normaliseRating = async (eachRating: UserBookRating) => {
+            //    const rating = eachRating.dataValues;
+            //    min = await userRatingModel.getMinRating(rating.userID);
+            //    max = await userRatingModel.getMaxRating(rating.userID);
+            //    rating.rating = bookFormula.normaliseRating(rating.rating, min, max);
+            //    await this.updateUserRating(rating, rating.userID, rating.bookID);
+            //}
+            //await userRatingModel.performOnAllRows(normaliseRating)
         } catch (err) {
             console.log(err)
             throw new Error("Error in createOneRating")
         }
     }
 
+
+    // public async normaliseAllRatings = async (userID: number): Promise<void> => {
+    //     const bookModel = new BookItemModel()
+    //     const userRatingModel = new UserBookRatingModels();
+    //     let min, max ;
+    //     const normaliseRating = async (eachRating: UserBookRating) => {
+    //         const rating = eachRating.dataValues;
+    //         min = await userRatingModel.getMinRating(rating.userID);
+    //         max = await userRatingModel.getMaxRating(rating.userID);
+    //         rating.rating = bookFormula.normaliseRating(rating.rating, min, max);
+    //         await this.updateUserRating(rating, rating.userID, rating.bookID);
+    //     }
+    //     await userRatingModel.performOnAllRows(normaliseRating)
+
+
+    // }
+
     /**
      * Gets the max rating for a whole table or for a specific user and or book
      * 
-     * @param userId 
-     * @param bookId 
+     * @param userID 
+     * @param bookID 
      * @returns 
      */
-    public async getMaxRating(userId?: number): Promise<number> {
+    public async getMaxRating(userID?: number): Promise<number> {
         try {
-            const result = await this.model.max("rating", { where: { userId } });
+            const options = userID ? { where: { userID } } : {};
+            const result = await this.model.max("rating", options);
             //const some = await this.model.sync();
 
             if (result === null) {
@@ -349,15 +454,16 @@ export class UserBookRatingModels extends BaseModel<UserBookRating> {
         }
     }
 
-    public async getMinRating(userId?: number): Promise<number> {
+    public async getMinRating(userID?: number): Promise<number> {
         try {
             let found = false;
             let result = null;
             do {
-                result = await this.model.min("rating", { where: { userId } });
+                const options = userID ? { where: { userID } } : {};
+                result = await this.model.min("rating", options);
                 console.log("result: ", result);
                 if (result === null) {
-                    console.log(userId)
+                    console.log(userID)
                     continue;
                 }
                 found = true;

@@ -2,33 +2,34 @@ import { coordiantes } from '../../baseTypes';
 
 export interface ItemType {
     id?: number;
-    itemName: string;
-    description: string;
-    thumbnail: string;
-    pricePerDay: number;
-    itemLocation?: coordiantes;
+    ownerID: number;
+    itemID: number;
+    thumbnail?: string;
+    price: number;
     quantity: number;
+
 }
 
 export interface RentalType {
-    id?: number;
-    rentalStartDate: Date;
-    rentalEndDate: Date;
-    rentalStatus: string;
-    paid: boolean;
-    paymentDate: Date;
-    orderNumber: number;
+    orderNumber?: number;
+    renterID: number;
+    ownerID: number;
+    startDate: Date;
+    endDate: Date;
+    rentalStatus?: string;
+    paid?: boolean;
+    paymentDate?: Date;
 }
 
 export interface RentalDetailType {
     id?: number;
     price: number;
-    total: number;
-    discount: number;
-    paymentDetails: string;
-    billDate: Date;
+    itemID: number;
+    discount?: number;
+    paymentDetails?: string;
+    billDate?: Date;
     quantity: number;
-    orderNumber: number;
+    orderNumber: number; // foreign key
 }
 
 export interface PaymentDetailType {

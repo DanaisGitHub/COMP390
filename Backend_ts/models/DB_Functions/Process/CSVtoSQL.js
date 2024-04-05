@@ -8,7 +8,7 @@ exports.CSVtoSQLBook = void 0;
 const fs_1 = __importDefault(require("fs"));
 const csvtojson_1 = __importDefault(require("csvtojson"));
 const csv_parser_1 = __importDefault(require("csv-parser"));
-const csvFilePath = '../Backend_py/DataSource/first10s.csv';
+const csvFilePath = '../Backend_py/ML/DataSource/first10s.csv';
 const bookModel_1 = require("../../typesOfModels/Items/BookModels/bookModel");
 const GenreModels_1 = require("../../typesOfModels/Items/BookModels/GenreModels/GenreModels");
 const FormatModel_1 = require("../../typesOfModels/Items/BookModels/FormatModels/FormatModel");
@@ -24,7 +24,7 @@ class ReadCSV {
                 await CSVtoSQLBook.processEachRow(row); // not read properly 
             })
                 .on('end', function () {
-                console.log('All Data loaded');
+                console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!£££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££££%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% All BOOKS CREATED");
             });
         }
         catch (error) {

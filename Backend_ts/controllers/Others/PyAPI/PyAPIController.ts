@@ -2,7 +2,7 @@ import { Router, Request as Req, Response as Res, NextFunction as Next } from 'e
 
 import { PyUserType } from '../../../types/API_Types/Python/pyAPI';
 import { BookPreferenceType } from '../../../types/DBTypes/BookTypes/bookTypes';
-import { BookType } from '../../../types/DBTypes/BookTypes/bookTypes';
+import { BookItemType } from '../../../types/DBTypes/BookTypes/bookTypes';
 import { TempUserType } from '../../../types/DBTypes/UserTypes/userTypes';
 
 import { UserModel } from '../../../models/typesOfModels/Users/userModels';

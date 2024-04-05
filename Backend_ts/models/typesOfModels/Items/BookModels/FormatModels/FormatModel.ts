@@ -24,20 +24,20 @@ export class BookFormatModel extends BaseModel<BookFormat> {
         }
     }
 
-    public async getAllBookFormatsForSpecficBook(formatId: number, returnIds = true): Promise<StdReturn<Format[] | number[]>> {
+    public async getAllBookFormatsForSpecficBook(formatID: number, returnIDs = true): Promise<StdReturn<Format[] | number[]>> {
         try {
             const { err, result } = await this.baseFindAll({
                 include: [{
-                    where: { formatId: formatId },
+                    where: { formatID: formatID },
                     attributes: []
                 }]
             });
-            if (returnIds) {
-                return { err, result: result?.map((format) => format.formatId) }
+            if (returnIDs) {
+                return { err, result: result?.map((format) => format.formatID) }
             }
             return {
-                err, result: await Promise.all(result?.map(async (formatId) => {
-                    const { err, result } = await this.formatTable.find({ where: { id: formatId.formatId }, rejectOnEmpty: true });
+                err, result: await Promise.all(result?.map(async (formatID) => {
+                    const { err, result } = await this.formatTable.find({ where: { id: formatID.formatID }, rejectOnEmpty: true });
                     if (err) {
                         throw new DatabaseError("getAllBookFormatsForSpecficBook()" + err);
                     }

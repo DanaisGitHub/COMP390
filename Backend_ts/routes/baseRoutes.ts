@@ -1,29 +1,34 @@
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
 
 // test
-import { authMiddleware } from '../../utils/auth/authUtils'
-import { User } from '../../models/DB_Functions/Set_Up/modelSetUp';
+import { authMiddleware } from '../utils/auth/authUtils'
+import { User } from '../models/DB_Functions/Set_Up/modelSetUp';
 import jwt from 'jsonwebtoken';
 
 import path from 'path';
 import fs from 'fs';
 
 
-import authRoutes from './authRoutes';
-import apiRoutes from '../../API/googleMaps/googleMapsAPI';
-import testRoutes from '../testRoutes';
-import StdReturn from '../../types/baseTypes';
-import apiPython from './APIPython';
+import authRoutes from './Auth/authRoutes';
+//import testRoutes from '../testRoutes';
+import StdReturn from '../types/baseTypes';
+import apiPython from './zzPrevRoutes/APIPython';
 //import { FoodModel } from '../models/typesOfModels/foodModel';
+import product from './Product/produceSearchPage';
+import userRoutes from './UserDetails/UserProfilePage';
+import myItemsPage from './UserDetails/MyItemsPage';
 
 const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
 const router = Router();
-router.use('/test', testRoutes)
+//router.use('/test', testRoutes)
 router.use('/auth', authRoutes);
-router.use('/api', apiRoutes);
 router.use('/apiPY', apiPython);
+router.use('/productSearchPage', product);
+router.use('/userProfilePage', userRoutes)
+router.use('/MyItemsPage' , myItemsPage)
+
 
 
 

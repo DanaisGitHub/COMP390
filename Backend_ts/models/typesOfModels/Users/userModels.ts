@@ -1,13 +1,14 @@
-import { sequelize, User, Item, Rental, PaymentDetail, RentalsDetail, UserPreference } from "../../DB_Functions/Set_Up/modelSetUp";
+import { sequelize, User, UserItem, Rental, PaymentDetail, RentalsDetail, UserPreference, UserBookRating } from "../../DB_Functions/Set_Up/modelSetUp";
 import { BaseModel } from "../baseModel";
-import { BookPreferenceModel, UserBookRatingModels } from "../Items/BookModels/bookModel";
+import { BookItemModel, BookPreferenceModel, UserBookRatingModels } from "../Items/BookModels/bookModel";
 import crypto from 'crypto';
 import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
 import { UserPreferenceType, TempUserType } from '../../../types/DBTypes/UserTypes/userTypes'
 import { BookPreferenceType } from "../../../types/DBTypes/BookTypes/bookTypes";
 import { randomDate, randomDateRange, randomNumber, randomRange } from '../../../utils/other/random'
 import { random } from "../../../utils/other/utils";
-import {generateRandomLatLng} from'../../../utils/locationUtils'
+import { generateRandomLatLng } from '../../../utils/locationUtils'
+import { CreateUserBookRatingFormula, CreateUserBookRatingFormula2 } from "../../DB_Functions/Process/userBookRatingFormula";
 
 
 
@@ -89,7 +90,7 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
             // creates a prefrance for the user with default values
             const bookPrefResult = await bookPreference.createRandomBookPreference(user.id!);
             const userPrefResult = await userPreference.createRandomUserPreference(user.id!);
-            const userBookRatingResult = await userBookRatingModels.genRatingForAllBooks(user);
+            const userBookRatingResult = await userBookRatingModels.genRatingForAllBooks(user);// too early
             // need to create rating for each book
 
             return { err, result: user }
@@ -99,8 +100,8 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
         }
     }
 
-  
-    public createRandomUser = async (): Promise<StdReturn<User>> => {
+
+    private createRandomUser = async (): Promise<StdReturn<User>> => {
         try {
             const { lat, lng } = generateRandomLatLng(10);
             const userDetails: TempUserType = {
@@ -109,7 +110,7 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
                 userEmail: crypto.randomBytes(20).toString('hex') + "@test.com",
                 password: "password",
                 birthDate: randomDate(new Date(1920, 1, 1), new Date(2004, 1, 1)),
-                sex:randomNumber(0, 1) === 0 ? false : true,
+                sex: randomNumber(0, 1) === 0 ? false : true,
                 lat: lat,
                 lng: lng
             }
@@ -124,12 +125,17 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
     public createManyRandomUsers = async (amount: number): Promise<void> => {
         try {
             for (let i = 0; i < amount; i++) {
-                const { err, result } = await this.createRandomUser();
+                const { err, result:user } = await this.createRandomUser();
                 if (err) {
                     console.log(err)
                     throw new Error("Error in createManyRandomUsers")
                 }
             }
+            setTimeout(async () =>{
+                await this.allUsersCreatedListener(); // not happening for last user
+            
+            },2000)
+
         } catch (err) {
             console.log(err)
             throw new Error("Error in createManyRandomUsers")
@@ -166,5 +172,54 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
             throw new Error("Error in getUserBookPref")
         }
     }
+
+    /**
+     * Get all user Details including foreign keys (userPreference, bookPreference, )
+     * 
+     * @param userID user Id
+     * @returns 
+     */
+    public getUserFullDetails = async (userID: number, options: { userPref: true, bookPref: true, ratings: false }): Promise<any> => {
+        try {
+            let include = []
+            if (options.userPref) include.push('userPreference')
+            if (options.bookPref) include.push('bookPreference')
+            if (options.ratings) include.push('ratings');
+            const user: any = await this.baseFindOne({ where: { id: userID }, include, rejectOnEmpty: false }) // return type is wrong
+            console.log(user)
+            return user
+
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in getUserFullDetails")
+        }
+    }
+
+    public allUsersCreatedListener = async (): Promise<void> => {
+        try {
+            const userRatingModel = new UserBookRatingModels();
+            const userBookRatingModel = new UserBookRatingModels();
+            const bookFormula = new CreateUserBookRatingFormula2();
+            // normalise ratings
+            // get smallest rating
+            // get largest rating
+            // normalise all ratings
+            const min = await userRatingModel.getMinRating();
+            const max = await userRatingModel.getMaxRating();
+
+            const normaliseRating = async (eachRating: UserBookRating) => {
+                const rating = eachRating.dataValues;
+                rating.rating = bookFormula.normaliseRating(rating.rating, min, max);
+                await userBookRatingModel.updateUserRating(rating, rating.userID, rating.bookID);
+            }
+            await userRatingModel.performOnAllRows(normaliseRating)
+
+
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in allUsersCreatedListener")
+        }
+    }
+
 }
 

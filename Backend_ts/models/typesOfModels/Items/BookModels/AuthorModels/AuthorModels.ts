@@ -22,22 +22,22 @@ export class BookAuthorModel extends BaseBookAttributesModel<BookAuthor> {
         }
     }
 
-    public async getAllBookAuthorsForSpecficBook(bookId: number, returnIds = true): Promise<StdReturn<Author[] | number[]>> {// ERROR: BookAuthor is not associated to BookAuthor!
+    public async getAllBookAuthorsForSpecficBook(bookID: number, returnIDs = true): Promise<StdReturn<Author[] | number[]>> {// ERROR: BookAuthor is not associated to BookAuthor!
         try {
             const authorTable = new AuthorModel();
             const { err, result } = await this.baseFindAll({
                 include: [{
-                    where: { bookId },
+                    where: { bookID },
                     attributes: []
                 }]
             });
-            if (returnIds) {
-                return { err, result: result?.map((author) => author.authorId) }
+            if (returnIDs) {
+                return { err, result: result?.map((author) => author.authorID) }
             }
 
             return {
                 err, result: await Promise.all(result?.map(async (author) => {
-                    const { err, result } = await authorTable.find({ where: { id: author.authorId }, rejectOnEmpty: true });
+                    const { err, result } = await authorTable.find({ where: { id: author.authorID }, rejectOnEmpty: true });
                     if (err) {
                         throw new DatabaseError("getAllBookAuthorsForSpecficBook()" + err);
                     }

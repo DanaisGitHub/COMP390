@@ -12,8 +12,10 @@ import { Router, Request as Req, Response as Res, NextFunction as Next } from 'e
 
 import { sequelize, initialize } from './models/DB_Functions/Set_Up/modelSetUp'
 
-import authRoutes from './routes/zzPrevRoutes/authRoutes';
-import baseRoutes from './routes/zzPrevRoutes/baseRoutes';
+import authRoutes from './routes/Auth/authRoutes';
+import baseRoutes from './routes/baseRoutes';
+import { UserModel } from './models/typesOfModels/Users/userModels';
+import { DBSetupListener } from './models/DB_Functions/Set_Up/modelSetUp';
 
 dotenv.config();
 const app = express();
@@ -30,20 +32,28 @@ app.use(cors());
 
 app.use('/', baseRoutes)// sending all routes that start with '/' to routes folder
 
-
-
-
 // start the server
 app.listen(5000, () => console.log("Server running on port " + 5000));
 
 sequelize.authenticate()
-        .then(async () => {
-                await initialize();
-                console.log('DB connection successful');
-        })
-        .catch((error) => {
-                console.log('DB connection Failed becuase: ', error)
-        });
+    .then(async () => {
+        await initialize();
+        console.log('DB connection successful');
+        // setTimeout(async () => { //works
+        //     try {
+        //         await DBSetupListener.createUserItems(); // need to be able to toggle
+        //     } catch (err) {
+        //         console.log(err)
+        //     }
+        // }, 1000)
+    })
+    .catch((error) => {
+        console.log('DB connection Failed becuase: ', error)
+    });
+
+
+
+
 
 
 
