@@ -1,16 +1,19 @@
+import { BookItemType, BookAuthorType, BookGenreType, BookFormatType } from "../DBTypes/BookTypes/bookTypes";
 
-export interface ProductPreview { // all previews are ranked
-    productID: number, // id of book
-    sellerID?: number, // might not needs
-    title: string,
-    longitude: number,
-    latitude: number,
-    ranking: number,
+
+export type ProductPreviewType = { // all previews are ranked
+    itemID: number, // id of book
+    ownerID?: number, // might not needs
+    book: string,
+    lng: number,
+    lat: number,
+    ranking_of_book?: number,
+    ranking_we_think?: number,
 }
 
-export interface ProductDetails {
+export type ProductDetailsType = {
     id: number;
-    bookTitle: string;
+    book: string;
     series: string | undefined | null;
     author: string;
     description: string;
@@ -18,6 +21,19 @@ export interface ProductDetails {
     formats: string[];// are these even in ?
     genres: string[];// are these even in ?
     publication: Date;
-    rating: number;
+    rating_we_think?: number;
     numOfVoters: number;
+}
+
+export type FullBookDetails = BookItemType & {
+    authorList: string[],
+    genreList: string[],
+    formatList: string[],
+
+}
+export type FullBookDetail = BookItemType & {
+    BookAuthors: BookAuthorType[],
+    BookGenres: BookGenreType[],
+    BookFormats: BookFormatType[]
+
 }

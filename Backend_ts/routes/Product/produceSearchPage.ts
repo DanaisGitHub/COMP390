@@ -4,34 +4,32 @@ import jwt from 'jsonwebtoken';
 
 import path from 'path';
 import fs from 'fs';
+
+import { ProductPreviewType, ProductDetailsType } from '../../types/Product/ProductsTy';
+import { ProductController } from '../../controllers/ProductCtrl/ProductCtril';
+import { FullBook } from '../../types/API_Types/Book/BookApiTypes';
 // const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 // const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
 const router = Router();
 
-import { ProductPreview, ProductDetails } from '../../types/Product/ProductsTy';
-import { ProductController } from '../../controllers/ProductCtrl/ProductCtril';
+const productController = new ProductController();
 
 // well let controller deal with auth
 
 const getRankedBooks = async (req: Req, res: Res, next: Next) => {
     try {
+        const lat = parseFloat(req.query.lat as string);// should give an auto location eg center of the Mannyeh
+        const lng = parseFloat(req.query.lng as string);// should give an auto location eg center of the Mannyeh
+        const searchQuery = req.query.searchQuery as string ?? ''; // "" == string
+        const maxDistance = parseFloat(req.query.maxDistance as string) ?? Infinity;
+        const minRating = parseFloat(req.query.minRating as string) ?? 0
+        const maxPrice = parseFloat(req.query.maxPrice as string) ?? Infinity
 
-        const productController = new ProductController();
-        const qlat = req.query.lat as string;
-        const qlng = req.query.lng as string;
-        const searchTerm = req.query.search as string;
-        const maxDistance = req.query.maxDistance ?? Infinity as number;
-        const minRating = req.query.minRating ?? 0 as number;
-        const maxPrice = req.query.maxPrice ?? Infinity as number;
 
-        const lat = parseFloat(qlat);
-        const lng = parseFloat(qlng);
         // ... any other query params
-
-        const books = {}
-        // const books = await productController.getRankedBooks({ lat, lng, searchQuery: searchTerm, maxDistance, minRating, maxPrice });
-        res.status(200).json({ books: books });
+        const books: ProductPreviewType[] = await productController.getRankedBooks({ lat, lng, searchQuery, maxDistance, minRating, maxPrice }); // shuld be sending userID as well
+        res.status(200).json({ message: books });
     } catch (err) {
         res.status(500).json({ message: "There was an error in get ranked books ROUTE", err: err })
     }
@@ -40,7 +38,8 @@ const getRankedBooks = async (req: Req, res: Res, next: Next) => {
 router.get('/get-full-book-details', async (req: Req, res: Res, next: Next) => { // findAll db not working here
     try {
         const productController = new ProductController();
-        const bookDetails = await productController.getBookDetails(req, res, next);
+        const bookID = parseInt(req.query.bookID as string);
+        const bookDetails:FullBook = await productController.getBookDetails(bookID);
         res.status(200).json({ message: bookDetails })
     } catch (err) {
         console.log(err)
@@ -58,6 +57,8 @@ router.get('/get-items-user-list', async (req: Req, res: Res, next: Next) => { /
         res.status(500).json({ err: err, message: null })
     }
 })
+
+router.get('/get-ranked-books', getRankedBooks);
 
 
 export default router;

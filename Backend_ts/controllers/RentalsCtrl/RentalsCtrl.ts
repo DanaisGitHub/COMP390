@@ -1,8 +1,8 @@
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
 // access to the database
-import { ProductPreview, ProductDetails } from '../../types/Product/ProductsTy';
+import { ProductPreviewType, ProductDetailsType } from '../../types/Product/ProductsTy';
 import { BookItem, User, UserItem } from '../../models/DB_Functions/Set_Up/modelSetUp';
-import { BookItemModel, FullBookDetail } from '../../models/typesOfModels/Items/BookModels/bookModel';
+import { BookItemModel } from '../../models/typesOfModels/Items/BookModels/bookModel';
 import { UserModel } from '../../models/typesOfModels/Users/userModels';
 
 import { calculateDistance } from '../../utils/locationUtils';
@@ -10,7 +10,7 @@ import { UserItemModel } from '../../models/typesOfModels/Items/UserItemModel';
 import { EmptyResultError, where } from 'sequelize';
 import { NotFoundError } from '../../utils/other/customError';
 import { BookItemType } from '../../types/DBTypes/BookTypes/bookTypes';
-import { RentalModel, RentalDetailsModel } from '../../models/typesOfModels/Rentals/RentalModel';
+import { RentalModel } from '../../models/typesOfModels/Rentals/RentalModel';
 import { RentalOrderType, RentalItemType, FullRentalPurchaseRequest } from '../../types/API_Types/Rental/RentalAPITypes';
 
 
@@ -66,11 +66,17 @@ export class RentalsContorller {
             const { ownerID, itemID, quantity, startDate, endDate } = options
             // check quantity
             const isEnoughQuant = await this.userItemModel.checkIfEnoughQuantity({ ownerID, itemID, quantity })
-            if (isEnoughQuant) return false;
+            if (!isEnoughQuant) {
+                console.log("Not enough quantity")
+                return false;
+            }
 
             // check if dates are available // more complicated/ have to search rentals and see if dates are available in each rental
             const clash = await this.rentalModel.checkIfUserItemDatesClash({ ownerID, itemID, startDate, endDate })
-            if (clash) return false;
+            if (clash) {
+                console.log("Dates clash")
+                return false;
+            }
 
             return true; // if all checks pass
         }
@@ -90,14 +96,15 @@ export class RentalsContorller {
                     throw new Error("Item is not available")
                 }
             }
+            
             const purchaseRequest = await this.rentalModel.addOrderWithItems(purchaseReq);
             // if item is available
             // create a purchase request
 
         }
-        catch (err) {
+        catch (err:any) {
             console.error(err)
-            throw new Error("Error in creating purchase request")
+            throw new Error("Error createPurchaseRequest ---> " + err.message)
         }
     }
 

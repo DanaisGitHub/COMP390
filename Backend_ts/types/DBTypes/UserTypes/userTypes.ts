@@ -1,8 +1,8 @@
-import {coordiantes} from '../../baseTypes';
-import {BookPreferenceType} from '../BookTypes/bookTypes';
+import { coordiantes } from '../../baseTypes';
+import { BookPreferenceType } from '../BookTypes/bookTypes';
 
 // Since some id's is auto incremented input into db is not needed
-// export interface UserType { // might need to add more fields
+// export type UserType { // might need to add more fields
 //     id?: number;//Primary key//Optinal to allow new users to be added to db
 //     firstName: string;
 //     lastName: string;
@@ -16,7 +16,7 @@ import {BookPreferenceType} from '../BookTypes/bookTypes';
 //     CryptoPaymentsID:number;
 // }
 
-export interface TempUserType { // might need to add more fields
+export type TempUserType = { // might need to add more fields
     id?: number;//Primary key//Optinal to allow new users to be added to db
     firstName: string;
     lastName: string;
@@ -26,12 +26,12 @@ export interface TempUserType { // might need to add more fields
     birthDate: Date;
     refreshToken?: string; // not sure of ?
     profilePicture?: string;
-    lat:number;
-    lng:number;
+    lat: number;
+    lng: number;
     paymentDetailsID?: number;
 }
 
-export interface UserPreferenceType {
+export type UserPreferenceType = {
     userID?: number; // FK to user
     distanceRangeMin?: number;
     distanceRangeMax?: number;

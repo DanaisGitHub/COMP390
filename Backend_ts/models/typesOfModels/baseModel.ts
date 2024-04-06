@@ -5,12 +5,13 @@ import { Attributes, DestroyOptions, InstanceDestroyOptions, CreateOptions, Inst
 import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
 import { mode } from 'crypto-js';
-import { Col, Fn, Literal, MakeNullishOptional } from 'sequelize/types/utils';
+import { Col, Fn, Literal, MakeNullishOptional, } from 'sequelize/types/utils';
 import { ItemType } from '../../types/DBTypes/RentalTypes/rentalType';
 import { AuthorModel } from './Items/BookModels/AuthorModels/AuthorModels';
 import { AuthorType, BookAuthorType, BookFormatType, BookGenreType, FormatType, GenreType } from '../../types/DBTypes/BookTypes/bookTypes';
 import { CountOptions } from 'sequelize';
 import { GenreModel } from './Items/BookModels/GenreModels/GenreModels';
+import { EmptyResultError } from 'sequelize';
 
 // cant perfrom circular imports
 
@@ -119,12 +120,15 @@ export class BaseModel<T extends Model<any, any> = Models> {
         try {
             const result = await this.model.findOne(options)
             if (result === null || result === undefined) {
-                throw new NotFoundError("User not found in 'findOne' ");
+                throw new EmptyResultError("User not found in 'findOne' ");
             }
             return { err: null, result };
         }
         catch (err) {
             console.error(err);
+            if (err instanceof EmptyResultError) {
+                throw new NotFoundError("User not found in 'findOne' " + err.message);
+            }
             throw new DatabaseError("Failed to perform 'findOne'");
         }
     }
@@ -243,7 +247,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
             const result = await this.model.sequelize?.query(query);
             return result;
         }
-        catch (err:any) {
+        catch (err: any) {
             console.error(err);
             throw new DatabaseError(`Failed to perfrom customQuery database Operation: ${err}`);
         }

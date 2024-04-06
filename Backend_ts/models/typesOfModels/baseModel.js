@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseAttributeModel = exports.BaseBookAttributesModel = exports.BaseModel = void 0;
 const customError_1 = require("../../utils/other/customError");
 const modelSetUp_1 = require("../DB_Functions/Set_Up/modelSetUp");
+const sequelize_1 = require("sequelize");
 // cant perfrom circular imports
 // be careful with the types here
 //could be all statics and not need to instantiate
@@ -87,12 +88,15 @@ class BaseModel {
             try {
                 const result = await this.model.findOne(options);
                 if (result === null || result === undefined) {
-                    throw new customError_1.NotFoundError("User not found in 'findOne' ");
+                    throw new sequelize_1.EmptyResultError("User not found in 'findOne' ");
                 }
                 return { err: null, result };
             }
             catch (err) {
                 console.error(err);
+                if (err instanceof sequelize_1.EmptyResultError) {
+                    throw new customError_1.NotFoundError("User not found in 'findOne' " + err.message);
+                }
                 throw new customError_1.DatabaseError("Failed to perform 'findOne'");
             }
         };
@@ -185,17 +189,28 @@ class BaseModel {
                 throw new customError_1.DatabaseError("Failed to perfrom getRandom database Operation");
             }
         };
+        // TODO: Custom Query
+        ///////////////////////////
+        //PUBLIC FUNCTIONS
+        ///////////////////////////
+        // why do these exist
+        this.customQuery = async (query) => {
+            var _a;
+            try {
+                const result = await ((_a = this.model.sequelize) === null || _a === void 0 ? void 0 : _a.query(query));
+                return result;
+            }
+            catch (err) {
+                console.error(err);
+                throw new customError_1.DatabaseError(`Failed to perfrom customQuery database Operation: ${err}`);
+            }
+        };
         this.model = model;
     }
     catch(err) {
         console.log(err);
         throw new customError_1.DatabaseError("Failed to perfrom findByPkey database Operation");
     }
-    // TODO: Custom Query
-    ///////////////////////////
-    //PUBLIC FUNCTIONS
-    ///////////////////////////
-    // why do these exist
     async addNew(details) {
         try {
             const { err, result } = await this.baseCreate(details);

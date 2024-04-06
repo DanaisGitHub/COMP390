@@ -14,21 +14,25 @@ const rentalCtrl = new RentalsContorller();
 
 router.get('/purchase-request', async (req: Req, res: Res, next: Next) => {
     try {
-        const purchaseRequestFromBody = req.body.purchaseReqest as FullRentalPurchaseRequest;
-        const { ownerID, renterID, startDate, endDate, rentalItems } = purchaseRequestFromBody;
+        const ownerID = parseInt(req.body.purchaseRequest.ownerID);
+        const startDate = new Date(req.body.purchaseRequest.startDate);
+        const endDate = new Date(req.body.purchaseRequest.endDate);
+        const rentalItems: RentalItemType[] = req.body.purchaseRequest.rentalItems;
+        console.log(rentalItems);
 
-        for (const item of rentalItems) {
-            const { itemID, quantity } = item;
-            let available = await rentalCtrl.checkIfItemIsAvailable({ ownerID: 10, itemID, startDate, endDate, quantity });
-            if (available) {
-                res.status(400).json({ err: true, message: "Item is not available" });
-            }
-        }
-        // if item is available
+
+        // for (const item of rentalItems) {
+        //     const { itemID, quantity } = item;
+        //     let available = await rentalCtrl.checkIfItemIsAvailable({ ownerID, itemID, startDate, endDate, quantity });
+        //     if (available) {
+        //         res.status(400).json({ err: true, message: "Item is not available" });
+        //     }
+        // }
+        //if item is available
         // create a purchase request
         const purchaseRequest: FullRentalPurchaseRequest = {
-            ownerID: 10,
-            renterID,
+            ownerID,
+            renterID: 10,
             startDate,
             endDate,
             rentalItems
@@ -39,8 +43,27 @@ router.get('/purchase-request', async (req: Req, res: Res, next: Next) => {
     }
     catch (err: any) {
         next(err); // 
+        if (err.message === "Item is not available") {
+            res.status(400).json({ err: true, message: err.message });
+        }
         console.error(err);
         res.status(500).json({ err: err, message: err.message });
     }
 });
+
 export default router;
+
+// {
+//     "purchaseRequest": {
+//         "ownerID": 8,
+//         "renterID": 1,
+//         "startDate": "04/04/2024",
+//         "endDate": "04/05/2024",
+//         "rentalItems": [
+//             {
+//                 "itemID": 19,
+//                 "quantity": 1
+//             }
+//         ]
+//     }
+// }

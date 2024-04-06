@@ -17,16 +17,15 @@ import { UserItemModel } from "../../typesOfModels/Items/UserItemModel";
 import { TempUserType, UserPreferenceType, } from '../../../types/DBTypes/UserTypes/userTypes';
 import { ItemType as UserItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../../types/DBTypes/RentalTypes/rentalType';
 import { BookItemType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType, BookPreferenceType, UserBookRatingType } from '../../../types/DBTypes/BookTypes/bookTypes';
-import { coordiantes } from '../../../types/baseTypes';
 import { BookItemModel } from '../../typesOfModels/Items/BookModels/bookModel';
 import { CSVtoSQLBook } from '../Process/CSVtoSQL';
 import { SyncOptions } from 'sequelize';
 import { UserModel } from '../../typesOfModels/Users/userModels';
 
 
-let dropDB = true; // delete most tables not book
-let dropUsers = true; // delete user tables // does nothing
-let dropBook = true; // delete book tables
+let dropDB = false; // delete most tables not book
+let dropUsers = false; // delete user tables // does nothing
+let dropBook = false; // delete book tables
 
 
 /**

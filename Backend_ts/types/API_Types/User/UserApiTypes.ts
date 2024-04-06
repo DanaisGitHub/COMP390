@@ -1,12 +1,12 @@
-import {TempUserType,UserPreferenceType} from '../../DBTypes/UserTypes/userTypes';
-import {BookPreferenceType} from '../../DBTypes/BookTypes/bookTypes';
+import { TempUserType, UserPreferenceType } from '../../DBTypes/UserTypes/userTypes';
+import { BookPreferenceType } from '../../DBTypes/BookTypes/bookTypes';
 
-export interface UnprocessedUser extends TempUserType, UserPreferenceType, BookPreferenceType {
-    [x: string]: any; // short term fix
+export type UnprocessedUser =
+    TempUserType & UserPreferenceType & BookPreferenceType & {
+        [x: string]: any; // short term fix
+    }
 
-}
-
-export interface ProcessedUserType {
+export type ProcessedUserType = {
     id: number,
     firstName: string
     lastName: string

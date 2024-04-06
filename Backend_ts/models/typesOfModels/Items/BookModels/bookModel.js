@@ -17,48 +17,36 @@ class BookItemModel extends baseModel_1.BaseModel {
     }
     async getFullBookDetailsForBookID(bookID, options) {
         try {
-            const genreModel = new GenreModels_1.GenreModel();
-            const formatModel = new FormatModel_1.FormatModel();
-            const authorModel = new AuthorModels_1.AuthorModel();
-            let fullBookDeails = await this.baseFindOneNotTyped({
-                where: { id: bookID },
-                include: [modelSetUp_1.BookAuthor, modelSetUp_1.BookFormat, modelSetUp_1.BookGenre],
-                rejectOnEmpty: true
-            });
-            if (!fullBookDeails) {
-                throw new customError_1.NotFoundError("Book not found");
-            }
-            const genresID = fullBookDeails.BookGenres.map((genre) => genre.genreID);
-            const formatsID = fullBookDeails.BookFormats.map((format) => format.formatID);
-            const authorsID = fullBookDeails.BookAuthors.map((author) => author.authorID);
-            console.log(genresID);
-            const genreNames = await genreModel.getAttributeNameFromIDs(genresID);
-            const formatNames = await formatModel.getAttributeNameFromIDs(formatsID);
-            const authorNames = await authorModel.getAttributeNameFromIDs(authorsID);
-            fullBookDeails.genres = genreNames;
-            fullBookDeails.format = formatNames;
-            const fullBook = {
-                id: fullBookDeails.id,
-                book: fullBookDeails.book,
-                author: authorNames[0],
-                series: fullBookDeails.series,
-                description: fullBookDeails.description,
-                numPages: fullBookDeails.numPages,
-                publication: fullBookDeails.publication,
-                rating: fullBookDeails.rating,
-                numOfVoters: fullBookDeails.numOfVoters,
-                genres: genreNames,
-                format: formatNames,
-            };
-            fullBookDeails.BookAuthors = [];
-            fullBookDeails.BookGenres = [];
-            fullBookDeails.BookFormats = [];
-            //fullBookDeails.genres = await Promise.all(namedGenres);
+            const [result, metadata] = await this.model.sequelize.query(`	SELECT 
+            b.id AS book_id,
+            b.series,
+            b.book,
+            b.description,
+            b.numPages,
+            b.publication,
+            b.rating,
+            b.numOfVoters,
+            GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
+            GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') AS formats,
+            GROUP_CONCAT(DISTINCT g.name SEPARATOR ', ') AS genres
+        FROM 
+            BookItems b
+        LEFT JOIN BookAuthors ba ON b.id = ba.bookId
+        LEFT JOIN Authors a ON ba.authorId = a.id
+        LEFT JOIN BookFormats bf ON b.id = bf.bookId
+        LEFT JOIN Formats f ON bf.formatId = f.id
+        LEFT JOIN BookGenres bg ON b.id = bg.bookId
+        LEFT JOIN Genres g ON bg.genreId = g.id
+        WHERE b.id = ${bookID}`);
+            const fullBook = result[0];
             return fullBook;
         }
         catch (err) {
             console.log(err);
-            throw new customError_1.DatabaseError("getFullBookDetailsForBookID()" + err);
+            if (err instanceof customError_1.NotFoundError) {
+                throw err;
+            }
+            throw new customError_1.DatabaseError("getFullBookDetailsForBookID()" + err.message);
         }
     }
     async findAllBooksForIDs(bookIDs) {
@@ -80,9 +68,15 @@ class BookItemModel extends baseModel_1.BaseModel {
     }
     async fullTextSearch(minRating, maxPrice, searchQuery) {
         try {
+            searchQuery = searchQuery.trim();
+            console.log("searchQuery: ", searchQuery);
+            let search = searchQuery !== "" ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
+            //= searchQuery.length !== 0 ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
+            // why does the query have so many types
             const query = `SELECT 
             bk.id AS bookID, 
             bk.series, 
+            bk.book,
             bk.description, 
             bk.numPages, 
             bk.publication, 
@@ -98,14 +92,38 @@ class BookItemModel extends baseModel_1.BaseModel {
           JOIN 
             Users usr ON ui.OwnerID = usr.id
           WHERE 
-            MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE)
-            AND bk.rating >= ${minRating}
+            ${search} bk.rating >= ${minRating}
             AND ui.price <= ${maxPrice}
           ORDER BY 
             bk.rating DESC, 
             ui.price ASC;`;
-            const result = await this.model.sequelize.query(query); // maybe wrong, we need sequelize instance
-            return result[0];
+            const [result, metadata] = await this.model.sequelize.query(query); // maybe wrong, we need sequelize instance
+            // const books: ProductPreviewType[] = result[0].map((book: any) => {
+            //     return {
+            //         itemID: book.bookID,
+            //         book: book.book,
+            //         series: book.series,
+            //         description: book.description,
+            //         numPages: book.numPages,
+            //         publication: book.publication,
+            //         rating: book.preRating,
+            //         price: book.price,
+            //         lat: book.lat,
+            //         lng: book.lng,
+            //         ownerID: book.ownerID
+            //     }
+            // });
+            const books = result.map((book) => {
+                return {
+                    itemID: book.bookID,
+                    book: book.book,
+                    ranking_of_book: book.preRating,
+                    lat: book.lat,
+                    lng: book.lng,
+                    ownerID: book.ownerID
+                };
+            });
+            return books; // no rating
         }
         catch (err) {
             console.log(err);
@@ -119,15 +137,17 @@ class BookItemModel extends baseModel_1.BaseModel {
     async findAllBooksWithinRadiusAndSearchQuery(options) {
         try {
             let rankedBooks = [];
-            const { locationOfUser, maxDistance, searchQuery, minRating, maxPrice } = options;
-            const booksWithoutRadius = await this.fullTextSearch(minRating, maxPrice, searchQuery);
-            const booksWithinRadius = booksWithoutRadius.filter(book => {
-                (0, locationUtils_1.calculateDistance)(locationOfUser.lat, locationOfUser.lng, book.lat, book.lng)
+            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice } = options;
+            const books = await this.fullTextSearch(minRating, maxPrice, searchQuery);
+            const booksWithinRadius = books.filter(book => {
+                return (0, locationUtils_1.calculateDistance)(lat, lng, book.lat, book.lng)
                     <= maxDistance;
             });
+            const bookIDs = booksWithinRadius.map(book => book.itemID);
             // SEND TO PYTHON FOR RANKING.
-            rankedBooks = await this.pyRankBooks(booksWithinRadius);
-            return rankedBooks;
+            // rankedBooks = await this.pyRankBooks(booksWithinRadius);
+            const booksWithinRandRanked = booksWithinRadius;
+            return booksWithinRandRanked;
         }
         catch (err) {
             console.log(err);

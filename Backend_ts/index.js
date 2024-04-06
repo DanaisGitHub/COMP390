@@ -26,13 +26,6 @@ modelSetUp_1.sequelize.authenticate()
     .then(async () => {
     await (0, modelSetUp_1.initialize)();
     console.log('DB connection successful');
-    // setTimeout(async () => { //works
-    //     try {
-    //         await DBSetupListener.createUserItems(); // need to be able to toggle
-    //     } catch (err) {
-    //         console.log(err)
-    //     }
-    // }, 1000)
 })
     .catch((error) => {
     console.log('DB connection Failed becuase: ', error);

@@ -1,18 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RentalDetailsModel = exports.RentalModel = void 0;
-const random_1 = require("../../../utils/other/random");
+exports.RentalModel = void 0;
 const modelSetUp_1 = require("../../DB_Functions/Set_Up/modelSetUp");
 const baseModel_1 = require("../baseModel");
+const RentalDetailModel_1 = require("./RentalDetailModel");
+const UserItemModel_1 = require("../Items/UserItemModel");
 class RentalModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.Rental);
-        this.rentalDetailModel = new RentalDetailsModel();
     }
     async addOrderItem(details) {
         try {
-            const orderNumber = (0, random_1.randomNumber)(1, 999999);
-            const itemDetails = Object.assign(Object.assign({}, details), { orderNumber });
+            const itemDetails = details;
             const { err, result: user } = await this.baseCreate(itemDetails);
             if (err)
                 throw new Error(err);
@@ -23,49 +22,31 @@ class RentalModel extends baseModel_1.BaseModel {
             throw new Error("Error in addOrderItem ---->" + err.message);
         }
     }
-    async addOrderWithMultipleItems(rentalOrder, rentalItems) {
+    async addOrderWithItems(rentalReq) {
         try {
-            const order = await this.addOrderItem(rentalOrder);
+            const userItemModel = new UserItemModel_1.UserItemModel();
+            const rentalDetailModel = new RentalDetailModel_1.RentalDetailsModel();
+            const { rentalItems } = rentalReq;
+            const order = await this.addOrderItem(rentalReq);
             const orderNumber = order.orderNumber;
             let rentalItem;
+            const dayRented = order.endDate.getDate() - order.startDate.getDate();
             for (const item of rentalItems) {
-                rentalItem = Object.assign(Object.assign({}, item), { orderNumber });
-                await this.rentalDetailModel.addItemToOrder(rentalItem);
+                const { err, result: userItem } = await userItemModel.find({ where: { ownerID: rentalReq.ownerID, itemID: item.itemID }, rejectOnEmpty: true });
+                const price = userItem.price * dayRented * item.quantity;
+                rentalItem = Object.assign(Object.assign({}, item), { orderNumber, price });
+                await rentalDetailModel.addItemToOrder(rentalItem);
             }
             return order;
         }
         catch (err) {
             console.error(err);
-            throw new Error("Error in addOrderWithMultipleItems");
-        }
-    }
-    async getAllPreviousLettings(letterID) {
-        try {
-            const { err, result } = await this.baseFindAll({ where: { letterID } });
-            if (err)
-                throw new Error(err);
-            return result;
-        }
-        catch (err) {
-            console.error(err);
-            throw new Error("Error in getAllPreviousOrders");
-        }
-    }
-    async getPreviousOrder(renterID) {
-        try {
-            const { err, result } = await this.baseFindAll({ where: { renterID } });
-            if (err)
-                throw new Error(err);
-            return result;
-        }
-        catch (err) {
-            console.error(err);
-            throw new Error("Error in getPreviousOrder");
+            throw new Error("Error in addOrderWithItems" + err.message);
         }
     }
     async getAllRentalDetails(orderNumber) {
         try {
-            const result = await this.baseFindOneNotTyped({ where: { orderNumber }, include: [modelSetUp_1.RentalsDetail], rejectOnEmpty: true });
+            const result = await this.baseFindOneNotTyped({ where: { orderNumber }, include: [modelSetUp_1.RentalsDetail], rejectOnEmpty: false });
             return result;
         }
         catch (err) {
@@ -73,25 +54,25 @@ class RentalModel extends baseModel_1.BaseModel {
             throw new Error("Error in getAllRentalDetails ---->" + err.message);
         }
     }
-}
-exports.RentalModel = RentalModel;
-class RentalDetailsModel extends baseModel_1.BaseModel {
-    constructor() {
-        super(modelSetUp_1.RentalsDetail);
-        this.rentalModel = new RentalModel();
-    }
-    async addItemToOrder(items) {
+    async checkIfUserItemDatesClash(options) {
         try {
-            const { err, result } = await this.baseCreate(items);
-            if (err)
-                throw new Error(err);
-            // find seller a decrease quantity
-            return result;
+            const { ownerID, itemID, startDate, endDate } = options;
+            const sqlQuery = `SELECT r.orderNumber, r.RenterID, r.startDate, r.endDate
+            FROM Rentals r JOIN RentalsDetails rd ON r.OrderNumber = rd.orderNumber
+            WHERE r.ownerID = '${ownerID}' OR rd.ItemId = '${itemID}'
+            AND (
+            (r.startDate BETWEEN '${startDate}' AND '${endDate}') OR (r.endDate BETWEEN '${startDate}' AND '${endDate}')
+                OR ('${startDate}' BETWEEN r.startDate AND r.endDate) OR ('${endDate}' BETWEEN r.startDate AND r.endDate)
+            );`;
+            const [results, metadata] = await this.customQuery(sqlQuery);
+            console.log(results);
+            const clash = (results.length > 0); // true of false
+            return clash;
         }
         catch (err) {
-            console.log(err);
-            throw new Error("Error in addOrderItem");
+            console.error(err);
+            throw new Error("Error in checkIfUserItemDatesClash ---->" + err.message);
         }
     }
 }
-exports.RentalDetailsModel = RentalDetailsModel;
+exports.RentalModel = RentalModel;

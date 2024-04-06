@@ -13,37 +13,12 @@ import { BookFormatModel, FormatModel } from "./FormatModels/FormatModel";
 import { BookGenreModel, GenreModel } from "./GenreModels/GenreModels";
 import { randomDate, randomDateRange, randomNumber, randomRange } from '../../../../utils/other/random'
 import { calculateDistance } from '../../../../utils/locationUtils'
-import { ProductPreview } from "../../../../types/Product/ProductsTy";
+import { ProductDetailsType, ProductPreviewType } from "../../../../types/Product/ProductsTy";
 import { UserItemModel } from "../UserItemModel";
-interface BookItemPreviewDetails {
-    bookID: number,
-    series: string,
-    description: string,
-    numPages: number,
-    publication: Date,
-    preRating: number,
-    price: number,
-    lat: number,
-    lng: number,
-    ownerID: number,
+import { FullBookDetails, FullBookDetail } from '../../../../types/API_Types/Book/BookApiTypes' // 
 
-}
 
-export interface FullBookDetails extends BookItemType {
-    authorList: string[],
-    genreList: string[],
-    formatList: string[],
 
-}
-export interface FullBookDetail extends BookItemType {
-    BookAuthors: BookAuthor[],
-    BookGenres: BookGenre[],
-    BookFormats: BookFormat[]
-
-}
-interface BookPreviewRanked extends BookItemPreviewDetails {
-    rank: number
-}
 
 
 export class BookItemModel extends BaseModel<BookItem> { // BookItem should really extend itemModel, and item 
@@ -51,55 +26,38 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         super(BookItem)
     }
 
-    public async getFullBookDetailsForBookID(bookID: number, options?: { ownerID: number, rating: number }): Promise<any> { // op is from query
+    public async getFullBookDetailsForBookID(bookID: number, options?: { ownerID: number, rating: number }): Promise<any> {
         try {
-            const genreModel = new GenreModel()
-            const formatModel = new FormatModel()
-            const authorModel = new AuthorModel()
-            let fullBookDeails: FullBookDetail =
-                await this.baseFindOneNotTyped<FullBookDetail>({
-                    where: { id: bookID },
-                    include: [BookAuthor, BookFormat, BookGenre], // this only return the id's
-                    rejectOnEmpty: true
+            const [result, metadata] = await this.model.sequelize!.query(`	SELECT 
+            b.id AS book_id,
+            b.series,
+            b.book,
+            b.description,
+            b.numPages,
+            b.publication,
+            b.rating,
+            b.numOfVoters,
+            GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
+            GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') AS formats,
+            GROUP_CONCAT(DISTINCT g.name SEPARATOR ', ') AS genres
+        FROM 
+            BookItems b
+        LEFT JOIN BookAuthors ba ON b.id = ba.bookId
+        LEFT JOIN Authors a ON ba.authorId = a.id
+        LEFT JOIN BookFormats bf ON b.id = bf.bookId
+        LEFT JOIN Formats f ON bf.formatId = f.id
+        LEFT JOIN BookGenres bg ON b.id = bg.bookId
+        LEFT JOIN Genres g ON bg.genreId = g.id
+        WHERE b.id = ${bookID}`);
+            const fullBook: FullBookDetails = result[0] as FullBookDetails;
 
-                });
-            if (!fullBookDeails) {
-                throw new NotFoundError("Book not found")
-            }
-            const genresID = fullBookDeails.BookGenres.map((genre) => genre.genreID);
-            const formatsID = fullBookDeails.BookFormats.map((format) => format.formatID);
-            const authorsID = fullBookDeails.BookAuthors.map((author) => author.authorID);
-            console.log(genresID)
-            const genreNames = await genreModel.getAttributeNameFromIDs(genresID);
-            const formatNames = await formatModel.getAttributeNameFromIDs(formatsID);
-            const authorNames = await authorModel.getAttributeNameFromIDs(authorsID);
-
-            fullBookDeails.genres = genreNames;
-            fullBookDeails.format = formatNames;
-
-            const fullBook = {
-                id: fullBookDeails.id,
-                book: fullBookDeails.book,
-                author: authorNames[0],
-                series: fullBookDeails.series,
-                description: fullBookDeails.description,
-                numPages: fullBookDeails.numPages,
-                publication: fullBookDeails.publication,
-                rating: fullBookDeails.rating,
-                numOfVoters: fullBookDeails.numOfVoters,
-                genres: genreNames,
-                format: formatNames,
-
-            }
-
-            fullBookDeails.BookAuthors = []
-            fullBookDeails.BookGenres = []
-            fullBookDeails.BookFormats = []
-            //fullBookDeails.genres = await Promise.all(namedGenres);
             return fullBook;
-        } catch (err) {
+        } catch (err: any) {
             console.log(err as Error)
-            throw new DatabaseError("getFullBookDetailsForBookID()" + err);
+            if (err instanceof NotFoundError) {
+                throw err;
+            }
+            throw new DatabaseError("getFullBookDetailsForBookID()" + err.message);
         }
     }
 
@@ -121,11 +79,19 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string): Promise<BookItemPreviewDetails[]> {
+    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string): Promise<ProductPreviewType[]> {
         try {
+
+            searchQuery = searchQuery.trim();
+            console.log("searchQuery: ", searchQuery)
+            let search = searchQuery !== "" ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
+
+            //= searchQuery.length !== 0 ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
+            // why does the query have so many types
             const query = `SELECT 
             bk.id AS bookID, 
             bk.series, 
+            bk.book,
             bk.description, 
             bk.numPages, 
             bk.publication, 
@@ -141,14 +107,41 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
           JOIN 
             Users usr ON ui.OwnerID = usr.id
           WHERE 
-            MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE)
-            AND bk.rating >= ${minRating}
+            ${search} bk.rating >= ${minRating}
             AND ui.price <= ${maxPrice}
           ORDER BY 
             bk.rating DESC, 
             ui.price ASC;`
-            const result = await this.model.sequelize!.query(query); // maybe wrong, we need sequelize instance
-            return result[0] as BookItemPreviewDetails[]
+            const [result, metadata] = await this.model.sequelize!.query(query); // maybe wrong, we need sequelize instance
+
+            // const books: ProductPreviewType[] = result[0].map((book: any) => {
+            //     return {
+            //         itemID: book.bookID,
+            //         book: book.book,
+            //         series: book.series,
+            //         description: book.description,
+            //         numPages: book.numPages,
+            //         publication: book.publication,
+            //         rating: book.preRating,
+            //         price: book.price,
+            //         lat: book.lat,
+            //         lng: book.lng,
+            //         ownerID: book.ownerID
+            //     }
+            // });
+
+            const books: ProductPreviewType[] = result.map((book: any) => {
+                return {
+                    itemID: book.bookID,
+                    book: book.book,
+                    ranking_of_book: book.preRating,
+                    lat: book.lat,
+                    lng: book.lng,
+                    ownerID: book.ownerID
+                }
+            });
+
+            return books // no rating
         }
         catch (err) {
             console.log(err)
@@ -156,31 +149,36 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    private async pyRankBooks(books: BookItemPreviewDetails[]): Promise<BookPreviewRanked[]> { // WHY here
+    private async pyRankBooks(books: ProductPreviewType[]): Promise<ProductPreviewType[]> { // WHY here
         // send to python for ranking
-        return [];
+        return [] as ProductPreviewType[];
     }
 
     public async findAllBooksWithinRadiusAndSearchQuery(options: {
-        locationOfUser: { lat: number, lng: number },
+        lat: number,
+        lng: number,
         maxDistance: number,
         searchQuery: string,
         minRating: number,
-        maxPrice: number
-    }): Promise<BookPreviewRanked[]> {
+        maxPrice: number,
+        userID: number
+    }): Promise<ProductPreviewType[]> {
         try {
-            let rankedBooks: BookPreviewRanked[] = [];
-            const { locationOfUser, maxDistance, searchQuery, minRating, maxPrice } = options;
-            const booksWithoutRadius = await this.fullTextSearch(minRating, maxPrice, searchQuery);
-            const booksWithinRadius = booksWithoutRadius.filter(book => {
-                calculateDistance(locationOfUser.lat, locationOfUser.lng, book.lat, book.lng)
+            let rankedBooks: ProductPreviewType[] = [];
+            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice } = options;
+
+            const books: ProductPreviewType[] = await this.fullTextSearch(minRating, maxPrice, searchQuery);
+            const booksWithinRadius: ProductPreviewType[] = books.filter(book => {
+                return calculateDistance(lat, lng, book.lat, book.lng)
                     <= maxDistance
             });
+            const bookIDs = booksWithinRadius.map(book => book.itemID);
 
             // SEND TO PYTHON FOR RANKING.
-            rankedBooks = await this.pyRankBooks(booksWithinRadius);
+            // rankedBooks = await this.pyRankBooks(booksWithinRadius);
+            const booksWithinRandRanked = booksWithinRadius;
 
-            return rankedBooks
+            return booksWithinRandRanked
         }
         catch (err) {
             console.log(err)
@@ -478,3 +476,6 @@ export class UserBookRatingModels extends BaseModel<UserBookRating> {
         }
     }
 }
+
+
+

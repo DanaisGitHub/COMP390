@@ -1,16 +1,16 @@
 
-export interface BookPreferenceType { // all are optional for ease of use
+export type BookPreferenceType = { // all are optional for ease of use
     userID?: number;// FK to user
     authorPreference?: number[]; // maybe we can get away with storing as JSON/Array of id's
     genrePreference?: number[]; // why are these strings? should be numbers
     formatPreference?: number[];
     publicationRangeMin?: Date;
-    publicationRangeMax?:Date 
+    publicationRangeMax?: Date
     bookLengthRangeMin?: number;
     bookLengthRangeMax?: number;
 }
 
-export interface BookItemType {
+export type BookItemType = {
     id?: number;
     book: string;
     series: string | undefined | null;
@@ -24,41 +24,41 @@ export interface BookItemType {
     numOfVoters: number;
 }
 
-export interface BookAuthorType {
+export type BookAuthorType = {
     id?: number;
     bookID: number; // Primary & Foreign Key
     authorID: number; // Primary & Foreign Key
 }
 
-export interface BookFormatType {
+export type BookFormatType = {
     id?: number;
     bookID: number; // Primary & Foreign Key
     formatID: number; // Primary & Foreign Key
 }
 
-export interface BookGenreType {
+export type BookGenreType = {
     id?: number;
     bookID: number; // Primary & Foreign Key
     genreID: number; // Primary & Foreign Key
 }
 
-export interface GenreType {
+export type GenreType = {
     id?: number;
     name: string;
 }
 
-export interface FormatType {
+export type FormatType = {
     id?: number;
     name: string;
 }
 
-export interface AuthorType {
+export type AuthorType = {
     id?: number;
     name: string;
 }
 
 
-export interface BookTypeRaw {
+export type BookTypeRaw = {
     field1?: string;
     book: string;
     series: string;
@@ -73,7 +73,7 @@ export interface BookTypeRaw {
     numberOfVoters: string;
 }
 
-export interface UserBookRatingType{
+export type UserBookRatingType = {
     id?: number;
     userID: number;
     bookID: number;

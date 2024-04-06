@@ -23,12 +23,3 @@ export default interface StdReturn<T = any> {
     result: T
 }
 
-export interface coordiantes {
-    lat: number;
-    lng: number;
-}
-
-export interface RTokenModel {// don't think it's used 
-    token: string,
-    expiryDate: Date
-}

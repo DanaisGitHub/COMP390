@@ -1,6 +1,6 @@
 import { RentalType, RentalDetailType } from "../../DBTypes/RentalTypes/rentalType"
 
-export interface RentalOrderType {
+export type RentalOrderType =  {
     orderNumber?: number,
     renterID: number,
     ownerID: number,
@@ -8,7 +8,7 @@ export interface RentalOrderType {
     endDate: Date,
 }
 
-export interface RentalItemType {
+export type RentalItemType =  {
     orderNumber?: number // link to rental order
     itemID: number,
     price?: number, // should get from UserItem Table

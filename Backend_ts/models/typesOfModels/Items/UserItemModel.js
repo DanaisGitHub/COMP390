@@ -84,6 +84,8 @@ class UserItemModel extends baseModel_1.BaseModel {
             const { err, result: userItemObj } = await this.find({ where: { ownerID, itemID }, rejectOnEmpty: true });
             if (userItemObj.quantity < quantity)
                 return false;
+            userItemObj.quantity -= quantity;
+            await userItemObj.save();
             return true;
         }
         catch (err) {

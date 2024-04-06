@@ -18,21 +18,24 @@ class ProductController {
          * @param next
          * @returns
          */
-        this.getRankedBooks = async (options, req, res, next) => {
+        this.getRankedBooks = async (options) => {
             // from product/books get all books in location space x
             let userID = 1;
             const { lat, lng, searchQuery: searchQuery, maxDistance, minRating, maxPrice } = options;
-            const locationOfUser = { lat, lng };
-            const rankedBooks = await this.bookModel.findAllBooksWithinRadiusAndSearchQuery({ locationOfUser, maxDistance, searchQuery, minRating, maxPrice });
-            // SEND TO PYTHON FOR AI RANKING
-            // return rankedBooks;
-            return [];
+            const rankedBookPrevs = await this.bookModel.findAllBooksWithinRadiusAndSearchQuery({
+                lat,
+                lng,
+                maxDistance,
+                searchQuery,
+                minRating,
+                maxPrice,
+                userID
+            });
+            return rankedBookPrevs;
         };
-        this.getBookDetails = async (req, res, next) => {
-            var _a;
+        this.getBookDetails = async (bookID) => {
             // get book details
             let userID = 1; // get from token
-            const bookID = parseFloat((_a = req.query.id) !== null && _a !== void 0 ? _a : 1);
             const bookDetails = await this.bookModel.getFullBookDetailsForBookID(bookID);
             return bookDetails;
         };

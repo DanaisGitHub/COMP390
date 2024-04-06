@@ -1,6 +1,6 @@
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
 // access to the database
-import { ProductPreview, ProductDetails } from '../../types/Product/ProductsTy';
+import { ProductPreviewType, ProductDetailsType } from '../../types/Product/ProductsTy';
 import { BookPreference, User, UserPreference } from '../../models/DB_Functions/Set_Up/modelSetUp';
 import { BookItemModel, FullBookDetail } from '../../models/typesOfModels/Items/BookModels/bookModel';
 import { UserModel, UserPreferenceModel } from '../../models/typesOfModels/Users/userModels';

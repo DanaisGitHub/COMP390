@@ -1,6 +1,4 @@
-import { coordiantes } from '../../baseTypes';
-
-export interface ItemType {
+export type ItemType = {
     id?: number;
     ownerID: number;
     itemID: number;
@@ -10,7 +8,7 @@ export interface ItemType {
 
 }
 
-export interface RentalType {
+export type RentalType = {
     orderNumber?: number;
     renterID: number;
     ownerID: number;
@@ -21,7 +19,7 @@ export interface RentalType {
     paymentDate?: Date;
 }
 
-export interface RentalDetailType {
+export type RentalDetailType = {
     id?: number;
     price: number;
     itemID: number;
@@ -32,7 +30,7 @@ export interface RentalDetailType {
     orderNumber: number; // foreign key
 }
 
-export interface PaymentDetailType {
+export type PaymentDetailType = {
     id?: number;
     paymentDate: Date;
     paymentType: string;

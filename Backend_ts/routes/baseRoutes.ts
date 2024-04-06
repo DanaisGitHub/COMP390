@@ -17,6 +17,7 @@ import apiPython from './zzPrevRoutes/APIPython';
 import product from './Product/produceSearchPage';
 import userRoutes from './UserDetails/UserProfilePage';
 import myItemsPage from './UserDetails/MyItemsPage';
+import rentalPage from './Rental/PurchasePage';
 
 const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
@@ -28,6 +29,7 @@ router.use('/apiPY', apiPython);
 router.use('/productSearchPage', product);
 router.use('/userProfilePage', userRoutes)
 router.use('/MyItemsPage' , myItemsPage)
+router.use('/rental',rentalPage)
 
 
 

@@ -8,9 +8,9 @@ const sequelize_1 = require("sequelize");
 const UserItemModel_1 = require("../../typesOfModels/Items/UserItemModel");
 const bookModel_1 = require("../../typesOfModels/Items/BookModels/bookModel");
 const userModels_1 = require("../../typesOfModels/Users/userModels");
-let dropDB = true; // delete most tables not book
-let dropUsers = true; // delete user tables // does nothing
-let dropBook = true; // delete book tables
+let dropDB = false; // delete most tables not book
+let dropUsers = false; // delete user tables // does nothing
+let dropBook = false; // delete book tables
 /**
  * param1: database name (like CREATE DB )
  * param2: username (profile of mysql)
@@ -141,15 +141,14 @@ const InitialiseDatabase = (_a = class {
     },
     _a.initRentals = (sequelize) => {
         Rental.init({
-            id: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+            orderNumber: { type: sequelize_1.DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
             renterID: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
-            letterID: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
+            ownerID: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
             startDate: { type: sequelize_1.DataTypes.DATE, allowNull: false },
             endDate: { type: sequelize_1.DataTypes.DATE, allowNull: false },
             rentalStatus: { type: sequelize_1.DataTypes.STRING, allowNull: true },
             paid: { type: sequelize_1.DataTypes.BOOLEAN, allowNull: true },
             paymentDate: { type: sequelize_1.DataTypes.DATE, allowNull: true },
-            orderNumber: { type: sequelize_1.DataTypes.INTEGER, allowNull: false, unique: true },
         }, {
             sequelize,
             modelName: "Rental"
@@ -342,7 +341,7 @@ const InitialiseDatabase = (_a = class {
         _a.hasManyRelationOnDelete({ modelA: User, modelB: UserItem, foreignKey: "ownerID", onDelete: "CASCADE", as: 'owner' });
         // User <-=> Rentals * 2
         _a.hasManyRelation({ modelA: User, modelB: Rental, as: "renter", otherAs: "renter", foreignKey: "renterID" }); // NOTE: I think foreign key is wrong should be userID
-        _a.hasManyRelation({ modelA: User, modelB: Rental, as: "letter", otherAs: "letter", foreignKey: "letterID" }); // NOTE: I think foreign key is wrong should be userID
+        _a.hasManyRelation({ modelA: User, modelB: Rental, as: "letter", otherAs: "letter", foreignKey: "ownerID" }); // NOTE: I think foreign key is wrong should be userID
         // user <--> userPreference
         _a.hasOneRelation({ modelA: User, modelB: UserPreference, foreignKey: "userID", otherAs: "userPreference", as: 'userPreference' }); // pk is userID
         // user <--> bookPreference

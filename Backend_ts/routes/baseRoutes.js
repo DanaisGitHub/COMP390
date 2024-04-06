@@ -12,6 +12,7 @@ const APIPython_1 = __importDefault(require("./zzPrevRoutes/APIPython"));
 const produceSearchPage_1 = __importDefault(require("./Product/produceSearchPage"));
 const UserProfilePage_1 = __importDefault(require("./UserDetails/UserProfilePage"));
 const MyItemsPage_1 = __importDefault(require("./UserDetails/MyItemsPage"));
+const PurchasePage_1 = __importDefault(require("./Rental/PurchasePage"));
 const pathToKey = path_1.default.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
 const router = (0, express_1.Router)();
@@ -21,6 +22,7 @@ router.use('/apiPY', APIPython_1.default);
 router.use('/productSearchPage', produceSearchPage_1.default);
 router.use('/userProfilePage', UserProfilePage_1.default);
 router.use('/MyItemsPage', MyItemsPage_1.default);
+router.use('/rental', PurchasePage_1.default);
 const errorHandler = (err, req, res, next) => {
     console.log("There was an error", err);
     res.status(500).json({ err: "There was a fatal an error", result: err });
