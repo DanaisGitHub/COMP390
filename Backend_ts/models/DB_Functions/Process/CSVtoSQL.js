@@ -35,10 +35,16 @@ class ReadCSV {
 }
 class CSVtoSQLBook {
     static dateProcessor(date) {
-        const dateArray = date.split(" "); // ["January", "1,", "1980"]
-        const year = dateArray[2];
-        const newDate = new Date(year);
-        return newDate;
+        try {
+            const dateArray = date.split(" "); // ["January", "1,", "1980"]
+            const year = dateArray[2];
+            const newDate = new Date(year);
+            return newDate;
+        }
+        catch (err) {
+            console.log(err);
+            return new Date(2024);
+        }
     }
     static convertStringToArray(string) {
         let array = [];
@@ -68,7 +74,11 @@ class CSVtoSQLBook {
     static async convertStrBook(rawBook) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         try {
-            console.log(rawBook);
+            if (rawBook.book.includes("the masterharper of pern")) {
+                console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                console.log(rawBook);
+            }
+            const today = new Date(2024);
             const num = !Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0.0;
             let tempBookType = {
                 book: (_a = this.cleanString(rawBook.book)) !== null && _a !== void 0 ? _a : "",
@@ -85,9 +95,9 @@ class CSVtoSQLBook {
             // tempBookType = CSVtoSQLBook.removeDuplicates(tempBookType);
             return tempBookType;
         } // for each new tempbook send a create request
-        catch (error) {
-            console.log(error);
-            throw new Error("Error in CSVtoSQLBook.convertValue " + error);
+        catch (err) {
+            console.error(err);
+            throw new Error("Error in CSVtoSQLBook.convertValue " + err.message);
         }
     }
     static async sendMetaData(book) {

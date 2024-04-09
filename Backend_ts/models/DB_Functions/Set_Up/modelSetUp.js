@@ -22,10 +22,10 @@ exports.sequelize = new sequelize_1.Sequelize('Sprint1BasicEComDb', 'root', 'mys
     dialect: 'mysql',
     port: 3306,
     pool: {
-        max: 5,
+        max: 15,
         min: 0,
-        acquire: 30000,
-        idle: 10000
+        acquire: 300000,
+        idle: 100000
     }
 });
 // export class User extends Model<TempUserType> implements TempUserType {
@@ -202,7 +202,7 @@ const InitialiseDatabase = (_a = class {
             series: { type: sequelize_1.DataTypes.STRING, allowNull: true },
             description: { type: sequelize_1.DataTypes.TEXT, allowNull: false },
             numPages: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
-            publication: { type: sequelize_1.DataTypes.DATE, allowNull: false },
+            publication: { type: sequelize_1.DataTypes.DATE, allowNull: true, defaultValue: new Date(2024) },
             rating: { type: sequelize_1.DataTypes.DOUBLE, allowNull: false },
             numOfVoters: { type: sequelize_1.DataTypes.INTEGER, allowNull: false },
         }, {
@@ -420,7 +420,7 @@ DBSetupListener.dropTables2 = async () => {
             await DBSetupListener.addBookAndLinks();
         }
         // BOOKS have to be init before Users
-        await DBSetupListener.createUsers(10);
+        await DBSetupListener.createUsers(100);
     }
 };
 DBSetupListener.runBeforeDBInit = async () => {

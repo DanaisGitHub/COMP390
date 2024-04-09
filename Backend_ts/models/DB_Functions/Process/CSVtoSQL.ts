@@ -37,10 +37,15 @@ export class CSVtoSQLBook { // might make singleton
 
 
     private static dateProcessor(date: string): Date {
-        const dateArray = date.split(" "); // ["January", "1,", "1980"]
-        const year = dateArray[2];
-        const newDate = new Date(year);
-        return newDate;
+        try {
+            const dateArray = date.split(" "); // ["January", "1,", "1980"]
+            const year = dateArray[2];
+            const newDate = new Date(year);
+            return newDate;
+        } catch (err: any) {
+            console.log(err);
+            return new Date(2024);
+        }
     }
     private static convertStringToArray(string: string): string[] {
         let array: string[] = [];
@@ -73,8 +78,14 @@ export class CSVtoSQLBook { // might make singleton
 
     protected static async convertStrBook(rawBook: BookTypeRaw): Promise<BookItemType> {
         try {
-            console.log(rawBook);
+            if (rawBook.book.includes( "the masterharper of pern")) {
+                console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                console.log(rawBook);
+            }
+            const today = new Date(2024);
             const num: number = !Number.isNaN(parseFloat(rawBook.rating)) ? parseFloat(rawBook.rating) : 0.0;
+            
+    
             let tempBookType: BookItemType = {
                 book: this.cleanString(rawBook.book) ?? "",
                 series: this.cleanString(rawBook.series) ?? "",
@@ -92,9 +103,9 @@ export class CSVtoSQLBook { // might make singleton
 
             return tempBookType;
         }// for each new tempbook send a create request
-        catch (error) {
-            console.log(error);
-            throw new Error("Error in CSVtoSQLBook.convertValue " + error);
+        catch (err:any) {
+            console.error(err);
+            throw new Error("Error in CSVtoSQLBook.convertValue " + err.message);
         }
     }
 
@@ -134,7 +145,7 @@ export class CSVtoSQLBook { // might make singleton
         book.genres!.forEach(async (genre) => {
             await bookGenreModel.addBookGenreLink(book.book, genre);
         })
-        
+
         await bookAuthorModel.addBookAuthorLink(book.book, book.author!);
     }
 
@@ -143,7 +154,7 @@ export class CSVtoSQLBook { // might make singleton
             const bookItemModel = new BookItemModel();
             const bookRow: BookItemType = await this.convertStrBook(bookRowRaw);
             await bookItemModel.addBookItem(bookRow);
-            
+
             // get unique values for format, genres, and authors
             await this.sendMetaData(bookRow);
             await this.sendMetaDataLinks(bookRow);

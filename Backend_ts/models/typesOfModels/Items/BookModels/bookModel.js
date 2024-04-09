@@ -1,4 +1,7 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserBookRatingModels = exports.BookPreferenceModel = exports.BookItemModel = void 0;
 const CSVtoSQL_1 = require("../../../DB_Functions/Process/CSVtoSQL");
@@ -11,6 +14,7 @@ const FormatModel_1 = require("./FormatModels/FormatModel");
 const GenreModels_1 = require("./GenreModels/GenreModels");
 const random_1 = require("../../../../utils/other/random");
 const locationUtils_1 = require("../../../../utils/locationUtils");
+const pyAPI_1 = __importDefault(require("../../../../API/pyAPI"));
 class BookItemModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.BookItem);
@@ -130,28 +134,43 @@ class BookItemModel extends baseModel_1.BaseModel {
             throw new customError_1.DatabaseError("fullTextSearch()" + err);
         }
     }
-    async pyRankBooks(books) {
-        // send to python for ranking
-        return [];
-    }
-    async findAllBooksWithinRadiusAndSearchQuery(options) {
+    async getRankedBooksWithinRadiusAndSearchQuery(options) {
         try {
             let rankedBooks = [];
-            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice } = options;
+            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID } = options;
             const books = await this.fullTextSearch(minRating, maxPrice, searchQuery);
             const booksWithinRadius = books.filter(book => {
                 return (0, locationUtils_1.calculateDistance)(lat, lng, book.lat, book.lng)
                     <= maxDistance;
             });
-            const bookIDs = booksWithinRadius.map(book => book.itemID);
-            // SEND TO PYTHON FOR RANKING.
-            // rankedBooks = await this.pyRankBooks(booksWithinRadius);
-            const booksWithinRandRanked = booksWithinRadius;
+            let bookIDsNumber = booksWithinRadius.map(book => book.itemID);
+            const bookIDsStr = bookIDsNumber.map(id => id.toString());
+            if (bookIDsStr.length === 0) {
+                return [];
+                throw new customError_1.NotFoundError("No books found within radius");
+            }
+            //SEND TO PYTHON FOR RANKING.
+            console.log("userID: ", userID);
+            console.log("bookIDsStr: ", bookIDsStr);
+            const rankings = await (0, pyAPI_1.default)(userID.toString(), bookIDsStr);
+            const booksWithinRandRanked = booksWithinRadius.map((book, index) => {
+                return Object.assign(Object.assign({}, book), { ranking_we_think: parseFloat(rankings[index]) });
+            });
             return booksWithinRandRanked;
         }
         catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("findAllBooksWithinRadius()" + err);
+            if (err instanceof customError_1.NotFoundError) {
+                console.error(err);
+                throw err;
+            }
+            else if (err instanceof customError_1.DatabaseError) {
+                console.error(err);
+                throw err;
+            }
+            else {
+                console.error(err);
+                throw new Error("getRankedBooksWithinRadiusAndSearchQuery()" + err.message);
+            }
         }
     }
     async getAllAuthorsForBookID(bookID) {
@@ -184,6 +203,7 @@ class BookItemModel extends baseModel_1.BaseModel {
     }
     async addBookItem(book) {
         try {
+            book.publication = undefined;
             const { err, result } = await this.baseCreate(book);
             return { err, result };
         }

@@ -16,6 +16,7 @@ import { calculateDistance } from '../../../../utils/locationUtils'
 import { ProductDetailsType, ProductPreviewType } from "../../../../types/Product/ProductsTy";
 import { UserItemModel } from "../UserItemModel";
 import { FullBookDetails, FullBookDetail } from '../../../../types/API_Types/Book/BookApiTypes' // 
+import getRankedBooks from '../../../../API/pyAPI';
 
 
 
@@ -140,7 +141,6 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
                     ownerID: book.ownerID
                 }
             });
-
             return books // no rating
         }
         catch (err) {
@@ -149,12 +149,9 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    private async pyRankBooks(books: ProductPreviewType[]): Promise<ProductPreviewType[]> { // WHY here
-        // send to python for ranking
-        return [] as ProductPreviewType[];
-    }
+ 
 
-    public async findAllBooksWithinRadiusAndSearchQuery(options: {
+    public async getRankedBooksWithinRadiusAndSearchQuery(options: {
         lat: number,
         lng: number,
         maxDistance: number,
@@ -165,24 +162,43 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
     }): Promise<ProductPreviewType[]> {
         try {
             let rankedBooks: ProductPreviewType[] = [];
-            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice } = options;
+            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID } = options;
 
             const books: ProductPreviewType[] = await this.fullTextSearch(minRating, maxPrice, searchQuery);
             const booksWithinRadius: ProductPreviewType[] = books.filter(book => {
                 return calculateDistance(lat, lng, book.lat, book.lng)
                     <= maxDistance
             });
-            const bookIDs = booksWithinRadius.map(book => book.itemID);
+            let bookIDsNumber:number[] = booksWithinRadius.map(book => book.itemID);
+            const bookIDsStr:string[] = bookIDsNumber.map(id => id.toString());
+            if (bookIDsStr.length === 0) {
+                return [];
+                throw new NotFoundError("No books found within radius")
+            }
+            //SEND TO PYTHON FOR RANKING.
+            console.log("userID: ", userID)
+            console.log("bookIDsStr: ", bookIDsStr)
+            const rankings = await getRankedBooks(userID.toString(), bookIDsStr);
 
-            // SEND TO PYTHON FOR RANKING.
-            // rankedBooks = await this.pyRankBooks(booksWithinRadius);
-            const booksWithinRandRanked = booksWithinRadius;
+            const booksWithinRandRanked = booksWithinRadius.map((book, index) => {
+                return { ...book, ranking_we_think: parseFloat(rankings[index]) }
+            });
 
             return booksWithinRandRanked
         }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("findAllBooksWithinRadius()" + err);
+        catch (err:any) {
+            if (err instanceof NotFoundError) {
+                console.error(err)
+                throw err;
+            }
+            else if (err instanceof DatabaseError) {
+                console.error(err)
+                throw err;
+            }
+            else{
+                console.error(err)
+                throw new Error("getRankedBooksWithinRadiusAndSearchQuery()" + err.message);
+            }
         }
     }
 
@@ -216,9 +232,10 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-
     public async addBookItem(book: BookItemType): Promise<StdReturn<BookItem>> {
         try {
+            book.publication = undefined;
+
             const { err, result } = await this.baseCreate(book);
             return { err, result }
         }

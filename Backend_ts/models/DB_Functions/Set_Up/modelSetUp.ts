@@ -39,10 +39,10 @@ export const sequelize = new Sequelize('Sprint1BasicEComDb', 'root', 'mysql', {
     dialect: 'mysql',
     port: 3306,
     pool: {
-        max: 5,
+        max: 15,
         min: 0,
-        acquire: 30000,
-        idle: 10000
+        acquire: 300000,
+        idle: 100000
     }
 });
 
@@ -381,7 +381,7 @@ const InitialiseDatabase = class { // initalises database // all FK are done in 
                 series: { type: DataTypes.STRING, allowNull: true },
                 description: { type: DataTypes.TEXT, allowNull: false }, // are you sure this is text
                 numPages: { type: DataTypes.INTEGER, allowNull: false },
-                publication: { type: DataTypes.DATE, allowNull: false },
+                publication: { type: DataTypes.DATE, allowNull: true, defaultValue: new Date(2024)},
                 rating: { type: DataTypes.DOUBLE, allowNull: false },
                 numOfVoters: { type: DataTypes.INTEGER, allowNull: false },
             },
@@ -645,7 +645,7 @@ export class DBSetupListener {
                 await DBSetupListener.addBookAndLinks();
             }
             // BOOKS have to be init before Users
-            await DBSetupListener.createUsers(10);
+            await DBSetupListener.createUsers(100);
         }
     }
 

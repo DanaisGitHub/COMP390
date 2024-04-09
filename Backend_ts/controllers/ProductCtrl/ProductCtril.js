@@ -22,7 +22,7 @@ class ProductController {
             // from product/books get all books in location space x
             let userID = 1;
             const { lat, lng, searchQuery: searchQuery, maxDistance, minRating, maxPrice } = options;
-            const rankedBookPrevs = await this.bookModel.findAllBooksWithinRadiusAndSearchQuery({
+            const rankedBookPrevs = await this.bookModel.getRankedBooksWithinRadiusAndSearchQuery({
                 lat,
                 lng,
                 maxDistance,

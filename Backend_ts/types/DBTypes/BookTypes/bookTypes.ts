@@ -19,7 +19,7 @@ export type BookItemType = {
     numPages: number;
     format?: string[];// are these even in ?
     genres?: string[];// are these even in ?
-    publication: Date;
+    publication?: Date;
     rating: number;
     numOfVoters: number;
 }
