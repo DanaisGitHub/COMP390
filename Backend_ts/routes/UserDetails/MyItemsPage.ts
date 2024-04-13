@@ -8,6 +8,7 @@ import fs from 'fs';
 // const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 import { RentalsContorller } from '../../controllers/RentalsCtrl/RentalsCtrl';
 import { BookItemType } from '../../types/DBTypes/BookTypes/bookTypes';
+import { UserItemType } from '../../types/DBTypes/RentalTypes/rentalType';
 
 const rentalsCtrl = new RentalsContorller();
 const router = Router();
@@ -19,19 +20,21 @@ router.get('/get-listed-items', async (req: Req, res: Res, next: Next) => { //  
         res.status(200).json({ message: rental })
 
 
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
+    } catch (err: any) {
+        console.error(err)
+        res.status(500).json({ err: err.message, message: null })
     }
 })
 
 router.post('/add-new-item-listing', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
-        const item = req.body.bookItem as BookItemType;
-        const rental = await rentalsCtrl.addNewItemListing(item);
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
+        const userItem = req.body.userItem as UserItemType;
+        userItem.ownerID = 10;
+        const rental = await rentalsCtrl.addNewItemListing(userItem);
+        res.status(200).json({ message: `userItem is added` })
+    } catch (err: any) {
+        console.error(err)
+        res.status(500).json({ err: err.message, message: null })
     }
 })
 
@@ -40,9 +43,9 @@ router.get('/delete-item-listing', async (req: Req, res: Res, next: Next) => { /
         const itemID = req.body.itemID as number;
         const rental = await rentalsCtrl.deleteItemListing(itemID);
         res.status(200).json({ message: `userItem is deleted` })
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
+    } catch (err: any) {
+        console.error(err)
+        res.status(500).json({ err: err.message, message: null })
     }
 })
 

@@ -6,7 +6,7 @@ import { ModelTypes, Models } from '../../types/baseTypes'
 import { Model, ModelStatic, Optional } from 'sequelize/types';
 import { mode } from 'crypto-js';
 import { Col, Fn, Literal, MakeNullishOptional, } from 'sequelize/types/utils';
-import { ItemType } from '../../types/DBTypes/RentalTypes/rentalType';
+import { UserItemType } from '../../types/DBTypes/RentalTypes/rentalType';
 import { AuthorModel } from './Items/BookModels/AuthorModels/AuthorModels';
 import { AuthorType, BookAuthorType, BookFormatType, BookGenreType, FormatType, GenreType } from '../../types/DBTypes/BookTypes/bookTypes';
 import { CountOptions } from 'sequelize';
@@ -99,9 +99,12 @@ export class BaseModel<T extends Model<any, any> = Models> {
         try {
             await this.model.update(values, searchTerm);
         }
-        catch (err) {
-            console.log(err);
-            throw new DatabaseError("Failed to perfrom update database Operation: " + err);
+        catch (err:any) {
+            console.error(err);
+            if (err instanceof EmptyResultError) {
+                throw new NotFoundError("User not found in 'update' " + err.message);
+            }
+            throw new DatabaseError("Failed to perfrom update database Operation: " + err.message);
         }
     }
 
@@ -293,6 +296,9 @@ export class BaseModel<T extends Model<any, any> = Models> {
             return { err, result }
         }
         catch (err) {
+            if (err instanceof EmptyResultError) {
+                throw new NotFoundError("Item not found in 'find' ");
+            }
             console.log(err)
             throw new DatabaseError("Item Models find()::=> " + err);
         }
@@ -560,6 +566,9 @@ export class BaseAttributeModel<T extends BaseAttributeType> extends BaseModel<T
         }
         catch (err) {
             console.log(err);
+            if (err instanceof NotFoundError) {
+                throw err;
+            }
             throw new DatabaseError("getAttributeNameFromID()" + err);
         }
     }
@@ -579,6 +588,9 @@ export class BaseAttributeModel<T extends BaseAttributeType> extends BaseModel<T
         }
         catch (err) {
             console.log(err);
+            if (err instanceof NotFoundError) {
+                throw err;
+            }
             throw new DatabaseError("getAttributeNameFromIDs()" + err);
         }
     }

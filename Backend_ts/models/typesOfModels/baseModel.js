@@ -71,8 +71,11 @@ class BaseModel {
                 await this.model.update(values, searchTerm);
             }
             catch (err) {
-                console.log(err);
-                throw new customError_1.DatabaseError("Failed to perfrom update database Operation: " + err);
+                console.error(err);
+                if (err instanceof sequelize_1.EmptyResultError) {
+                    throw new customError_1.NotFoundError("User not found in 'update' " + err.message);
+                }
+                throw new customError_1.DatabaseError("Failed to perfrom update database Operation: " + err.message);
             }
         };
         // create function bulkCreate
@@ -246,6 +249,9 @@ class BaseModel {
             return { err, result };
         }
         catch (err) {
+            if (err instanceof sequelize_1.EmptyResultError) {
+                throw new customError_1.NotFoundError("Item not found in 'find' ");
+            }
             console.log(err);
             throw new customError_1.DatabaseError("Item Models find()::=> " + err);
         }
@@ -466,6 +472,9 @@ class BaseAttributeModel extends BaseModel {
         }
         catch (err) {
             console.log(err);
+            if (err instanceof customError_1.NotFoundError) {
+                throw err;
+            }
             throw new customError_1.DatabaseError("getAttributeNameFromID()" + err);
         }
     }
@@ -483,6 +492,9 @@ class BaseAttributeModel extends BaseModel {
         }
         catch (err) {
             console.log(err);
+            if (err instanceof customError_1.NotFoundError) {
+                throw err;
+            }
             throw new customError_1.DatabaseError("getAttributeNameFromIDs()" + err);
         }
     }

@@ -13,10 +13,11 @@ const produceSearchPage_1 = __importDefault(require("./Product/produceSearchPage
 const UserProfilePage_1 = __importDefault(require("./UserDetails/UserProfilePage"));
 const MyItemsPage_1 = __importDefault(require("./UserDetails/MyItemsPage"));
 const PurchasePage_1 = __importDefault(require("./Rental/PurchasePage"));
+const cors_1 = __importDefault(require("cors"));
 const pathToKey = path_1.default.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
 const router = (0, express_1.Router)();
-//router.use('/test', testRoutes)
+router.use((0, cors_1.default)());
 router.use('/auth', authRoutes_1.default);
 router.use('/apiPY', APIPython_1.default);
 router.use('/productSearchPage', produceSearchPage_1.default);

@@ -33,7 +33,7 @@ export default async function getRankedBooks(userID: string, bookIDs: string[]):
     }
     catch (err:any) {
         console.error(err);
-        throw new Error(`Error in getRankedBooks ${err.message}`)
+        throw new Error(`Error in getting PYTHON  ${err.message}`)
 
     }
 }

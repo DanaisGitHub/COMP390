@@ -11,7 +11,7 @@ import fs from 'fs';
 import { UserItem, User } from '../../models/DB_Functions/Set_Up/modelSetUp';
 import StdReturn, { Models } from '../../types/baseTypes';
 import { UserItemModel } from '../../models/typesOfModels/Items/UserItemModel';
-import { ItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../types/DBTypes/RentalTypes/rentalType';
+import { UserItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../types/DBTypes/RentalTypes/rentalType';
 import { coordiantes } from '../../types/baseTypes';
 import { Attributes, Model, ModelStatic } from 'sequelize';
 import { BaseModel } from '../../models/typesOfModels/baseModel';

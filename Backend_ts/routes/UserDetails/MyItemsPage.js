@@ -13,18 +13,20 @@ router.get('/get-listed-items', async (req, res, next) => {
         res.status(200).json({ message: rental });
     }
     catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, message: null });
+        console.error(err);
+        res.status(500).json({ err: err.message, message: null });
     }
 });
 router.post('/add-new-item-listing', async (req, res, next) => {
     try {
-        const item = req.body.bookItem;
-        const rental = await rentalsCtrl.addNewItemListing(item);
+        const userItem = req.body.userItem;
+        userItem.ownerID = 10;
+        const rental = await rentalsCtrl.addNewItemListing(userItem);
+        res.status(200).json({ message: `userItem is added` });
     }
     catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, message: null });
+        console.error(err);
+        res.status(500).json({ err: err.message, message: null });
     }
 });
 router.get('/delete-item-listing', async (req, res, next) => {
@@ -34,8 +36,8 @@ router.get('/delete-item-listing', async (req, res, next) => {
         res.status(200).json({ message: `userItem is deleted` });
     }
     catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, message: null });
+        console.error(err);
+        res.status(500).json({ err: err.message, message: null });
     }
 });
 exports.default = router;

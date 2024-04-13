@@ -39,7 +39,7 @@ async function getRankedBooks(userID, bookIDs) {
     }
     catch (err) {
         console.error(err);
-        throw new Error(`Error in getRankedBooks ${err.message}`);
+        throw new Error(`Error in getting PYTHON  ${err.message}`);
     }
 }
 exports.default = getRankedBooks;

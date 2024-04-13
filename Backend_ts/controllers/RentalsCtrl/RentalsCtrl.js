@@ -4,6 +4,8 @@ exports.RentalsContorller = void 0;
 const bookModel_1 = require("../../models/typesOfModels/Items/BookModels/bookModel");
 const userModels_1 = require("../../models/typesOfModels/Users/userModels");
 const UserItemModel_1 = require("../../models/typesOfModels/Items/UserItemModel");
+const sequelize_1 = require("sequelize");
+const customError_1 = require("../../utils/other/customError");
 const RentalModel_1 = require("../../models/typesOfModels/Rentals/RentalModel");
 class RentalsContorller {
     constructor() {
@@ -14,13 +16,20 @@ class RentalsContorller {
         this.rentalModel = new RentalModel_1.RentalModel();
         this.getAllCurrentlyListedItems = async () => {
             try { // from product/books get all books in location space x
-                let userID = 10;
+                let userID = 15;
                 const { err, result: bookDetails } = await this.userItemModel.findAll({ where: { ownerID: userID }, rejectOnEmpty: false });
                 const bookIDs = bookDetails.map((book) => {
                     return book.dataValues.itemID;
                 });
                 const books = await this.bookItemModel.getObjsFromIDs(bookIDs);
-                return books;
+                const bookPreview = books.map((book) => {
+                    return {
+                        itemID: book.id,
+                        book: book.book,
+                        ranking_of_book: book.rating
+                    };
+                });
+                return bookPreview;
             }
             catch (err) {
                 console.error(err);
@@ -29,8 +38,8 @@ class RentalsContorller {
         };
         this.addNewItemListing = async (item) => {
             try {
-                const { err, result: bookDetails } = await this.bookItemModel.addNew(item);
-                return bookDetails;
+                const { err, result: userItem } = await this.userItemModel.addNew(item);
+                return userItem;
             }
             catch (err) {
                 console.error(err);
@@ -86,6 +95,20 @@ class RentalsContorller {
             catch (err) {
                 console.error(err);
                 throw new Error("Error createPurchaseRequest ---> " + err.message);
+            }
+        };
+        this.getPriceAndQuantity = async (options) => {
+            try {
+                const { ownerID, itemID } = options;
+                const { err, result: bookDetails } = await this.userItemModel.find({ where: { ownerID, itemID }, rejectOnEmpty: true });
+                return { price: bookDetails.price, quantity: bookDetails.quantity };
+            }
+            catch (err) {
+                if (err instanceof sequelize_1.EmptyResultError) {
+                    throw new customError_1.NotFoundError("Item not found");
+                }
+                console.error(err);
+                throw new Error("Error in getting price and quantity");
             }
         };
     }

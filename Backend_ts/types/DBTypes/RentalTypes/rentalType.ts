@@ -1,6 +1,6 @@
-export type ItemType = {
+export type UserItemType = {
     id?: number;
-    ownerID: number;
+    ownerID?: number;
     itemID: number;
     thumbnail?: string;
     price: number;

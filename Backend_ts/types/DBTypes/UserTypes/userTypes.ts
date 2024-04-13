@@ -1,5 +1,5 @@
-import { coordiantes } from '../../baseTypes';
-import { BookPreferenceType } from '../BookTypes/bookTypes';
+
+import { BookPreferenceType } from '../BookTypes/bookTypes'; // bookTypes SHOULD be here
 
 // Since some id's is auto incremented input into db is not needed
 // export type UserType { // might need to add more fields

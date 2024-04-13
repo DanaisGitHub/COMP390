@@ -2,8 +2,11 @@ from flask import Flask, request, jsonify
 import tensorflow as tf
 import keras
 import tensorflow_ranking as tfr
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
+
 
 
 def tensor_to_json(tensor):

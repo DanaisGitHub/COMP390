@@ -1,21 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserContoller = void 0;
-const bookModel_1 = require("../../models/typesOfModels/Items/BookModels/bookModel");
 const userModels_1 = require("../../models/typesOfModels/Users/userModels");
-const bookModel_2 = require("../../models/typesOfModels/Items/BookModels/bookModel");
 const GenreModels_1 = require("../../models/typesOfModels/Items/BookModels/GenreModels/GenreModels");
 const FormatModel_1 = require("../../models/typesOfModels/Items/BookModels/FormatModels/FormatModel");
+const customError_1 = require("../../utils/other/customError");
 class UserContoller {
     constructor() {
         // Common Models for all functions
-        this.bookModel = new bookModel_1.BookItemModel();
         this.userModel = new userModels_1.UserModel();
         this.genreModel = new GenreModels_1.GenreModel();
         this.formatModel = new FormatModel_1.FormatModel();
         this.authorModel = new FormatModel_1.FormatModel();
-        this.userPreferenceModel = new userModels_1.UserPreferenceModel();
-        this.bookPreferenceModel = new bookModel_2.BookPreferenceModel();
         /**
          * Get all books in the location space of the user
          *
@@ -28,13 +24,15 @@ class UserContoller {
             var _a;
             try {
                 // get from auth token
-                const userID = 4;
-                const user = await this.userModel.baseFindOneNotTyped({ where: { id: userID }, include: ['userPreference', 'bookPreference'], raw: true, rejectOnEmpty: true });
-                console.log(user);
-                const genrePref = await this.genreModel.getAttributeNameFromIDs(user['bookPreference.genrePreference']);
-                console.log("genrePref", genrePref);
-                const authorPref = await this.authorModel.getAttributeNameFromIDs(user['bookPreference.authorPreference']);
-                const formatPref = await this.formatModel.getAttributeNameFromIDs(user['bookPreference.formatPreference']);
+                const userID = 10;
+                const rawUser = await this.userModel.baseFindOneNotTyped({
+                    where: { id: userID }, include: ['userPreference', 'bookPreference'], rejectOnEmpty: false
+                });
+                const user = rawUser.dataValues;
+                console.log(user.bookPreference.dataValues.genrePreference);
+                const genrePref = await this.genreModel.getAttributeNameFromIDs(user.bookPreference.dataValues.genrePreference);
+                const authorPref = await this.authorModel.getAttributeNameFromIDs(user.bookPreference.dataValues.authorPreference);
+                const formatPref = await this.formatModel.getAttributeNameFromIDs(user.bookPreference.dataValues.formatPreference);
                 const processedUser = {
                     id: (_a = user.id) !== null && _a !== void 0 ? _a : -1,
                     firstName: user.firstName,
@@ -44,24 +42,25 @@ class UserContoller {
                     lng: user.lng,
                     sex: user.sex,
                     birthDate: user.birthDate,
-                    distanceRangeMin: user['userPreference.distanceRangeMin'],
-                    distanceRangeMax: user['userPreference.distanceRangeMax'],
-                    priceRangeMin: user['userPreference.priceRangeMin'],
-                    priceRangeMax: user['userPreference.priceRangeMax'],
-                    ratingRangeMin: user['userPreference.ratingRangeMin'],
-                    ratingRangeMax: user['userPreference.ratingRangeMax'],
-                    dateRangeMin: user['userPreference.dateRangeMin'],
-                    dateRangeMax: user['userPreference.dateRangeMax'],
+                    distanceRangeMin: user.userPreference.dataValues.distanceRangeMin,
+                    distanceRangeMax: user.userPreference.dataValues.distanceRangeMax,
+                    priceRangeMin: user.userPreference.dataValues.priceRangeMin,
+                    priceRangeMax: user.userPreference.dataValues.priceRangeMax,
+                    ratingRangeMin: user.userPreference.dataValues.ratingRangeMin,
+                    ratingRangeMax: user.userPreference.dataValues.ratingRangeMax,
+                    dateRangeMin: user.userPreference.dataValues.dateRangeMin,
+                    dateRangeMax: user.userPreference.dataValues.dateRangeMax,
                     createdAt: user.createdAt,
                     authorPreference: authorPref,
                     genrePreference: genrePref,
                     formatPreference: formatPref,
-                    publicationRangeMin: user['bookPreference.publicationRangeMin'],
-                    publicationRangeMax: user['bookPreference.publicationRangeMax'],
-                    bookLengthRangeMin: user['bookPreference.bookLengthRangeMin'],
-                    bookLengthRangeMax: user['bookPreference.bookLengthRangeMax'],
+                    publicationRangeMin: user.bookPreference.dataValues.publicationRangeMin,
+                    publicationRangeMax: user.bookPreference.dataValues.publicationRangeMax,
+                    bookLengthRangeMin: user.bookPreference.dataValues.bookLengthRangeMin,
+                    bookLengthRangeMax: user.bookPreference.dataValues.bookLengthRangeMax,
                     password: user.password
                 };
+                console.log(processedUser);
                 return processedUser;
             }
             catch (err) {
@@ -69,48 +68,31 @@ class UserContoller {
                 throw new Error("Error in getting user details");
             }
         };
+        this.getBasicUserDetails = async () => {
+            const userID = 15;
+            const { err, result: user } = await this.userModel.find({ where: { id: userID }, rejectOnEmpty: true });
+            const basicUser = {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                userEmail: user.userEmail,
+                lat: user.lat,
+                lng: user.lng
+            };
+            return basicUser;
+        };
         this.changeUserDetails = async (UserDetails) => {
             try {
-                const userID = 4;
-                const newUserDetails = {
-                    firstName: UserDetails.firstName,
-                    lastName: UserDetails.lastName,
-                    userEmail: UserDetails.userEmail,
-                    lat: UserDetails.lat,
-                    lng: UserDetails.lng,
-                    birthDate: UserDetails.birthDate,
-                    sex: true,
-                    password: UserDetails.password,
-                };
-                const newUserPreference = {
-                    distanceRangeMin: UserDetails.distanceRangeMin,
-                    distanceRangeMax: UserDetails.distanceRangeMax,
-                    priceRangeMin: UserDetails.priceRangeMin,
-                    priceRangeMax: UserDetails.priceRangeMax,
-                    ratingRangeMin: UserDetails.ratingRangeMin,
-                    ratingRangeMax: UserDetails.ratingRangeMax,
-                    dateRangeMin: UserDetails.dateRangeMin,
-                    dateRangeMax: UserDetails.dateRangeMax,
-                };
-                const newBookPreference = {
-                    // authorPreference: UserDetails.authorPreference,
-                    // genrePreference: UserDetails.genrePreference,
-                    // formatPreference: UserDetails.formatPreference,
-                    publicationRangeMin: UserDetails.publicationRangeMin,
-                    publicationRangeMax: UserDetails.publicationRangeMax,
-                    bookLengthRangeMin: UserDetails.bookLengthRangeMin,
-                    bookLengthRangeMax: UserDetails.bookLengthRangeMax,
-                };
-                const { err, result: user } = await this.userModel.find({ where: { id: userID }, rejectOnEmpty: true });
-                const { err: err1, result: userPreference } = await this.userPreferenceModel.find({ where: { userID: userID }, rejectOnEmpty: true });
-                const { err: err2, result: bookPreference } = await this.bookPreferenceModel.find({ where: { userID: userID }, rejectOnEmpty: true });
-                await user.update(newUserDetails);
-                await userPreference.update(newUserPreference);
-                await bookPreference.update(newBookPreference);
-                return;
+                const userID = 15;
+                await this.userModel.update(UserDetails, { where: { id: userID } });
             }
             catch (err) {
-                console.log(err);
+                console.error(err);
+                if (err instanceof customError_1.NotFoundError) {
+                    throw err;
+                }
+                else {
+                    throw new Error("Error in changing user details " + err.message);
+                }
             }
         };
         this.deleteUserDetails = async (req, res, next) => {

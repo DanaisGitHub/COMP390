@@ -10,7 +10,7 @@ import fs from 'fs';
 const router = Router();
 
 import { UserContoller } from '../../controllers/UserCtrl/UserController';
-import { ProcessedUserType } from '../../types/API_Types/User/UserApiTypes';
+import { ProcessedUserType, UptUserType } from '../../types/API_Types/User/UserApiTypes';
 
 // URL = currently /user /userProfilePage
 
@@ -18,40 +18,39 @@ const userCtrl = new UserContoller();
 
 router.get('/get-full-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
-        
+
         // user id comes from token
         const user = await userCtrl.getAllUserDetails();
-        res.status(200).json({message: user })
-    } catch (err) {
+        res.status(200).json({ message: user })
+    } catch (err: any) {
         console.log(err)
-        res.status(500).json({ err: err, message: null })
+        res.status(500).json({ err: err.message, message: null })
     }
 })
+
+router.get('/get-basic-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+    try {
+        const basicUser = await userCtrl.getBasicUserDetails();
+        res.status(200).json({ message: basicUser })
+    } catch (err: any) {
+        console.log(err)
+        res.status(500).json({ err: err.message, message: null })
+    }
+})
+
+
 
 
 router.post('/change-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
-        //Query params should contain ALL user Details changed or not
-        // user id comes from token
-        const userDetails:ProcessedUserType = req.body.userDetails as ProcessedUserType;
+        const userDetails: UptUserType = req.body.userDetails as UptUserType;
         await userCtrl.changeUserDetails(userDetails);
-        res.status(200).json({message: "User Details Changed" })
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
-    }
-})
-
-
-router.get('/delete-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
-    try {
-        // user id comes from token
-        await userCtrl.deleteUserDetails(req,res,next);
-        res.status(200).json({message: "User Details Deleted" })
+        res.status(200).json({ message: "User Details Changed" })
     } catch (err: any) {
-        console.error(err)
-        res.status(500).json({ err: err, message: err.message })
+        console.log(err)
+        res.status(500).json({ err: err.message, message: null })
     }
 })
+
 
 export default router;

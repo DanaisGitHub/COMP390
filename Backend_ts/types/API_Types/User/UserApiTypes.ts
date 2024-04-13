@@ -33,3 +33,21 @@ export type ProcessedUserType = {
     bookLengthRangeMax: number,
     password: string
 }
+
+export type BasicUserType = {
+    id?: number,
+    firstName: string,
+    lastName: string,
+    userEmail: string,
+    lat: number,
+    lng: number
+}
+
+export type UptUserType = {
+    id?: number,
+    firstName?: string,
+    lastName?: string,
+    userEmail?: string,
+    lat?: number,
+    lng?: number
+}

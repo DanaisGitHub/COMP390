@@ -21,10 +21,12 @@ const getRankedBooks = async (req: Req, res: Res, next: Next) => {
     try {
         const lat = parseFloat(req.query.lat as string);// should give an auto location eg center of the Mannyeh
         const lng = parseFloat(req.query.lng as string);// should give an auto location eg center of the Mannyeh
-        const searchQuery = req.query.searchQuery as string ?? ''; // "" == string
-        const maxDistance = parseFloat(req.query.maxDistance as string) ?? Infinity;
-        const minRating = parseFloat(req.query.minRating as string) ?? 0
-        const maxPrice = parseFloat(req.query.maxPrice as string) ?? Infinity
+        const searchQuery = req.query.searchQuery ? req.query.searchQuery as string : undefined ; // "" == string
+        const maxDistance = !Number.isNaN(parseFloat(req.query.maxDistance as string)) ? parseFloat(req.query.maxDistance as string) : 10000
+        const minRating = !Number.isNaN(parseFloat(req.query.minRating as string)) ? parseFloat(req.query.minRating as string) : 0
+        const maxPrice = !Number.isNaN(parseFloat(req.query.maxPrice as string)) ? parseFloat(req.query.maxPrice as string) : 10000
+
+        console.log(lat, lng, searchQuery, maxDistance, minRating, maxPrice)
 
 
         // ... any other query params
@@ -39,7 +41,7 @@ router.get('/get-full-book-details', async (req: Req, res: Res, next: Next) => {
     try {
         const productController = new ProductController();
         const bookID = parseInt(req.query.bookID as string);
-        const bookDetails:FullBook = await productController.getBookDetails(bookID);
+        const bookDetails: FullBook = await productController.getBookDetails(bookID);
         res.status(200).json({ message: bookDetails })
     } catch (err) {
         console.log(err)
@@ -59,6 +61,11 @@ router.get('/get-items-user-list', async (req: Req, res: Res, next: Next) => { /
 })
 
 router.get('/get-ranked-books', getRankedBooks);
+
+router.get('/hello', (req: Req, res: Res, next: Next) => {
+    console.log("Hello World")
+    res.status(200).json({ message: "Hello World" })
+})
 
 
 export default router;

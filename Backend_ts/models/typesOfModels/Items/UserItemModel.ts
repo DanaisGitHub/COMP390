@@ -3,7 +3,7 @@ import { Model, DataTypes, Sequelize, ModelCtor, QueryTypes, Attributes, Instanc
 import { BaseModel } from "../baseModel";
 import StdReturn from "../../../types/baseTypes"; // just changed make sure correct
 import { TempUserType, UserPreferenceType, } from "../../../types/DBTypes/UserTypes/userTypes";
-import { ItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../../types/DBTypes/RentalTypes/rentalType";
+import { UserItemType, RentalType, RentalDetailType, PaymentDetailType } from "../../../types/DBTypes/RentalTypes/rentalType";
 import { BookItemType, UserBookRatingType } from "../../../types/DBTypes/BookTypes/bookTypes";
 import { DatabaseError, NotFoundError } from '../../../utils/other/customError';
 import { ModelTypes, Models } from '../../../types/baseTypes'
@@ -19,11 +19,11 @@ import { BookItemModel } from "./BookModels/bookModel";
 import { UserModel } from "../Users/userModels";
 
 
-interface ItemModelI extends Model<ItemType>, ItemType {
+interface ItemModelI extends Model<UserItemType>, UserItemType {
     // CRUD functions
-    addNewItem: (itemDetails: ItemType) => Promise<StdReturn>;// Auth
+    addNewItem: (itemDetails: UserItemType) => Promise<StdReturn>;// Auth
     removeItem: (itemId: number) => Promise<StdReturn>;// Auth
-    updateItem: (itemId: number, itemDetails: ItemType) => Promise<StdReturn>;// Auth
+    updateItem: (itemId: number, itemDetails: UserItemType) => Promise<StdReturn>;// Auth
     // Query functions
     querySearchItems: (query: string) => Promise<StdReturn>; // I know return on this so could make it more specific
     // Other functions
@@ -69,7 +69,7 @@ export class UserItemModel extends BaseModel<UserItem> {
         }
     }
 
-    public async addNewItem(itemDetails: ItemType): Promise<UserItem> {
+    public async addNewItem(itemDetails: UserItemType): Promise<UserItem> {
         try {
             const newItem = await UserItem.create(itemDetails)
             return newItem

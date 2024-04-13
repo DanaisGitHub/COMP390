@@ -5,8 +5,8 @@ export type ProductPreviewType = { // all previews are ranked
     itemID: number, // id of book
     ownerID?: number, // might not needs
     book: string,
-    lng: number,
-    lat: number,
+    lng?: number,
+    lat?: number,
     ranking_of_book?: number,
     ranking_we_think?: number,
 }

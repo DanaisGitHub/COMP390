@@ -8,19 +8,12 @@ import passport from 'passport';
 import cors from 'cors';
 import path from 'path';
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
-
-
 import { sequelize, initialize } from './models/DB_Functions/Set_Up/modelSetUp'
-
-import authRoutes from './routes/Auth/authRoutes';
 import baseRoutes from './routes/baseRoutes';
-import { UserModel } from './models/typesOfModels/Users/userModels';
-import { DBSetupListener } from './models/DB_Functions/Set_Up/modelSetUp';
+
 
 dotenv.config();
 const app = express();
-
-
 
 
 // all routes run through the middleware def app.use(X)
@@ -30,10 +23,13 @@ app.use(cookieParser())
 app.use(passport.initialize());
 app.use(cors());
 
-app.use('/', baseRoutes)// sending all routes that start with '/' to routes folder
+// sending all routes that start with '/' to routes folder
 
 // start the server
-app.listen(5000, () => console.log("Server running on port " + 5000));
+const PORT = process.env.PORT || 2000;
+app.listen(PORT, () => console.log("Server running on port " + PORT));
+
+app.use('/', baseRoutes)
 
 sequelize.authenticate()
     .then(async () => {

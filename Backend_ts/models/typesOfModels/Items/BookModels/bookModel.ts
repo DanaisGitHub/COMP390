@@ -80,12 +80,11 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string): Promise<ProductPreviewType[]> {
+    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string|undefined): Promise<ProductPreviewType[]> {
         try {
 
-            searchQuery = searchQuery.trim();
             console.log("searchQuery: ", searchQuery)
-            let search = searchQuery !== "" ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
+            let search = searchQuery !== undefined ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
 
             //= searchQuery.length !== 0 ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
             // why does the query have so many types
@@ -143,9 +142,9 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
             });
             return books // no rating
         }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("fullTextSearch()" + err);
+        catch (err:any) {
+            console.error(err)
+            throw new DatabaseError("fullTextSearch()" + err.message);
         }
     }
 
@@ -155,7 +154,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         lat: number,
         lng: number,
         maxDistance: number,
-        searchQuery: string,
+        searchQuery?: string,
         minRating: number,
         maxPrice: number,
         userID: number
@@ -164,7 +163,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
             let rankedBooks: ProductPreviewType[] = [];
             const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID } = options;
 
-            const books: ProductPreviewType[] = await this.fullTextSearch(minRating, maxPrice, searchQuery);
+            const books: ProductPreviewType[] = await this.fullTextSearch(minRating, maxPrice, searchQuery? searchQuery : undefined);
             const booksWithinRadius: ProductPreviewType[] = books.filter(book => {
                 return calculateDistance(lat, lng, book.lat, book.lng)
                     <= maxDistance
@@ -176,8 +175,6 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
                 throw new NotFoundError("No books found within radius")
             }
             //SEND TO PYTHON FOR RANKING.
-            console.log("userID: ", userID)
-            console.log("bookIDsStr: ", bookIDsStr)
             const rankings = await getRankedBooks(userID.toString(), bookIDsStr);
 
             const booksWithinRandRanked = booksWithinRadius.map((book, index) => {

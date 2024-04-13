@@ -72,9 +72,8 @@ class BookItemModel extends baseModel_1.BaseModel {
     }
     async fullTextSearch(minRating, maxPrice, searchQuery) {
         try {
-            searchQuery = searchQuery.trim();
             console.log("searchQuery: ", searchQuery);
-            let search = searchQuery !== "" ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
+            let search = searchQuery !== undefined ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
             //= searchQuery.length !== 0 ? `MATCH(bk.book, bk.description) AGAINST('${searchQuery}' IN NATURAL LANGUAGE MODE) AND ` : "";
             // why does the query have so many types
             const query = `SELECT 
@@ -130,15 +129,15 @@ class BookItemModel extends baseModel_1.BaseModel {
             return books; // no rating
         }
         catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("fullTextSearch()" + err);
+            console.error(err);
+            throw new customError_1.DatabaseError("fullTextSearch()" + err.message);
         }
     }
     async getRankedBooksWithinRadiusAndSearchQuery(options) {
         try {
             let rankedBooks = [];
             const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID } = options;
-            const books = await this.fullTextSearch(minRating, maxPrice, searchQuery);
+            const books = await this.fullTextSearch(minRating, maxPrice, searchQuery ? searchQuery : undefined);
             const booksWithinRadius = books.filter(book => {
                 return (0, locationUtils_1.calculateDistance)(lat, lng, book.lat, book.lng)
                     <= maxDistance;
@@ -150,8 +149,6 @@ class BookItemModel extends baseModel_1.BaseModel {
                 throw new customError_1.NotFoundError("No books found within radius");
             }
             //SEND TO PYTHON FOR RANKING.
-            console.log("userID: ", userID);
-            console.log("bookIDsStr: ", bookIDsStr);
             const rankings = await (0, pyAPI_1.default)(userID.toString(), bookIDsStr);
             const booksWithinRandRanked = booksWithinRadius.map((book, index) => {
                 return Object.assign(Object.assign({}, book), { ranking_we_think: parseFloat(rankings[index]) });

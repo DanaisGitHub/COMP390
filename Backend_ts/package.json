@@ -10,8 +10,8 @@
     "dev": "concurrently npm:dev:*",
     "dev:ts": "tsc -w",
     "dev:js": "nodemon z_Dev.js",
-    "alt" :"tsc && nodemon z_Dev.js",
-    "alt-Start" :"tsc -w && nodemon index.js"
+    "alt": "tsc && nodemon z_Dev.js",
+    "alt-Start": "tsc -w && nodemon index.js"
   },
   "author": "Danai Zerai",
   "license": "ISC",

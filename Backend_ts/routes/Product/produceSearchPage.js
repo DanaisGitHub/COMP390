@@ -8,14 +8,14 @@ const router = (0, express_1.Router)();
 const productController = new ProductCtril_1.ProductController();
 // well let controller deal with auth
 const getRankedBooks = async (req, res, next) => {
-    var _a, _b, _c, _d;
     try {
         const lat = parseFloat(req.query.lat); // should give an auto location eg center of the Mannyeh
         const lng = parseFloat(req.query.lng); // should give an auto location eg center of the Mannyeh
-        const searchQuery = (_a = req.query.searchQuery) !== null && _a !== void 0 ? _a : ''; // "" == string
-        const maxDistance = (_b = parseFloat(req.query.maxDistance)) !== null && _b !== void 0 ? _b : Infinity;
-        const minRating = (_c = parseFloat(req.query.minRating)) !== null && _c !== void 0 ? _c : 0;
-        const maxPrice = (_d = parseFloat(req.query.maxPrice)) !== null && _d !== void 0 ? _d : Infinity;
+        const searchQuery = req.query.searchQuery ? req.query.searchQuery : undefined; // "" == string
+        const maxDistance = !Number.isNaN(parseFloat(req.query.maxDistance)) ? parseFloat(req.query.maxDistance) : 10000;
+        const minRating = !Number.isNaN(parseFloat(req.query.minRating)) ? parseFloat(req.query.minRating) : 0;
+        const maxPrice = !Number.isNaN(parseFloat(req.query.maxPrice)) ? parseFloat(req.query.maxPrice) : 10000;
+        console.log(lat, lng, searchQuery, maxDistance, minRating, maxPrice);
         // ... any other query params
         const books = await productController.getRankedBooks({ lat, lng, searchQuery, maxDistance, minRating, maxPrice }); // shuld be sending userID as well
         res.status(200).json({ message: books });
@@ -48,4 +48,8 @@ router.get('/get-items-user-list', async (req, res, next) => {
     }
 });
 router.get('/get-ranked-books', getRankedBooks);
+router.get('/hello', (req, res, next) => {
+    console.log("Hello World");
+    res.status(200).json({ message: "Hello World" });
+});
 exports.default = router;

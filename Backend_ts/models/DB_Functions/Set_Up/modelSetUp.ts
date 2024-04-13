@@ -15,7 +15,7 @@ import mysql from "mysql2";
 import { UserItemModel } from "../../typesOfModels/Items/UserItemModel";
 
 import { TempUserType, UserPreferenceType, } from '../../../types/DBTypes/UserTypes/userTypes';
-import { ItemType as UserItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../../types/DBTypes/RentalTypes/rentalType';
+import { UserItemType as UserItemType, RentalType, PaymentDetailType, RentalDetailType } from '../../../types/DBTypes/RentalTypes/rentalType';
 import { BookItemType, BookAuthorType, BookFormatType, BookGenreType, GenreType, FormatType, AuthorType, BookPreferenceType, UserBookRatingType } from '../../../types/DBTypes/BookTypes/bookTypes';
 import { BookItemModel } from '../../typesOfModels/Items/BookModels/bookModel';
 import { CSVtoSQLBook } from '../Process/CSVtoSQL';
@@ -381,7 +381,7 @@ const InitialiseDatabase = class { // initalises database // all FK are done in 
                 series: { type: DataTypes.STRING, allowNull: true },
                 description: { type: DataTypes.TEXT, allowNull: false }, // are you sure this is text
                 numPages: { type: DataTypes.INTEGER, allowNull: false },
-                publication: { type: DataTypes.DATE, allowNull: true, defaultValue: new Date(2024)},
+                publication: { type: DataTypes.DATE, allowNull: true, defaultValue: new Date(2024) },
                 rating: { type: DataTypes.DOUBLE, allowNull: false },
                 numOfVoters: { type: DataTypes.INTEGER, allowNull: false },
             },
@@ -663,13 +663,14 @@ export const initialize = async () => {
     try {
 
         InitialiseDatabase.initAllTables(sequelize);
+
+        InitialiseDatabase.createAllRelations();
         if (!dropDB) {
             await sequelize.sync()
 
             return;
         }
         await DBSetupListener.runBeforeDBInit();
-        InitialiseDatabase.createAllRelations();
 
         let options: SyncOptions = dropDB && dropBook ? { force: true } : {};
         await sequelize.sync(options)

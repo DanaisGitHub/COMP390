@@ -18,12 +18,13 @@ import product from './Product/produceSearchPage';
 import userRoutes from './UserDetails/UserProfilePage';
 import myItemsPage from './UserDetails/MyItemsPage';
 import rentalPage from './Rental/PurchasePage';
+import cors from 'cors';
 
 const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
 const router = Router();
-//router.use('/test', testRoutes)
+router.use(cors())
 router.use('/auth', authRoutes);
 router.use('/apiPY', apiPython);
 router.use('/productSearchPage', product);

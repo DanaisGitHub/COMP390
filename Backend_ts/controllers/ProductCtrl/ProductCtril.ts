@@ -26,14 +26,14 @@ export class ProductController {
     public getRankedBooks = async (options: {
         lat: number,
         lng: number,
-        searchQuery: string,
+        searchQuery?: string,
         maxDistance: number,
         minRating: number,
         maxPrice: number
     }): Promise<ProductPreviewType[]> => {
         // from product/books get all books in location space x
         let userID = 1
-        const { lat, lng, searchQuery: searchQuery, maxDistance, minRating, maxPrice } = options;
+        const { lat, lng, searchQuery, maxDistance, minRating, maxPrice } = options;
         const rankedBookPrevs: ProductPreviewType[] = await this.bookModel.getRankedBooksWithinRadiusAndSearchQuery({
             lat,
             lng,
