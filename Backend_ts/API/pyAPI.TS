@@ -22,11 +22,13 @@ export const post = async (url: string, data: any) => {
     }
 };
 
-export default async function getRankedBooks(userID: string, bookIDs: string[]): Promise<string[]> {
+export default async function getRankedBooks(userID: number, userSex:number, bookIDs: number[], bookTitles:string[]): Promise<string[]> {
     try {
         const data = {
             user_id: userID,
-            movie_titles: bookIDs
+            sex: userSex,
+            book_id: bookIDs,
+            book_title: bookTitles
         }
         const url = `${pythonAPI}`;
         return await post(url, data) as string[];

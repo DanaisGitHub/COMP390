@@ -8,6 +8,7 @@ import { UserModel } from '../../models/typesOfModels/Users/userModels';
 import { calculateDistance } from '../../utils/locationUtils';
 import { UserItemModel } from '../../models/typesOfModels/Items/UserItemModel';
 import { FullBook } from '../../types/API_Types/Book/BookApiTypes'
+import { NotFoundError } from '../../utils/other/customError';
 
 
 export class ProductController {
@@ -33,6 +34,9 @@ export class ProductController {
     }): Promise<ProductPreviewType[]> => {
         // from product/books get all books in location space x
         let userID = 1
+        const { err, result: user } = await this.userModel.findByPkey(userID);
+        if (err) throw new NotFoundError('User not found');
+        const userSex: number = !user.sex ? 0 : 1;
         const { lat, lng, searchQuery, maxDistance, minRating, maxPrice } = options;
         const rankedBookPrevs: ProductPreviewType[] = await this.bookModel.getRankedBooksWithinRadiusAndSearchQuery({
             lat,
@@ -41,7 +45,8 @@ export class ProductController {
             searchQuery,
             minRating,
             maxPrice,
-            userID
+            userID,
+            userSex
         });
 
         return rankedBookPrevs;
@@ -49,7 +54,7 @@ export class ProductController {
 
 
 
-    public getBookDetails = async (bookID:number): Promise<FullBook> => {
+    public getBookDetails = async (bookID: number): Promise<FullBook> => {
         // get book details
         let userID = 1// get from token
         const bookDetails = await this.bookModel.getFullBookDetailsForBookID(bookID);

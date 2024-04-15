@@ -136,20 +136,20 @@ class BookItemModel extends baseModel_1.BaseModel {
     async getRankedBooksWithinRadiusAndSearchQuery(options) {
         try {
             let rankedBooks = [];
-            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID } = options;
+            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID, userSex } = options;
             const books = await this.fullTextSearch(minRating, maxPrice, searchQuery ? searchQuery : undefined);
             const booksWithinRadius = books.filter(book => {
                 return (0, locationUtils_1.calculateDistance)(lat, lng, book.lat, book.lng)
                     <= maxDistance;
             });
             let bookIDsNumber = booksWithinRadius.map(book => book.itemID);
+            const bookTitles = booksWithinRadius.map(book => book.book);
             const bookIDsStr = bookIDsNumber.map(id => id.toString());
             if (bookIDsStr.length === 0) {
                 return [];
-                throw new customError_1.NotFoundError("No books found within radius");
             }
             //SEND TO PYTHON FOR RANKING.
-            const rankings = await (0, pyAPI_1.default)(userID.toString(), bookIDsStr);
+            const rankings = await (0, pyAPI_1.default)(userID, userSex, bookIDsNumber, bookTitles);
             const booksWithinRandRanked = booksWithinRadius.map((book, index) => {
                 return Object.assign(Object.assign({}, book), { ranking_we_think: parseFloat(rankings[index]) });
             });

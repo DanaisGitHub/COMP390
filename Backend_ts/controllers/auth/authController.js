@@ -39,6 +39,7 @@ const authModel_1 = require("../../models/typesOfModels/Users/authModel");
 const authUtils_1 = require("../../utils/auth/authUtils");
 const passport_2 = require("../../config/passport");
 const errorController_1 = require("../errorController");
+const UserController_1 = require("../UserCtrl/UserController");
 // constants
 const pathToKey = path_1.default.join(__dirname, '..', '..', '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync('C:/Users/DZera/Documents/UOL offine/COMP 390/Backend_ts/id_rsa_pub.pem', 'utf8'); // error
@@ -47,7 +48,7 @@ const accessTime = 900000 * 4 * 24 * 30; // 15 days
 const refreshTime = 900000 * 4 * 24 * 30; // 30 days
 (0, passport_2.runPassport)(passport_1.default);
 const app = (0, express_1.default)();
-class AuthController {
+class AuthController extends UserController_1.UserContoller {
 }
 exports.AuthController = AuthController;
 _a = AuthController;
@@ -142,8 +143,7 @@ AuthController.tokenState = (token) => {
  */
 AuthController.signUp = async (req, res, next) => {
     try {
-        let user = req.body;
-        user.birthDate = new Date();
+        let user = req.body.user;
         console.log(user);
         const { err, result } = await db.signUp(user);
         if (err) {

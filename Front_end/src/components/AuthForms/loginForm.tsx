@@ -5,11 +5,29 @@ const loginFormSumbit = (e: any) => {
     console.log(e);
 }
 
+export type TempUserType = { // might need to add more fields
+    id?: number;//Primary key//Optinal to allow new users to be added to db
+    firstName: string;
+    lastName: string;
+    sex: boolean;
+    userEmail: string;
+    password: string;
+    birthDate: Date;
+    refreshToken?: string; // not sure of ?
+    profilePicture?: string;
+    lat: number;
+    lng: number;
+    paymentDetailsID?: number;
+}
+
 export const LoginForm = () => {
     return <div>
         <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto h-[100%] lg:py-0 p-96">
             <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
                 <form className="w-full max-w-lg px-6 py-8" onSubmit={loginFormSumbit}>
+                    <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center">
+                        Sign Up
+                    </h1>
                     <div className="flex flex-wrap -mx-3 mb-6">
                         <div className="w-full md:w-1/2 px-3 mb-6 md:mb-0">
                             <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-first-name" >
@@ -26,6 +44,35 @@ export const LoginForm = () => {
                         </div>
                     </div>
                     <div className="flex flex-wrap -mx-3 mb-6">
+                        <div className="w-full px-3">
+                            <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-email">
+                                Email Address
+                            </label>
+                            <input
+                                required
+                                className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                                id="grid-email"
+                                type="email"
+                                placeholder="JaneDoe@example.com" />
+                        </div>
+
+                        <div className="w-full px-3">
+                            <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="sex">sex</label>
+                            <select name="sex" id="sex" className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                <option value={0}>Male</option>
+                                <option value={1}>Female</option>
+                            </select>
+                        </div>
+
+                        <div className="w-full px-3">
+                            <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="DOB">Date of Birth</label>
+                            <input
+                                required
+                                className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                                id="DOB"
+                                type="date" ></input>
+                        </div>
+
                         <div className="w-full px-3">
                             <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-password">
                                 Password
@@ -60,7 +107,12 @@ export const LoginForm = () => {
                             <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-zip">
                                 Zip
                             </label>
-                            <input required className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500" id="grid-zip" type="text" placeholder="90210" />
+                            <input
+                                required
+                                className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                                id="grid-zip"
+                                type="text"
+                                placeholder="90210" />
                         </div>
                     </div>
                     <label className="md:w-2/3 block text-gray-500 font-bold">

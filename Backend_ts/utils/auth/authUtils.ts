@@ -8,7 +8,7 @@ import { Request as Req, Response as Res, NextFunction as Next } from 'express';
 
 import { runPassport } from '../../config/passport'
 
-import { AuthController} from '../../controllers/auth/authController';
+import { AuthController } from '../../controllers/auth/authController';
 
 // constants
 
@@ -16,7 +16,7 @@ runPassport(passport);
 
 
 
-const pathToKey = path.join(__dirname, '..','..', 'id_rsa_priv.pem');
+const pathToKey = path.join(__dirname, '..', '..', 'id_rsa_priv.pem');
 const PRIV_KEY = fs.readFileSync(pathToKey, 'utf8');
 
 export const validPassword = (password: any, hash: any, salt: any) => {
@@ -34,7 +34,7 @@ export const genPassword = (password: any) => {
     };
 }
 
-export const issueJWT = (user: any, expires:string = "5m") => { // could we do access and refresh with difference time vars ....
+export const issueJWT = (user: any, expires: string = "5m") => { // could we do access and refresh with difference time vars ....
     let id = user.id;
     let token;
 
@@ -75,18 +75,18 @@ export const authMiddleware = (req: Req, res: Res, next: Next) => { // if Token 
         if (!user) {
             if (info instanceof TokenExpiredError) {
                 // heres a good place to run refresh token function
-                const {err,result} = AuthController.accessExpired(req, res, next)
-                if (err){
+                const { err, result } = AuthController.accessExpired(req, res, next)
+                if (err) {
                     return res.status(401).json({ error: err, result: "Send Refresh Token Or Login Again" });
                 }
                 const payload = result;
                 // need to somehow send a new access token back to user without calling res.s/end
-                AuthController.issueNewAccessToken(res,payload);
+                AuthController.issueNewAccessToken(res, payload);
                 // user doens't request again for action
                 req.user = user;
                 next();
-                
-            
+
+
             } else {
                 return res.status(401).json({ error: 'Unauthorized', result: "Login Again" });
             }

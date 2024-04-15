@@ -4,6 +4,7 @@ exports.ProductController = void 0;
 const bookModel_1 = require("../../models/typesOfModels/Items/BookModels/bookModel");
 const userModels_1 = require("../../models/typesOfModels/Users/userModels");
 const UserItemModel_1 = require("../../models/typesOfModels/Items/UserItemModel");
+const customError_1 = require("../../utils/other/customError");
 class ProductController {
     constructor() {
         // Common Models for all functions
@@ -21,6 +22,10 @@ class ProductController {
         this.getRankedBooks = async (options) => {
             // from product/books get all books in location space x
             let userID = 1;
+            const { err, result: user } = await this.userModel.findByPkey(userID);
+            if (err)
+                throw new customError_1.NotFoundError('User not found');
+            const userSex = !user.sex ? 0 : 1;
             const { lat, lng, searchQuery, maxDistance, minRating, maxPrice } = options;
             const rankedBookPrevs = await this.bookModel.getRankedBooksWithinRadiusAndSearchQuery({
                 lat,
@@ -29,7 +34,8 @@ class ProductController {
                 searchQuery,
                 minRating,
                 maxPrice,
-                userID
+                userID,
+                userSex
             });
             return rankedBookPrevs;
         };

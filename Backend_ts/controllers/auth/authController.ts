@@ -21,6 +21,7 @@ import StdReturn from '../../types/baseTypes';
 import { type } from 'os';
 
 import {errorHandler, asyncErrorHandler} from '../errorController'
+import { UserContoller } from '../UserCtrl/UserController';
 
 
 
@@ -35,7 +36,7 @@ runPassport(passport);
 
 const app = express();
 
-export class AuthController { // would be nice to use a singleton here 
+export class AuthController extends UserContoller { // would be nice to use a singleton here 
 
 
     public static issueNewAccessToken = (res: Res, payload: any): { token: string; expires: string; } => {
@@ -137,10 +138,8 @@ export class AuthController { // would be nice to use a singleton here
      */
     public static signUp = async (req: Req, res: Res, next: Next) => {
         try {
-            let user: TempUserType = req.body
-            user.birthDate = new Date();
+            let user: TempUserType = req.body.user;
             console.log(user)
-
             const { err, result } = await db.signUp(user)
             if (err) {
                 // should be sending more signigicant error

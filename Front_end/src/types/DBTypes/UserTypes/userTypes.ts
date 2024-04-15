@@ -1,4 +1,4 @@
-import { coordiantes } from '../../baseTypes';
+
 import { BookPreferenceType } from '../BookTypes/bookTypes';
 
 // Since some id's is auto incremented input into db is not needed

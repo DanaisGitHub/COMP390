@@ -26,8 +26,6 @@ const getRankedBooks = async (req: Req, res: Res, next: Next) => {
         const minRating = !Number.isNaN(parseFloat(req.query.minRating as string)) ? parseFloat(req.query.minRating as string) : 0
         const maxPrice = !Number.isNaN(parseFloat(req.query.maxPrice as string)) ? parseFloat(req.query.maxPrice as string) : 10000
 
-        console.log(lat, lng, searchQuery, maxDistance, minRating, maxPrice)
-
 
         // ... any other query params
         const books: ProductPreviewType[] = await productController.getRankedBooks({ lat, lng, searchQuery, maxDistance, minRating, maxPrice }); // shuld be sending userID as well

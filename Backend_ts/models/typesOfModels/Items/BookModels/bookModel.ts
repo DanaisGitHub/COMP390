@@ -80,7 +80,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
-    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string|undefined): Promise<ProductPreviewType[]> {
+    private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string | undefined): Promise<ProductPreviewType[]> {
         try {
 
             console.log("searchQuery: ", searchQuery)
@@ -142,13 +142,13 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
             });
             return books // no rating
         }
-        catch (err:any) {
+        catch (err: any) {
             console.error(err)
             throw new DatabaseError("fullTextSearch()" + err.message);
         }
     }
 
- 
+
 
     public async getRankedBooksWithinRadiusAndSearchQuery(options: {
         lat: number,
@@ -158,32 +158,32 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         minRating: number,
         maxPrice: number,
         userID: number
+        userSex: number,
     }): Promise<ProductPreviewType[]> {
         try {
             let rankedBooks: ProductPreviewType[] = [];
-            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID } = options;
+            const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID, userSex } = options;
 
-            const books: ProductPreviewType[] = await this.fullTextSearch(minRating, maxPrice, searchQuery? searchQuery : undefined);
+            const books: ProductPreviewType[] = await this.fullTextSearch(minRating, maxPrice, searchQuery ? searchQuery : undefined);
             const booksWithinRadius: ProductPreviewType[] = books.filter(book => {
-                return calculateDistance(lat, lng, book.lat, book.lng)
+                return calculateDistance(lat, lng, book.lat!, book.lng!)
                     <= maxDistance
             });
-            let bookIDsNumber:number[] = booksWithinRadius.map(book => book.itemID);
-            const bookIDsStr:string[] = bookIDsNumber.map(id => id.toString());
+            let bookIDsNumber: number[] = booksWithinRadius.map(book => book.itemID);
+            const bookTitles = booksWithinRadius.map(book => book.book);
+            const bookIDsStr: string[] = bookIDsNumber.map(id => id.toString());
             if (bookIDsStr.length === 0) {
                 return [];
-                throw new NotFoundError("No books found within radius")
             }
             //SEND TO PYTHON FOR RANKING.
-            const rankings = await getRankedBooks(userID.toString(), bookIDsStr);
-
+            const rankings = await getRankedBooks(userID, userSex, bookIDsNumber, bookTitles);
             const booksWithinRandRanked = booksWithinRadius.map((book, index) => {
                 return { ...book, ranking_we_think: parseFloat(rankings[index]) }
             });
 
             return booksWithinRandRanked
         }
-        catch (err:any) {
+        catch (err: any) {
             if (err instanceof NotFoundError) {
                 console.error(err)
                 throw err;
@@ -192,7 +192,7 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
                 console.error(err)
                 throw err;
             }
-            else{
+            else {
                 console.error(err)
                 throw new Error("getRankedBooksWithinRadiusAndSearchQuery()" + err.message);
             }

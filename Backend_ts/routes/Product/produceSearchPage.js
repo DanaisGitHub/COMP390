@@ -15,7 +15,6 @@ const getRankedBooks = async (req, res, next) => {
         const maxDistance = !Number.isNaN(parseFloat(req.query.maxDistance)) ? parseFloat(req.query.maxDistance) : 10000;
         const minRating = !Number.isNaN(parseFloat(req.query.minRating)) ? parseFloat(req.query.minRating) : 0;
         const maxPrice = !Number.isNaN(parseFloat(req.query.maxPrice)) ? parseFloat(req.query.maxPrice) : 10000;
-        console.log(lat, lng, searchQuery, maxDistance, minRating, maxPrice);
         // ... any other query params
         const books = await productController.getRankedBooks({ lat, lng, searchQuery, maxDistance, minRating, maxPrice }); // shuld be sending userID as well
         res.status(200).json({ message: books });

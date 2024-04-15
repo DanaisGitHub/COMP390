@@ -28,11 +28,13 @@ const post = async (url, data) => {
     }
 };
 exports.post = post;
-async function getRankedBooks(userID, bookIDs) {
+async function getRankedBooks(userID, userSex, bookIDs, bookTitles) {
     try {
         const data = {
             user_id: userID,
-            movie_titles: bookIDs
+            sex: userSex,
+            book_id: bookIDs,
+            book_title: bookTitles
         };
         const url = `${pythonAPI}`;
         return await (0, exports.post)(url, data);
