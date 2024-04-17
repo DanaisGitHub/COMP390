@@ -1,0 +1,30 @@
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #000;
+    color: #fff;
+  }
+  
+  .form {
+    display: grid;
+    grid-gap: 20px;
+    /* Additional styling */
+  }
+  
+  .form label {
+    /* Your label styling */
+  }
+  
+  .form input[type="date"],
+  .form input[type="number"] {
+    /* Your input styling */
+  }
+  
+  .priceContainer {
+    /* Style your price container */
+  }
+  
+  .submitButton {
+    /* Style your submit button */
+  }

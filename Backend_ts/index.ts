@@ -1,0 +1,49 @@
+import express from 'express';
+import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
+import session from 'express-session';
+import passport from 'passport';
+import cors from 'cors';
+import path from 'path';
+import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
+import { sequelize, initialize } from './models/DB_Functions/Set_Up/modelSetUp'
+import baseRoutes from './routes/baseRoutes';
+
+
+dotenv.config();
+const app = express();
+
+
+// all routes run through the middleware def app.use(X)
+app.use(bodyParser.urlencoded({ extended: false })); // we mihgt not need
+app.use(bodyParser.json()) // we might not need 
+app.use(cookieParser())
+app.use(passport.initialize());
+app.use(cors());
+
+// sending all routes that start with '/' to routes folder
+
+// start the server
+const PORT = process.env.PORT || 2000;
+app.listen(PORT, () => console.log("Server running on port " + PORT));
+
+app.use('/', baseRoutes)
+
+sequelize.authenticate()
+    .then(async () => {
+        await initialize();
+        console.log('DB connection successful');
+    })
+    .catch((error) => {
+        console.log('DB connection Failed becuase: ', error)
+    });
+
+
+
+
+
+
+
+
