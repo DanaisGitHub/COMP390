@@ -14,17 +14,17 @@ const db = new authModel_1.AuthModel();
 const pathToKey = path_1.default.join(__dirname, '..', 'id_rsa_pub.pem');
 const PUB_KEY = fs_1.default.readFileSync(pathToKey, 'utf8');
 const localStrategy = new passport_local_1.Strategy(// don't really know what this does
-async (username, password, done) => {
+async (userEmail, password, done) => {
     try {
-        const { err, result } = await db.isAlreadyAUserObj(username); //dont think i need 
-        if (!result) {
+        const user = await db.findUserByEmail(userEmail); //dont think i need 
+        if (!user) {
             return done(null, false);
         }
-        const isValid = await db.comparePasswords(password, result.password);
+        const isValid = await db.comparePasswords(password, user.password);
         if (!isValid) {
             return done(null, false);
         }
-        return done(null, result);
+        return done(null, user);
     }
     catch (err) {
         return done(err);
@@ -39,7 +39,6 @@ const options = {
 // if user cannot be found then this crashes 
 const strategy = new passport_jwt_1.Strategy(options, async (payload, done) => {
     try {
-        //console.log(payload)/////////////////////////////////// 
         const { err, result } = await db.isAlreadyAUserObj(payload.id); // I have defined as email here, need to change it 
         if (err) {
             done(err);

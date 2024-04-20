@@ -11,16 +11,16 @@ const router = Router();
 
 import { UserContoller } from '../../controllers/UserCtrl/UserController';
 import { ProcessedUserType, UptUserType } from '../../types/API_Types/User/UserApiTypes';
+import { authMiddleware, getPayloadFromAuthHeader } from '../../utils/auth/authUtils';
 
 // URL = currently /user /userProfilePage
 
 const userCtrl = new UserContoller();
 
-router.get('/get-full-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+router.get('/get-full-user-details', authMiddleware, async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
-
-        // user id comes from token
-        const user = await userCtrl.getAllUserDetails();
+        const { id: userID, userEmail } = getPayloadFromAuthHeader(req)
+        const user = await userCtrl.getAllUserDetails(userID);
         res.status(200).json({ message: user })
     } catch (err: any) {
         console.log(err)
@@ -28,9 +28,10 @@ router.get('/get-full-user-details', async (req: Req, res: Res, next: Next) => {
     }
 })
 
-router.get('/get-basic-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+router.get('/get-basic-user-details', authMiddleware, async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
-        const basicUser = await userCtrl.getBasicUserDetails();
+        const { id: userID, userEmail } = getPayloadFromAuthHeader(req)
+        const basicUser = await userCtrl.getBasicUserDetails(userID);
         res.status(200).json({ message: basicUser })
     } catch (err: any) {
         console.log(err)
@@ -41,9 +42,10 @@ router.get('/get-basic-user-details', async (req: Req, res: Res, next: Next) => 
 
 
 
-router.post('/change-user-details', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+router.post('/change-user-details', authMiddleware, async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
         const userDetails: UptUserType = req.body.userDetails as UptUserType;
+        userDetails.id = getPayloadFromAuthHeader(req).id;
         await userCtrl.changeUserDetails(userDetails);
         res.status(200).json({ message: "User Details Changed" })
     } catch (err: any) {

@@ -52,11 +52,8 @@ class AuthController extends UserController_1.UserContoller {
 }
 exports.AuthController = AuthController;
 _a = AuthController;
-AuthController.issueNewAccessToken = (res, payload) => {
-    const newAccessToken = (0, authUtils_1.issueJWT)(payload);
-    res.write("New access token issued");
-    res.cookie("accessToken", newAccessToken, { maxAge: accessTime, httpOnly: true });
-    return newAccessToken;
+AuthController.issueNewAccessToken = (payload) => {
+    return (0, authUtils_1.issueJWT)(payload);
 };
 /**
  *
@@ -67,23 +64,12 @@ AuthController.extractTokenStateAndBody = (token) => {
     try {
         const decoded = jwt.verify(token, PUB_KEY);
         console.log(decoded);
-        return { err: null, result: decoded };
+        return decoded;
     }
     catch (err) {
         console.log(err);
         return { err: err.name, result: null };
     }
-};
-AuthController.extractAccessTokenFromReq = (req) => {
-    var _b;
-    const accessToken = req.cookies.accessToken || req.body.accessToken || ((_b = req.headers.authorization) === null || _b === void 0 ? void 0 : _b.split('')[1]); // should be checking if access token is in header Bearer
-    if (accessToken === undefined) {
-        console.log("No access token");
-        return undefined;
-    }
-    console.log(accessToken);
-    const { token } = accessToken;
-    return token;
 };
 AuthController.extractRefreshTokenFromReq = (req) => {
     const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
@@ -95,31 +81,8 @@ AuthController.extractRefreshTokenFromReq = (req) => {
     const { token } = refreshToken;
     return token;
 };
-/**
- * Assuming Correct Authentification, logs user in by setting cookies and headers
- * @param res Response
- * @param payload the body of JWT
- */
-AuthController.logUserIn = (res, payload) => {
-    try {
-        const refreshToken = (0, authUtils_1.issueJWT)({ id: payload }, "30d"); //Should we renew refresh token at each login
-        const accessToken = _a.issueNewAccessToken(res, payload);
-        res.cookie("refreshToken", refreshToken, { maxAge: refreshTime, httpOnly: true });
-        res.setHeader('Authorization', 'Bearer ' + accessToken); // no header is being set
-        console.log("Logged in");
-        // for login issue couldn't we set cookie for user id and then use that to get user info
-        res.status(200).json({ err: false, result: { token: accessToken.token, refreshToken: refreshToken } });
-    }
-    catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, result: null });
-    }
-};
 AuthController.logUserOut = (res) => {
     try {
-        res.clearCookie('accessToken', { maxAge: accessTime, httpOnly: true }); // if options are not exactly same as res.cookie then web browser won't clear
-        res.removeHeader('Authorization'); // not working
-        res.status(200).json({ err: false, result: "Logged out" });
     }
     catch (err) {
         console.log(err);
@@ -144,7 +107,6 @@ AuthController.tokenState = (token) => {
 AuthController.signUp = async (req, res, next) => {
     try {
         let user = req.body.user;
-        console.log(user);
         const { err, result } = await db.signUp(user);
         if (err) {
             // should be sending more signigicant error
@@ -168,90 +130,47 @@ AuthController.signUp = async (req, res, next) => {
  * @param next Next Function
  */
 AuthController.login = async (req, res, next) => {
-    const id = req.body.id;
-    const password = req.body.password;
-    const refreshToken = (0, authUtils_1.issueJWT)({ id: id }, "30d");
-    const { err, result } = await db.login({ email: id, rawPassword: password, refreshToken: refreshToken.token });
-    if (err) { // err in login attempt
-        console.log(err);
-        res.status(400).json({ err: err, result: null });
+    try {
+        const userEmail = req.body.userEmail;
+        const password = req.body.password;
+        console.log(userEmail, password);
+        const { err, result: user } = await db.login({ userEmail, rawPassword: password });
+        if (err) {
+            res.status(500).json({ err: err, result: null });
+        }
+        else {
+            const accessToken = (0, authUtils_1.issueJWT)({ id: user.id, userEmail }, '1d');
+            const refreshToken = (0, authUtils_1.issueJWT)({ id: user.id, userEmail }, '30d');
+            res.setHeader('Authorization', 'Bearer ' + accessToken); // not working
+            res.cookie("accessToken", accessToken, { maxAge: accessTime, httpOnly: true });
+            res.cookie("refreshToken", refreshToken, { maxAge: refreshTime, httpOnly: true });
+            console.log("Logged in");
+            // for login issue couldn't we set cookie for user id and then use that to get user info
+            res.status(200).json({ err: false, result: { accessToken: accessToken.token, refreshToken: refreshToken.token, id: user.id } });
+        }
     }
-    else {
-        _a.logUserIn(res, id);
+    catch (err) {
+        console.log(err);
+        next(err);
     }
 };
 AuthController.logout = async (req, res, next) => {
-    const accessToken = _a.extractAccessTokenFromReq(req); // should be checking if access token is in header Bearer
-    if (accessToken === undefined) {
-        console.log("No access token");
-        res.status(400).json({ err: "no access token", result: null });
-        return;
-    }
-    _a.logUserOut(res);
-};
-AuthController.autoLogin = async (req, res, next) => {
     try {
-        const refreshToken = _a.extractRefreshTokenFromReq(req);
-        if (refreshToken === undefined) {
-            console.log("No refresh token");
-            res.status(400).json({ err: "No refresh token", result: null });
+        const accessToken = _a.extractAccessTokenFromReq(req);
+        const { id, userEmail } = _a.getPayloadFromAuthHeader(req); // should be checking if access token is in header Bearer
+        console.log(id, userEmail);
+        if (accessToken === undefined) {
+            console.log("No access token");
+            res.status(400).json({ err: "no access token", result: null });
             return;
         }
-        // get new access token
-        const refreshTokenBody = _a.extractTokenStateAndBody(refreshToken);
-        const { id } = refreshTokenBody;
-        _a.logUserIn(res, id);
+        res.clearCookie('accessToken', { maxAge: accessTime, httpOnly: true }); // if options are not exactly same as res.cookie then web browser won't clear
+        res.removeHeader('Authorization'); // not working
+        res.status(200).json({ err: false, result: "Logged out" });
     }
     catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, result: null }); // not always true for err 500
-    }
-};
-/**
- * When access token expires, this function is called to issue a new access token by validating the refresh Token (body of accessToken is on refresh token)
- * @param req Request
- * @param res Response
- * @param next Next
- * @returns stdReturn with new access token, if err, returns stdReturn with err
- */
-AuthController.accessExpired = (req, res, next) => {
-    try {
-        let theResult = { err: null, result: null };
-        const refreshToken = _a.extractRefreshTokenFromReq(req);
-        if (refreshToken === undefined) {
-            console.log("No refresh token");
-            theResult.err = "No refresh token";
-            return theResult;
-        }
-        const { err, result } = _a.extractTokenStateAndBody(refreshToken);
-        if (err === "TokenExpiredError") {
-            console.log("Refresh token expired");
-            theResult.err = "Refresh token expired";
-            return theResult;
-        }
-        if (err) {
-            console.log(err);
-            theResult.err = err;
-            return theResult;
-        }
-        const { id } = result;
-        const newAccessToken = (0, authUtils_1.issueJWT)({ id: id });
-        theResult.result = newAccessToken;
-        return theResult;
-    }
-    catch (err) {
-        console.log(err);
-        throw new Error(err);
-    }
-};
-AuthController.deleteEverything = async (req, res, next) => {
-    try {
-        const result = await db.deleteEverything();
-        res.json({ err: result.err, reuslt: result.result });
-    }
-    catch (err) {
-        console.log(err);
-        res.json({ err: true, result: err });
+        console.error(err);
+        next(err);
     }
 };
 app.use(errorController_1.errorHandler);

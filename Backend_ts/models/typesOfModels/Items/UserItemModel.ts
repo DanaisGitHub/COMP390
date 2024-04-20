@@ -51,7 +51,7 @@ export class UserItemModel extends BaseModel<UserItem> {
     public async querySearchItems(query: string): Promise<StdReturn> {
         let searchTerm: string = `
         SELECT * FROM items 
-        WHERE MATCH(itemName, description)
+        WHERE MATCH(book, description)
         AGAINST('${query}' IN BOOLEAN MODE);`// what the hell is boolean mode
         const [result, metadata] = await sequelize.query(searchTerm, { type: QueryTypes.RAW }) // where are you getting sequelize from (Should you use custom query)
         return { err: null, result: [result, metadata] }
@@ -82,8 +82,8 @@ export class UserItemModel extends BaseModel<UserItem> {
     public async addRandomItem(options: { ownerID: number, itemID: number }): Promise<UserItem> {
         try {
             const { ownerID, itemID } = options
-            const quantity = randomNumber(1, 100)
-            const price = randomNumber(1, 100)
+            const quantity = randomNumber(2, 1000)
+            const price = randomNumber(2, 100)
             const newItem = await UserItem.create({ ownerID, itemID, quantity, price })
             return newItem
         } catch (err) {
@@ -92,7 +92,7 @@ export class UserItemModel extends BaseModel<UserItem> {
         }
     }
 
-    public async createNewRandomItems(quant = 200): Promise<void> {
+    public async createNewRandomItems(quant:number): Promise<void> {
         try {
             const bookModel = new BookItemModel()
             const usersModel = new UserModel()
@@ -118,6 +118,7 @@ export class UserItemModel extends BaseModel<UserItem> {
             if (userItemObj.quantity < quantity) return false;
             userItemObj.quantity -= quantity
             await userItemObj.save()
+            if (userItemObj.quantity === 0) await userItemObj.destroy()
             return true;
         } catch (err: any) {
             console.error(err)

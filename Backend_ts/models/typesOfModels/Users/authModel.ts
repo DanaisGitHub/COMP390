@@ -6,24 +6,44 @@ import bcrypt from 'bcrypt'
 import passport from 'passport-jwt';
 import StdReturn, { Models } from "../../../types/baseTypes"; // just changed make sure correct
 import { UserPreferenceType, TempUserType } from '../../../types/DBTypes/UserTypes/userTypes'
-import {UserModel} from "./userModels";
+import { UserModel } from "./userModels";
+import { NotFoundError } from "../../../utils/other/customError";
 
 
 // pre-processing & storage goes in here
 export class AuthModel extends UserModel {
-    isAlreadyAUserObj(username: string): { err: any; result: any; } | PromiseLike<{ err: any; result: any; }> {
-        throw new Error('Method not implemented.');
-    }
-    user = User; // not specified which user just all Users
 
-    public signUp = async (userDetails: TempUserType): Promise<StdReturn> => {
+    public isAlreadyAUserObj = async (primaryKey: number): Promise<StdReturn> => {
+        try {
+            const { err, result } = await this.findByPkey(primaryKey)
+            if (err) {
+                throw new Error(`Problem when trying to find user ) ${err}}`)
+                return { err: err, result: result }
+            }
+            if (result === null) {
+                return { err: err, result: result }
+            }
+            else {
+                return { err: err, result: result }
+            }
+        } catch (err) {
+            console.error(err)
+            throw new Error(`Problem when trying to find user ) ${err}}`)
+
+        }
+    }
+
+  
+    // not specified which user just all Users
+
+    public signUp = async (userDetails: TempUserType): Promise<StdReturn<User | null>> => {
         // check to see if already exists
         // check data is correct (should use validator software)
         try {
 
 
-            let isUser: StdReturn = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
-            if (isUser.result !== null) {
+            let user = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
+            if (user !== null) {
                 //user does exists
                 console.log("User " + userDetails.userEmail + " Exsits");
                 return { err: "User '" + userDetails.userEmail + "' Exsits", result: null }
@@ -38,32 +58,31 @@ export class AuthModel extends UserModel {
             console.log(err)
             throw new Error("AuthModel signUp() -----> " + err)
         }
-
-
     }
 
 
-    public login = async (obj: { email: string, rawPassword: string, refreshToken: string }): Promise<StdReturn> => {
+
+    public login = async (obj: { userEmail: string, rawPassword: string }): Promise<StdReturn<User | null>> => {
         try {
-            const { err, result } = await this.findUserByEmail(obj.email);
-            if (err) {
-                console.log(`Error in login ${err}`)
-                return { err: err, result: null } // I don't think this ever runs
-            }
-            if (result === null) {
+            const { userEmail, rawPassword } = obj;
+            const user = await this.findUserByEmail(userEmail, true);
+            if (user === null) {
                 //not found, already console.logged
                 return { err: "User Not Found", result: null }
             }
-            const user = result;
-            await this.baseUpdate({ refreshToken: obj.refreshToken }, { where: { userEmail: obj.email } })
-            const passwordMatch = await this.comparePasswords(obj.rawPassword, user.password);
+
+            const passwordMatch = await this.comparePasswords(rawPassword, user.password);
             if (!passwordMatch.result) {
                 console.log("passwords don't match")
                 return { err: "Passwords don't match", result: null }
             }
-            return { err: null, result: result }
+            return { err: null, result: user }
 
         } catch (err) {
+            if (err instanceof NotFoundError) {
+                console.log(err.message)
+                return { err: "User Not Found " + err.message, result: null }
+            }
             console.log(err)
             throw new Error("Login error")
         }
@@ -71,32 +90,18 @@ export class AuthModel extends UserModel {
 
 
 
-    private findUserByEmail = async (email: string): Promise<StdReturn> => { // don't need this if you have above
+    public findUserByEmail = async (userEmail: string, rejectOnEmpty = false): Promise<User> => { // don't need this if you have above
         try {
-            const { err, result } = await this.baseFindOne({
-                where: { "userEmail": email },
-                rejectOnEmpty: false
+            const { err, result: user } = await this.baseFindOne({
+                where: { userEmail },
+                rejectOnEmpty
             })
-            if (result === null) {
-                console.log(err);
-                return { err: "User Not Found", result: null }
-            }
-            return { err: err, result: result }
+            return user
 
-        } catch (err) {
-            console.log(err)
-            throw new Error(`authModel findUserByEmai catch err ----> ${err}}`)
+        } catch (err: any) {
+            console.error(err)
+            throw new Error(`authModel findUserByEmai catch err ----> ${err.message}}`)
 
-        }
-    }
-
-    public deleteEverything = async (): Promise<StdReturn> => {
-        try {
-            await this.user.destroy({ where: {} })
-            return { err: null, result: "Everything from db is delete" }
-        } catch (err) {
-            console.log(err)
-            throw new Error("Problem when trying to delete everything")
         }
     }
 

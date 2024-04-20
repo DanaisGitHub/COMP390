@@ -2,30 +2,22 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const RentalsCtrl_1 = require("../../controllers/RentalsCtrl/RentalsCtrl");
+const authUtils_1 = require("../../utils/auth/authUtils");
 // const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 // const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 const router = (0, express_1.Router)();
 const rentalCtrl = new RentalsCtrl_1.RentalsContorller();
 // well let controller deal with auth
-router.post('/purchase-request', async (req, res, next) => {
+router.post('/purchase-request', authUtils_1.authMiddleware, async (req, res, next) => {
     try {
         const ownerID = parseInt(req.body.ownerID);
         const startDate = new Date(req.body.startDate);
         const endDate = new Date(req.body.endDate);
         const rentalItems = req.body.rentalItems;
-        console.log(rentalItems);
-        // for (const item of rentalItems) {
-        //     const { itemID, quantity } = item;
-        //     let available = await rentalCtrl.checkIfItemIsAvailable({ ownerID, itemID, startDate, endDate, quantity });
-        //     if (available) {
-        //         res.status(400).json({ err: true, message: "Item is not available" });
-        //     }
-        // }
-        //if item is available
-        // create a purchase request
+        const { id, userEmail } = (0, authUtils_1.getPayloadFromAuthHeader)(req);
         const purchaseRequest = {
             ownerID,
-            renterID: 10,
+            renterID: id,
             startDate,
             endDate,
             rentalItems
@@ -36,13 +28,13 @@ router.post('/purchase-request', async (req, res, next) => {
     catch (err) {
         next(err); // 
         if (err.message === "Item is not available") {
-            res.status(400).json({ err: true, message: err.message });
+            res.status(400).json({ err: err.message, message: err.message });
         }
         console.error(err);
-        res.status(500).json({ err: err, message: err.message });
+        res.status(500).json({ err: err.message, message: err.message });
     }
 });
-router.get('/getPrice&Quantity', async (req, res, next) => {
+router.get('/getPrice&Quantity', authUtils_1.authMiddleware, async (req, res, next) => {
     try {
         const ownerID = parseInt(req.query.ownerID);
         const itemID = parseInt(req.query.itemID);

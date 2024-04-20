@@ -6,15 +6,13 @@ import Link from 'next/link'
 export default function productPreview(props: ProductPreviewType) {
     const { itemID, ownerID, book, lng, lat, ranking_we_think, ranking_of_book } = props
     console.log(props)
-    return <Link href={`/productsearch/${itemID}?ownerID=${ownerID}&itemID=${itemID}`} className="max-w-[20rem] rounded overflow-hidden shadow-lg border-white border-2 m-2">
+    return <Link href={`/productsearch/${itemID}?ownerID=${ownerID}&itemID=${itemID}`}
+        className="w-[40%] rounded overflow-hidden shadow-lg bg-slate-200 border-gray-100 border-2 m-2">
 
-        <div className="px-6 py-4">
-            <div className="font-bold text-xl mb-2">{book ?? "noName"} </div> {/*Max 3 Lines*/}
-            <div className=" text-m mb-2 flex flex-row w-[100%] bg-red-500 justify-start"> {"Name of Seller"}
-            </div>
-            <div className="font-bold text-xl mb-2">Rating Others gave: {ranking_of_book}</div>
-            <div className="font-bold text-xl mb-2">:{ranking_we_think?.toFixed(2)}</div>
-
+        <div className="px-6 py-4 ">
+            <div className="text-l mb-2">Title: <b>{book.toLocaleUpperCase() ?? "noName"} </b></div> {/*Max 3 Lines*/}
+            <div className="text-l mb-2">AI Rating: <b>{ranking_we_think?.toFixed(2)}</b></div>
+            <div className="text-l mb-2">Standard Rating: <b>{ranking_of_book}</b></div>
         </div>
     </Link>
 }

@@ -90,7 +90,7 @@ class BaseModel {
         this.baseFindOne = async (options) => {
             try {
                 const result = await this.model.findOne(options);
-                if (result === null || result === undefined) {
+                if (options.rejectOnEmpty && (result === null || result === undefined)) {
                     throw new sequelize_1.EmptyResultError("User not found in 'findOne' ");
                 }
                 return { err: null, result };

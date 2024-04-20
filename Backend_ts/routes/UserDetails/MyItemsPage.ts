@@ -9,11 +9,12 @@ import fs from 'fs';
 import { RentalsContorller } from '../../controllers/RentalsCtrl/RentalsCtrl';
 import { BookItemType } from '../../types/DBTypes/BookTypes/bookTypes';
 import { UserItemType } from '../../types/DBTypes/RentalTypes/rentalType';
+import { authMiddleware, getPayloadFromAuthHeader } from '../../utils/auth/authUtils';
 
 const rentalsCtrl = new RentalsContorller();
 const router = Router();
 
-router.get('/get-listed-items', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+router.get('/get-listed-items',authMiddleware, async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
         //getBookFullDetails(req, res, next);
         const rental = await rentalsCtrl.getAllCurrentlyListedItems();
@@ -26,10 +27,11 @@ router.get('/get-listed-items', async (req: Req, res: Res, next: Next) => { //  
     }
 })
 
-router.post('/add-new-item-listing', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+router.post('/add-new-item-listing', authMiddleware, async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
+        const { id, userEmail } = getPayloadFromAuthHeader(req)
         const userItem = req.body.userItem as UserItemType;
-        userItem.ownerID = 10;
+        userItem.ownerID = id;
         const rental = await rentalsCtrl.addNewItemListing(userItem);
         res.status(200).json({ message: `userItem is added` })
     } catch (err: any) {
@@ -38,7 +40,7 @@ router.post('/add-new-item-listing', async (req: Req, res: Res, next: Next) => {
     }
 })
 
-router.get('/delete-item-listing', async (req: Req, res: Res, next: Next) => { //  findAll db not working here
+router.get('/delete-item-listing',authMiddleware, async (req: Req, res: Res, next: Next) => { //  findAll db not working here
     try {
         const itemID = req.body.itemID as number;
         const rental = await rentalsCtrl.deleteItemListing(itemID);

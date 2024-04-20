@@ -621,14 +621,14 @@ export class DBSetupListener {
         await bookItem.addAllBookItems();
     }
 
-    static createUsers = async (num = 10) => {
+    static createUsers = async (num:number) => {
         const userModel = new UserModel();
         await userModel.createManyRandomUsers(num);
     }
 
     static createUserItems = async () => {
         const userItemModel = new UserItemModel();
-        await userItemModel.createNewRandomItems(100);
+        await userItemModel.createNewRandomItems(400);
     }
 
     static dropTables1 = async () => { // put anything you want to run before tables get dropped
@@ -645,7 +645,7 @@ export class DBSetupListener {
                 await DBSetupListener.addBookAndLinks();
             }
             // BOOKS have to be init before Users
-            await DBSetupListener.createUsers(100);
+            await DBSetupListener.createUsers(400);
         }
     }
 

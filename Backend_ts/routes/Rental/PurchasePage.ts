@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { RentalsContorller } from '../../controllers/RentalsCtrl/RentalsCtrl';
 import { RentalOrderType, RentalItemType, FullRentalPurchaseRequest } from '../../types/API_Types/Rental/RentalAPITypes';
+import { authMiddleware, getPayloadFromAuthHeader } from '../../utils/auth/authUtils';
 // const pathToKey = path.join(__dirname, '..', 'id_rsa_pub.pem');
 // const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
@@ -12,28 +13,16 @@ const rentalCtrl = new RentalsContorller();
 
 // well let controller deal with auth
 
-router.post('/purchase-request', async (req: Req, res: Res, next: Next) => {
+router.post('/purchase-request', authMiddleware, async (req: Req, res: Res, next: Next) => {
     try {
         const ownerID = parseInt(req.body.ownerID);
         const startDate = new Date(req.body.startDate);
         const endDate = new Date(req.body.endDate);
         const rentalItems: RentalItemType[] = req.body.rentalItems;
-
-        console.log(rentalItems);
-
-        // for (const item of rentalItems) {
-        //     const { itemID, quantity } = item;
-        //     let available = await rentalCtrl.checkIfItemIsAvailable({ ownerID, itemID, startDate, endDate, quantity });
-        //     if (available) {
-        //         res.status(400).json({ err: true, message: "Item is not available" });
-        //     }
-        // }
-        //if item is available
-        // create a purchase request
-
+        const { id, userEmail } = getPayloadFromAuthHeader(req)
         const purchaseRequest: FullRentalPurchaseRequest = {
             ownerID,
-            renterID: 10,
+            renterID: id,
             startDate,
             endDate,
             rentalItems
@@ -46,14 +35,14 @@ router.post('/purchase-request', async (req: Req, res: Res, next: Next) => {
     catch (err: any) {
         next(err); // 
         if (err.message === "Item is not available") {
-            res.status(400).json({ err: true, message: err.message });
+            res.status(400).json({ err: err.message, message: err.message });
         }
         console.error(err);
-        res.status(500).json({ err: err, message: err.message });
+        res.status(500).json({ err: err.message, message: err.message });
     }
 });
 
-router.get('/getPrice&Quantity', async (req: Req, res: Res, next: Next) => {
+router.get('/getPrice&Quantity', authMiddleware, async (req: Req, res: Res, next: Next) => {
     try {
         const ownerID = parseInt(req.query.ownerID as string);
         const itemID = parseInt(req.query.itemID as string);

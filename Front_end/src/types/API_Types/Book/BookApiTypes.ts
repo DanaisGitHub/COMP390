@@ -45,7 +45,7 @@ export type ProductDetailsType = {
     id: number;
     book: string;
     series: string | undefined | null;
-    author: string;
+    authors: string;
     description: string;
     numPages: number;
     formats: string[];// are these even in ?

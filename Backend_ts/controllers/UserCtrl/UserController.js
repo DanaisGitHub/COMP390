@@ -5,8 +5,10 @@ const userModels_1 = require("../../models/typesOfModels/Users/userModels");
 const GenreModels_1 = require("../../models/typesOfModels/Items/BookModels/GenreModels/GenreModels");
 const FormatModel_1 = require("../../models/typesOfModels/Items/BookModels/FormatModels/FormatModel");
 const customError_1 = require("../../utils/other/customError");
-class UserContoller {
+const baseController_1 = require("../_baseController/baseController");
+class UserContoller extends baseController_1.BaseController {
     constructor() {
+        super(...arguments);
         // Common Models for all functions
         this.userModel = new userModels_1.UserModel();
         this.genreModel = new GenreModels_1.GenreModel();
@@ -20,11 +22,10 @@ class UserContoller {
          * @param next
          * @returns
          */
-        this.getAllUserDetails = async () => {
+        this.getAllUserDetails = async (userID) => {
             var _a;
             try {
                 // get from auth token
-                const userID = 10;
                 const rawUser = await this.userModel.baseFindOneNotTyped({
                     where: { id: userID }, include: ['userPreference', 'bookPreference'], rejectOnEmpty: false
                 });
@@ -68,9 +69,8 @@ class UserContoller {
                 throw new Error("Error in getting user details");
             }
         };
-        this.getBasicUserDetails = async () => {
-            const userID = 15;
-            const { err, result: user } = await this.userModel.find({ where: { id: userID }, rejectOnEmpty: true });
+        this.getBasicUserDetails = async (id) => {
+            const { err, result: user } = await this.userModel.find({ where: { id }, rejectOnEmpty: true });
             const basicUser = {
                 firstName: user.firstName,
                 lastName: user.lastName,
@@ -82,8 +82,7 @@ class UserContoller {
         };
         this.changeUserDetails = async (UserDetails) => {
             try {
-                const userID = 15;
-                await this.userModel.update(UserDetails, { where: { id: userID } });
+                await this.userModel.update(UserDetails, { where: { id: UserDetails.id } });
             }
             catch (err) {
                 console.error(err);

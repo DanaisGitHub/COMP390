@@ -122,7 +122,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
     protected baseFindOne = async (options: NonNullFindOptions<Attributes<T>>): Promise<StdReturn<T>> => {
         try {
             const result = await this.model.findOne(options)
-            if (result === null || result === undefined) {
+            if (options.rejectOnEmpty && (result === null || result === undefined)) {
                 throw new EmptyResultError("User not found in 'findOne' ");
             }
             return { err: null, result };

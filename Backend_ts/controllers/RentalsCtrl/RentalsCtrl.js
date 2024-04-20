@@ -59,23 +59,23 @@ class RentalsContorller {
         this.checkIfItemIsAvailable = async (options) => {
             try {
                 const { ownerID, itemID, quantity, startDate, endDate } = options;
+                const clash = await this.rentalModel.checkIfUserItemDatesClash({ ownerID, itemID, startDate, endDate });
+                if (clash) {
+                    console.log("Dates clash");
+                    throw new Error("Dates clash");
+                }
                 // check quantity
                 const isEnoughQuant = await this.userItemModel.checkIfEnoughQuantity({ ownerID, itemID, quantity });
                 if (!isEnoughQuant) {
                     console.log("Not enough quantity");
-                    return false;
+                    throw new Error("Not enough quantity");
                 }
                 // check if dates are available // more complicated/ have to search rentals and see if dates are available in each rental
-                const clash = await this.rentalModel.checkIfUserItemDatesClash({ ownerID, itemID, startDate, endDate });
-                if (clash) {
-                    console.log("Dates clash");
-                    return false;
-                }
                 return true; // if all checks pass
             }
             catch (err) {
                 console.error(err);
-                throw new Error(`Error in checkIfItemIsAvailable:=> ${err}`);
+                throw new Error(`Error in checkIfItemIsAvailable:=> ${err.message}`);
             }
         };
         this.createPurchaseRequest = async (purchaseReq) => {
@@ -94,7 +94,7 @@ class RentalsContorller {
             }
             catch (err) {
                 console.error(err);
-                throw new Error("Error createPurchaseRequest ---> " + err.message);
+                throw err;
             }
         };
         this.getPriceAndQuantity = async (options) => {
