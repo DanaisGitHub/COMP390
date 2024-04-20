@@ -21,12 +21,11 @@ class ProductController {
          */
         this.getRankedBooks = async (options) => {
             // from product/books get all books in location space x
-            let userID = 1;
+            const { lat, lng, searchQuery, maxDistance, minRating, maxPrice, userID } = options;
             const { err, result: user } = await this.userModel.findByPkey(userID);
             if (err)
                 throw new customError_1.NotFoundError('User not found');
             const userSex = !user.sex ? 0 : 1;
-            const { lat, lng, searchQuery, maxDistance, minRating, maxPrice } = options;
             const rankedBookPrevs = await this.bookModel.getRankedBooksWithinRadiusAndSearchQuery({
                 lat,
                 lng,
@@ -41,18 +40,23 @@ class ProductController {
         };
         this.getBookDetails = async (bookID) => {
             // get book details
-            let userID = 1; // get from token
             const bookDetails = await this.bookModel.getFullBookDetailsForBookID(bookID);
             return bookDetails;
         };
-        this.getBookOwnedByUser = async (req, res, next) => {
+        this.getBookOwnedByUser = async (userID) => {
             // get book details
-            let userID = 1;
             const { err, result: bookDetails } = await this.userItemsModel.findAll({ where: { ownerID: userID }, rejectOnEmpty: true });
             const bookIDs = bookDetails.map((book) => book.itemID);
             const bookPreview = await this.bookModel.findAllBooksForIDs(bookIDs);
             console.log(bookPreview);
             return bookPreview;
+        };
+        this.getUserLocation = async (userID) => {
+            // get user location
+            const { err, result: user } = await this.userModel.findByPkey(userID);
+            if (err)
+                throw new customError_1.NotFoundError('User not found');
+            return { lat: user.lat, lng: user.lng };
         };
     }
 }

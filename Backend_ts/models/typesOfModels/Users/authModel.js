@@ -4,20 +4,39 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModel = void 0;
-const modelSetUp_1 = require("../../DB_Functions/Set_Up/modelSetUp");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const userModels_1 = require("./userModels");
+const customError_1 = require("../../../utils/other/customError");
 // pre-processing & storage goes in here
 class AuthModel extends userModels_1.UserModel {
     constructor() {
         super(...arguments);
-        this.user = modelSetUp_1.User; // not specified which user just all Users
+        this.isAlreadyAUserObj = async (primaryKey) => {
+            try {
+                const { err, result } = await this.findByPkey(primaryKey);
+                if (err) {
+                    throw new Error(`Problem when trying to find user ) ${err}}`);
+                    return { err: err, result: result };
+                }
+                if (result === null) {
+                    return { err: err, result: result };
+                }
+                else {
+                    return { err: err, result: result };
+                }
+            }
+            catch (err) {
+                console.error(err);
+                throw new Error(`Problem when trying to find user ) ${err}}`);
+            }
+        };
+        // not specified which user just all Users
         this.signUp = async (userDetails) => {
             // check to see if already exists
             // check data is correct (should use validator software)
             try {
-                let isUser = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
-                if (isUser.result !== null) {
+                let user = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
+                if (user !== null) {
                     //user does exists
                     console.log("User " + userDetails.userEmail + " Exsits");
                     return { err: "User '" + userDetails.userEmail + "' Exsits", result: null };
@@ -34,54 +53,39 @@ class AuthModel extends userModels_1.UserModel {
         };
         this.login = async (obj) => {
             try {
-                const { err, result } = await this.findUserByEmail(obj.email);
-                if (err) {
-                    console.log(`Error in login ${err}`);
-                    return { err: err, result: null }; // I don't think this ever runs
-                }
-                if (result === null) {
+                const { userEmail, rawPassword } = obj;
+                const user = await this.findUserByEmail(userEmail, true);
+                if (user === null) {
                     //not found, already console.logged
                     return { err: "User Not Found", result: null };
                 }
-                const user = result;
-                await this.baseUpdate({ refreshToken: obj.refreshToken }, { where: { userEmail: obj.email } });
-                const passwordMatch = await this.comparePasswords(obj.rawPassword, user.password);
+                const passwordMatch = await this.comparePasswords(rawPassword, user.password);
                 if (!passwordMatch.result) {
                     console.log("passwords don't match");
                     return { err: "Passwords don't match", result: null };
                 }
-                return { err: null, result: result };
+                return { err: null, result: user };
             }
             catch (err) {
+                if (err instanceof customError_1.NotFoundError) {
+                    console.log(err.message);
+                    return { err: "User Not Found " + err.message, result: null };
+                }
                 console.log(err);
                 throw new Error("Login error");
             }
         };
-        this.findUserByEmail = async (email) => {
+        this.findUserByEmail = async (userEmail, rejectOnEmpty = false) => {
             try {
-                const { err, result } = await this.baseFindOne({
-                    where: { "userEmail": email },
-                    rejectOnEmpty: false
+                const { err, result: user } = await this.baseFindOne({
+                    where: { userEmail },
+                    rejectOnEmpty
                 });
-                if (result === null) {
-                    console.log(err);
-                    return { err: "User Not Found", result: null };
-                }
-                return { err: err, result: result };
+                return user;
             }
             catch (err) {
-                console.log(err);
-                throw new Error(`authModel findUserByEmai catch err ----> ${err}}`);
-            }
-        };
-        this.deleteEverything = async () => {
-            try {
-                await this.user.destroy({ where: {} });
-                return { err: null, result: "Everything from db is delete" };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Problem when trying to delete everything");
+                console.error(err);
+                throw new Error(`authModel findUserByEmai catch err ----> ${err.message}}`);
             }
         };
         this.createHash = async (rawPassword) => {
@@ -164,9 +168,6 @@ class AuthModel extends userModels_1.UserModel {
         //         throw new Error("Problem when trying to find all");
         //     }
         // }
-    }
-    isAlreadyAUserObj(username) {
-        throw new Error('Method not implemented.');
     }
 }
 exports.AuthModel = AuthModel;

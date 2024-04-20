@@ -12,7 +12,6 @@ import fs from 'fs';
 import authRoutes from './Auth/authRoutes';
 //import testRoutes from '../testRoutes';
 import StdReturn from '../types/baseTypes';
-import apiPython from './zzPrevRoutes/APIPython';
 //import { FoodModel } from '../models/typesOfModels/foodModel';
 import product from './Product/produceSearchPage';
 import userRoutes from './UserDetails/UserProfilePage';
@@ -26,7 +25,6 @@ const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 const router = Router();
 router.use(cors())
 router.use('/auth', authRoutes);
-router.use('/apiPY', apiPython);
 router.use('/productSearchPage', product);
 router.use('/userProfilePage', userRoutes)
 router.use('/MyItemsPage' , myItemsPage)

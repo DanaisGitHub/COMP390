@@ -1,45 +1,162 @@
-import { sign } from "crypto";
+'use client'
 import React, { useState } from "react";
+import { signUp, logoutCall } from "../../../lib/AuthAPI";
+import { UserType } from "../../types/API_Types/User/UserApiTypes"
+import cookies from 'js-cookie';
 
 
 
 
-export function SignUpForm() {
-  return (
-    <section className="bg-gray-50 dark:bg-gray-900 bg-green-700 h-[100%] ">
-      <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto h-[100%] lg:py-0">
+
+
+export default function SignupForm() {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [userEmail, setUserEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [sex, setSex] = useState(1);
+    const [birthDate, setBirthDate] = useState('');
+    const [lat, setLat] = useState(53.483959);
+    const [lng, setLng] = useState(-2.244644);
+
+    const signIn = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        try {
+            console.log({ firstName, lastName, sex, userEmail, password, birthDate, lat, lng })
+            const data = await signUp({ firstName, lastName, sex, userEmail, password, birthDate, lat, lng });
+            console.log(data);
+            alert('Sign up successful');
+        } catch (err: any) {
+            console.log(err);
+            alert('Sign up failed because of ' + err.err);
+
+        }
+    }
+    return <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto h-full lg:py-0 p-96">
         <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
-          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
-            <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center">
-              Sign in 
-            </h1>
-            <form className="space-y-4 md:space-y-6" action="#">
-              <div>
-                <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your email</label>
-                <input type="email" name="email" id="email" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="name@company.com" />
-              </div>
-              <div>
-                <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password</label>
-                <input type="password" name="password" id="password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-              </div>
-              <div>
-                <label htmlFor="confirm-password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Confirm password</label>
-                <input type="confirm-password" name="confirm-password" id="confirm-password" placeholder="••••••••" className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-              </div>
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input id="terms" aria-describedby="terms" type="checkbox" className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800" />
+            <form className="w-full max-w-lg px-6 py-8" onSubmit={signIn}>
+                <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white text-center">
+                    Sign Up
+                </h1>
+                <div className="flex flex-wrap -mx-3 mb-6">
+                    <div className="w-full md:w-1/2 px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-first-name" >
+                            First Name
+                        </label>
+                        <input className="appearance-none block w-full bg-gray-200 text-gray-700 border border-red-500 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white"
+                            id="grid-first-name"
+                            type="text"
+                            placeholder="Jane"
+                            required
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)} />
+                        <p className="text-red-500 text-xs italic">Please fill out this field.</p>
+                    </div>
+                    <div className="w-full md:w-1/2 px-3">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-last-name">
+                            Last Name
+                        </label>
+                        <input required
+                            className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            id="grid-last-name"
+                            type="text"
+                            placeholder="Doe"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)} />
+                    </div>
                 </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="terms" className="font-light text-gray-500 dark:text-gray-300">I accept the <a className="font-medium text-primary-600 hover:underline dark:text-primary-500" href="#">Terms and Conditions</a></label>
-                </div>
-              </div>
-              <button type="submit" className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 bg-cyan-600 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800">Create an account</button>
+                <div className="flex flex-wrap -mx-3 mb-6">
+                    <div className="w-full px-3">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-email">
+                            Email Address
+                        </label>
+                        <input
+                            required
+                            className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            id="grid-email"
+                            type="email"
+                            placeholder="JaneDoe@example.com"
+                            value={userEmail}
+                            onChange={(e) => setUserEmail(e.target.value)} />
+                    </div>
 
+                    <div className="w-full px-3">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="sex">sex</label>
+                        <select name="sex"
+                            id="sex"
+                            className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            required
+                            onChange={(e) => setSex(parseInt(e.target.value))}>
+                            <option value={0}>Male</option>
+                            <option value={1}>Female</option>
+                        </select>
+                    </div>
+
+                    <div className="w-full px-3">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="DOB">Date of Birth</label>
+                        <input
+                            required
+                            className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            id="DOB"
+                            type="date"
+                            onChange={(e) => setBirthDate(e.target.value)}></input>
+                    </div>
+
+                    <div className="w-full px-3">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-password">
+                            Password
+                        </label>
+                        <input required
+                            className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 mb-3 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            id="grid-password"
+                            type="password"
+                            placeholder="******************"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)} />
+                        <p className="text-gray-600 text-xs italic">Make it as long and as crazy as you'd like</p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap justify-around -mx-3 mb-2">
+                    <div className="w-full md:w-1/3 px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-city">
+                            Latitude
+                        </label>
+                        <input className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            id="grid-city"
+                            type="number"
+                            value={lat}
+                            required
+                            onChange={(e) => setLat(parseInt(e.target.value))} />
+                    </div>
+
+                    <div className="w-full md:w-1/3 px-3 mb-6 md:mb-0">
+                        <label className="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2" htmlFor="grid-zip">
+                            Longitude
+                        </label>
+                        <input
+                            required
+                            className="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                            id="grid-zip"
+                            type="number"
+                            value={lng}
+                            onChange={(e) => setLng(parseInt(e.target.value))} />
+                    </div>
+                </div>
+                <div className="md:flex justify-center my-9">
+                    <button className="shadow bg-purple-500 hover:bg-purple-400 focus:shadow-outline focus:outline-none text-white font-bold py-2 px-4 rounded"
+                        type="submit">
+                        Sign Up
+                    </button>
+                </div>
             </form>
-          </div>
         </div>
-      </div>
-    </section>
-  );
-};
+    </div>
+
+
+}
+
+
+
+
+
+

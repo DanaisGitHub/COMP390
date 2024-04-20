@@ -13,17 +13,17 @@ const PUB_KEY = fs.readFileSync(pathToKey, 'utf8');
 
 
 const localStrategy = new LocalStrategy(// don't really know what this does
-    async (username: string, password: string, done) => {
+    async (userEmail: string, password: string, done) => {
         try {
-            const { err, result } = await db.isAlreadyAUserObj(username);//dont think i need 
-            if (!result) {
+            const user = await db.findUserByEmail(userEmail);//dont think i need 
+            if (!user) {
                 return done(null, false);
             }
-            const isValid = await db.comparePasswords(password, result.password);
+            const isValid = await db.comparePasswords(password, user.password);
             if (!isValid) {
                 return done(null, false);
             }
-            return done(null, result);
+            return done(null, user);
         } catch (err) {
             return done(err);
         }
@@ -40,7 +40,6 @@ const options = {
 // if user cannot be found then this crashes 
 const strategy = new JwtStrategy(options, async (payload, done) => { // What calls strategy?
     try {
-        //console.log(payload)/////////////////////////////////// 
         const { err, result } = await db.isAlreadyAUserObj(payload.id); // I have defined as email here, need to change it 
         if (err) {
             done(err)

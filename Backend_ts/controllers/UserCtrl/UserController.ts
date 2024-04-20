@@ -7,8 +7,9 @@ import { GenreModel } from '../../models/typesOfModels/Items/BookModels/GenreMod
 import { FormatModel } from '../../models/typesOfModels/Items/BookModels/FormatModels/FormatModel';
 import { BasicUserType, ProcessedUserType, UnprocessedUser, UptUserType } from '../../types/API_Types/User/UserApiTypes';
 import { NotFoundError } from '../../utils/other/customError';
+import { BaseController } from '../_baseController/baseController';
 
-export class UserContoller {
+export class UserContoller extends BaseController {
     // Common Models for all functions
     private userModel = new UserModel();
     private genreModel = new GenreModel();
@@ -23,10 +24,9 @@ export class UserContoller {
      * @param next 
      * @returns 
      */
-    public getAllUserDetails = async (): Promise<ProcessedUserType> => {
+    public getAllUserDetails = async (userID:number): Promise<ProcessedUserType> => {
         try {
             // get from auth token
-            const userID = 10
             const rawUser = await this.userModel.baseFindOneNotTyped<UnprocessedUser>({
                 where: { id: userID }, include: ['userPreference', 'bookPreference'], rejectOnEmpty: false
             })
@@ -71,9 +71,8 @@ export class UserContoller {
         }
     }
 
-    public getBasicUserDetails = async (): Promise<BasicUserType> => {
-        const userID = 15
-        const { err, result: user } = await this.userModel.find({ where: { id: userID }, rejectOnEmpty: true })
+    public getBasicUserDetails = async (id:number): Promise<BasicUserType> => {
+        const { err, result: user } = await this.userModel.find({ where: { id }, rejectOnEmpty: true })
         const basicUser: BasicUserType = {
             firstName: user.firstName,
             lastName: user.lastName,
@@ -86,8 +85,7 @@ export class UserContoller {
 
     public changeUserDetails = async (UserDetails: UptUserType): Promise<void> => {
         try {
-            const userID = 15
-            await this.userModel.update(UserDetails, { where: { id: userID } })
+            await this.userModel.update(UserDetails, { where: { id: UserDetails.id! } })
         }
         catch (err: any) {
             console.error(err)

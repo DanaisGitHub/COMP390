@@ -1,7 +1,7 @@
 import { Router, Request as Req, Response as Res, NextFunction as Next } from 'express';
 
 import { AuthController as AuthFunctions } from '../../controllers/auth/authController';
-import { authMiddleware } from '../../utils/auth/authUtils';
+import { authMiddleware, getPayloadFromAuthHeader } from '../../utils/auth/authUtils';
 
 // we are running into some refresh token issues, so access Token is going to be 15 days and refresh token is going to be 30 days
 // Then a force logout will happen 
@@ -40,10 +40,10 @@ router.post('/signUp', async (req: Req, res: Res, next: Next) => { // semi works
         await AuthFunctions.signUp(req, res, next);
     }
     catch (err) {
-        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"+err)
+        console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" + err)
         next(err)
         //res.status(500).json({ err: err, message: null })
-        
+
     }
 })
 
@@ -63,6 +63,16 @@ router.post('/logout', authMiddleware, async (req: Req, res: Res, next: Next) =>
         AuthFunctions.logout(req, res, next);
     }
     catch (err) {
+        console.log(err)
+        res.status(500).json({ err: err, message: null })
+    }
+})
+
+router.post('/test', authMiddleware, async (req: Req, res: Res, next: Next) => {
+    try {
+        const { id, userEmail } = getPayloadFromAuthHeader(req)
+        res.status(200).json({ id: id, userEmail: userEmail })
+    } catch (err) {
         console.log(err)
         res.status(500).json({ err: err, message: null })
     }
@@ -90,14 +100,6 @@ router.post('/logout', authMiddleware, async (req: Req, res: Res, next: Next) =>
 //     }
 // })
 
-router.post("/deleteEverything", async (req: Req, res: Res, next: Next) => { // works // Shouls we Really have this in production?
-    try {
-        AuthFunctions.deleteEverything(req, res, next);
-    } catch (err) {
-        console.log(err)
-        res.status(500).json({ err: err, message: null })
-    }
-})
 
 // router.get("/getEverything", async (req: Req, res: Res, next: Next) => { // works // Shouls we Really have this in production?
 //     try {

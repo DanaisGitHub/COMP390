@@ -52,6 +52,16 @@ router.post('/logout', authUtils_1.authMiddleware, async (req, res, next) => {
         res.status(500).json({ err: err, message: null });
     }
 });
+router.post('/test', authUtils_1.authMiddleware, async (req, res, next) => {
+    try {
+        const { id, userEmail } = (0, authUtils_1.getPayloadFromAuthHeader)(req);
+        res.status(200).json({ id: id, userEmail: userEmail });
+    }
+    catch (err) {
+        console.log(err);
+        res.status(500).json({ err: err, message: null });
+    }
+});
 // router.post('/autoLogin', async (req: Req, res: Res, next: Next) => { // it think done
 //     try {
 //         AuthFunctions.autoLogin(req, res, next);
@@ -70,15 +80,6 @@ router.post('/logout', authUtils_1.authMiddleware, async (req, res, next) => {
 //         res.status(500).json({ err: err, message: null })
 //     }
 // })
-router.post("/deleteEverything", async (req, res, next) => {
-    try {
-        authController_1.AuthController.deleteEverything(req, res, next);
-    }
-    catch (err) {
-        console.log(err);
-        res.status(500).json({ err: err, message: null });
-    }
-});
 // router.get("/getEverything", async (req: Req, res: Res, next: Next) => { // works // Shouls we Really have this in production?
 //     try {
 //         AuthFunctions.getEverything(req, res, next);

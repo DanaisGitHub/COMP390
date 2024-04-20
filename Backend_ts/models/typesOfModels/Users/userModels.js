@@ -11,6 +11,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const random_1 = require("../../../utils/other/random");
 const locationUtils_1 = require("../../../utils/locationUtils");
 const userBookRatingFormula_1 = require("../../DB_Functions/Process/userBookRatingFormula");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 class UserPreferenceModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.UserPreference);
@@ -94,7 +95,7 @@ class UserModel extends baseModel_1.BaseModel {
         };
         this.createRandomUser = async () => {
             try {
-                const { lat, lng } = (0, locationUtils_1.generateRandomLatLng)(10);
+                const { lat, lng } = (0, locationUtils_1.generateRandomLatLng)(700);
                 const userDetails = {
                     firstName: crypto_1.default.randomBytes(10).toString('hex'),
                     lastName: crypto_1.default.randomBytes(10).toString('hex'),
@@ -105,6 +106,9 @@ class UserModel extends baseModel_1.BaseModel {
                     lat: lat,
                     lng: lng
                 };
+                //hased password
+                const salt = await bcrypt_1.default.genSalt(10);
+                userDetails.password = await bcrypt_1.default.hash(userDetails.password, salt);
                 const { err, result } = await this.createUser(userDetails); // book and user pref created too
                 return { err, result };
             }

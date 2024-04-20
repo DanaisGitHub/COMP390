@@ -3,6 +3,8 @@ import Link from "next/link";
 import styles from "../styles/header.module.css"
 import avatar from "../components/Base/avatarImage"
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { logoutCall } from '../../lib/AuthAPI';
 
 
 
@@ -17,7 +19,7 @@ export default function header() {
                     <span className="self-center text-2xl font-semibold whitespace-nowrap"><b>Rent</b>Bie</span>
                 </Link>
                 <Link href="/Menu/List-Item" className={styles.eachLink}>List an Item</Link>
-                <Link href="/Menu" className={styles.eachLink}> Menu</Link>
+                <Link href="/" onClick={logoutCall} className={styles.eachLink}> Logout</Link>
             </div>
             <div className="flex w-full  sm:hidden">
                 <Link href="/" className="flex items-center justify-start ">
@@ -40,7 +42,7 @@ export default function header() {
                     <Link href="/CV"
                         className={styles.eachLink} onClick={() => setNavOpen(!navOpen)}>List an Item</Link>
                     <Link href="/contact-us"
-                        className={styles.eachLink} onClick={() => setNavOpen(!navOpen)}>Menu</Link>
+                        className={styles.eachLink} onClick={() => setNavOpen(!navOpen)}>Logout</Link>
                 </nav>
             </div>
         </nav>

@@ -1,5 +1,5 @@
+import { BookPreferenceType } from '@/types/DBTypes/BookTypes/bookTypes';
 import { TempUserType, UserPreferenceType } from '../../DBTypes/UserTypes/userTypes';
-import { BookPreferenceType } from '../../DBTypes/BookTypes/bookTypes';
 
 export type UnprocessedUser =
     TempUserType & UserPreferenceType & BookPreferenceType & {
@@ -76,4 +76,16 @@ export type UptUserType = {
     userEmail?: string,
     lat?: number,
     lng?: number
+}
+
+export type UserType = { // might need to add more fields
+    id?: number;//Primary key//Optinal to allow new users to be added to db
+    firstName: string;
+    lastName: string;
+    sex: boolean|number;
+    userEmail: string;
+    password: string;
+    birthDate: Date|string;
+    lat: number;
+    lng: number;
 }

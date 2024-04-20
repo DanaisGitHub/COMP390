@@ -31,13 +31,13 @@ export class ProductController {
         maxDistance: number,
         minRating: number,
         maxPrice: number
+        userID: number
     }): Promise<ProductPreviewType[]> => {
         // from product/books get all books in location space x
-        let userID = 1
+        const { lat, lng, searchQuery, maxDistance, minRating, maxPrice, userID } = options;
         const { err, result: user } = await this.userModel.findByPkey(userID);
         if (err) throw new NotFoundError('User not found');
         const userSex: number = !user.sex ? 0 : 1;
-        const { lat, lng, searchQuery, maxDistance, minRating, maxPrice } = options;
         const rankedBookPrevs: ProductPreviewType[] = await this.bookModel.getRankedBooksWithinRadiusAndSearchQuery({
             lat,
             lng,
@@ -56,20 +56,25 @@ export class ProductController {
 
     public getBookDetails = async (bookID: number): Promise<FullBook> => {
         // get book details
-        let userID = 1// get from token
         const bookDetails = await this.bookModel.getFullBookDetailsForBookID(bookID);
         return bookDetails;
     }
 
-    public getBookOwnedByUser = async (req: Req, res: Res, next: Next): Promise<any[]> => {
+    public getBookOwnedByUser = async (userID:number): Promise<any[]> => {
         // get book details
-        let userID = 1
         const { err, result: bookDetails } = await this.userItemsModel.findAll({ where: { ownerID: userID }, rejectOnEmpty: true });
         const bookIDs = bookDetails.map((book: any) => book.itemID);
 
         const bookPreview = await this.bookModel.findAllBooksForIDs(bookIDs);
         console.log(bookPreview)
         return bookPreview;
+    }
+
+    public getUserLocation = async (userID: number): Promise<{ lat: number, lng: number }> => {
+        // get user location
+        const { err, result: user } = await this.userModel.findByPkey(userID);
+        if (err) throw new NotFoundError('User not found');
+        return { lat: user.lat, lng: user.lng };
     }
 
 }

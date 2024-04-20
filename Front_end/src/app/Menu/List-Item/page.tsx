@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { getUserItems, getUserDetails, updateUserDetails } from "../../../../lib/UserDetailsAPI";
 import { postNewList } from '../../../../lib/ProductAPI';
+import { useRouter } from 'next/navigation';
 
 
 type UserItemType = {
@@ -19,23 +20,20 @@ export default function MyProfile() {
         quantity: 0,
         price: 0.00
     });
+    const router = useRouter();
 
-    const fetchData = async () => {
-        try {
-        } catch (error) {
-            console.error('Error fetching data:', error);
-        }
-    };
-    useEffect(() => {
-        fetchData();
-    }, []);
 
 
     const handleSubmit = async (e: any) => {
-        e.preventDefault();
-        await postNewList(newUserItem);
-        
-        alert("success")// go to next page
+        try {
+            e.preventDefault();
+            await postNewList(newUserItem);
+            alert("success")// go to next page
+            router.replace('/productsearch')
+        } catch (err: any) {
+            alert(err.message)
+            router.replace('/productsearch')
+        }
 
     };
 

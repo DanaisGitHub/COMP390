@@ -9,6 +9,7 @@ import { randomDate, randomDateRange, randomNumber, randomRange } from '../../..
 import { random } from "../../../utils/other/utils";
 import { generateRandomLatLng } from '../../../utils/locationUtils'
 import { CreateUserBookRatingFormula, CreateUserBookRatingFormula2 } from "../../DB_Functions/Process/userBookRatingFormula";
+import bcrypt from 'bcrypt'
 
 
 
@@ -103,7 +104,7 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
 
     private createRandomUser = async (): Promise<StdReturn<User>> => {
         try {
-            const { lat, lng } = generateRandomLatLng(10);
+            const { lat, lng } = generateRandomLatLng(700);
             const userDetails: TempUserType = {
                 firstName: crypto.randomBytes(10).toString('hex'),
                 lastName: crypto.randomBytes(10).toString('hex'),
@@ -114,6 +115,10 @@ export class UserModel extends BaseModel<User> {  // most should NOT be public
                 lat: lat,
                 lng: lng
             }
+            //hased password
+            const salt = await bcrypt.genSalt(10)
+            userDetails.password = await bcrypt.hash(userDetails.password, salt);
+
             const { err, result } = await this.createUser(userDetails); // book and user pref created too
             return { err, result }
         } catch (err) {

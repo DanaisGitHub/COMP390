@@ -99,7 +99,8 @@ class BookItemModel extends baseModel_1.BaseModel {
             AND ui.price <= ${maxPrice}
           ORDER BY 
             bk.rating DESC, 
-            ui.price ASC;`;
+            ui.price ASC
+            LIMIT 50;`;
             const [result, metadata] = await this.model.sequelize.query(query); // maybe wrong, we need sequelize instance
             // const books: ProductPreviewType[] = result[0].map((book: any) => {
             //     return {
@@ -137,7 +138,7 @@ class BookItemModel extends baseModel_1.BaseModel {
         try {
             let rankedBooks = [];
             const { lat, lng, maxDistance, searchQuery, minRating, maxPrice, userID, userSex } = options;
-            const books = await this.fullTextSearch(minRating, maxPrice, searchQuery ? searchQuery : undefined);
+            const books = await this.fullTextSearch(minRating, maxPrice, (searchQuery ? searchQuery : undefined));
             const booksWithinRadius = books.filter(book => {
                 return (0, locationUtils_1.calculateDistance)(lat, lng, book.lat, book.lng)
                     <= maxDistance;
