@@ -136,16 +136,13 @@ export class CSVtoSQLBook { // might make singleton
         const bookGenreModel = new BookGenreModel();
         const bookFormatModel = new BookFormatModel();
         const bookAuthorModel = new BookAuthorModel();
-
         book = CSVtoSQLBook.removeDuplicates(book);
-
         book.format!.forEach(async (format) => {
             await bookFormatModel.addBookFormatLink(book.book, format);
         })
         book.genres!.forEach(async (genre) => {
             await bookGenreModel.addBookGenreLink(book.book, genre);
         })
-
         await bookAuthorModel.addBookAuthorLink(book.book, book.author!);
     }
 

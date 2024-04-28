@@ -8,11 +8,11 @@ import { BaseAttributeModel } from "../../../baseModel";
 
 
 export class BookFormatModel extends BaseModel<BookFormat> {
+    private formatTable = new FormatModel();
+
     public constructor() {
         super(BookFormat)
     }
-
-    private formatTable = new FormatModel();
 
     public async addBookFormatLink(bookName: string, formatName: string): Promise<void> { //TODO: abstract to baseModel
         try {

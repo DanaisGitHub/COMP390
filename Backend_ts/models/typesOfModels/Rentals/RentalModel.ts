@@ -49,18 +49,6 @@ export class RentalModel extends BaseModel<Rental> { // BookItem should really e
 
     }
 
-
-    public async getAllRentalDetails(orderNumber: number): Promise<FullRentalDetails> {
-        try {
-            const result = await this.baseFindOneNotTyped<FullRentalDetails>({ where: { orderNumber }, include: [RentalsDetail], rejectOnEmpty: false })
-            return result
-        } catch (err: any) {
-            console.error(err)
-            throw new Error("Error in getAllRentalDetails ---->" + err.message)
-        }
-
-    }
-
     public async checkIfUserItemDatesClash(options: { ownerID: number, itemID: number, startDate: Date, endDate: Date }) {
         try {
             const { ownerID, itemID, startDate, endDate } = options
@@ -95,6 +83,17 @@ export class RentalModel extends BaseModel<Rental> { // BookItem should really e
             console.error(err)
             throw new Error("Error in checkIfUserItemDatesClash ---->" + err.message)
         }
+    }
+
+    public async getAllRentalDetails(orderNumber: number): Promise<FullRentalDetails> {
+        try {
+            const result = await this.baseFindOneNotTyped<FullRentalDetails>({ where: { orderNumber }, include: [RentalsDetail], rejectOnEmpty: false })
+            return result
+        } catch (err: any) {
+            console.error(err)
+            throw new Error("Error in getAllRentalDetails ---->" + err.message)
+        }
+
     }
 
     //
