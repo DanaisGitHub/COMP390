@@ -655,23 +655,18 @@ export class DBSetupListener {
 
     static runAfterDbInit = async () => {
         await DBSetupListener.dropTables2();
-
     }
 }
 
 export const initialize = async () => {
     try {
-
         InitialiseDatabase.initAllTables(sequelize);
-
         InitialiseDatabase.createAllRelations();
         if (!dropDB) {
             await sequelize.sync()
-
             return;
         }
         await DBSetupListener.runBeforeDBInit();
-
         let options: SyncOptions = dropDB && dropBook ? { force: true } : {};
         await sequelize.sync(options)
         await DBSetupListener.runAfterDbInit();

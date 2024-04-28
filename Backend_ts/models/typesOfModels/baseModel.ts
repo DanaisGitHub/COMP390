@@ -204,7 +204,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
         }
         return { err: null, result };
     }
-    catch(err: any) {
+    private catch(err: any) {
         console.log(err);
         throw new DatabaseError("Failed to perfrom findByPkey database Operation");
     }
@@ -318,11 +318,10 @@ export class BaseModel<T extends Model<any, any> = Models> {
     public async baseBookLink(bookName: string, linkName: string, linkTable: any, bookTable: any): Promise<void> {
         try {
             let book, linkRes;
-            const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
+            // get the attribute name based on linkTable type
+            const attributeName = (linkTable.constructor.name === "GenreModel" ? "genre"
                 : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "ID";
-
-
-            // searching for book
+            // searching for book exsits
             try {
                 book = await bookTable.find({
                     where: { book: bookName },
@@ -332,7 +331,7 @@ export class BaseModel<T extends Model<any, any> = Models> {
                 throw new NotFoundError("Book not found in 'baseBookLink' ");
             }
 
-            // seraching for attribute
+            // seraching for attribute exsits
             try {
                 linkRes = await linkTable.find({
                     where: { name: linkName },
@@ -346,9 +345,10 @@ export class BaseModel<T extends Model<any, any> = Models> {
             if (book.result === null || linkRes.result === null) {
                 throw new NotFoundError("Book or Link not found in 'baseBookLink' ");
             }
+            
             let createObject: { bookID: number, genre?: number, format?: number, author?: number } = {
                 bookID: book.result.id,
-                [jsonName]: linkRes.result.id
+                [attributeName]: linkRes.result.id
 
             };
             await this.model.create(createObject as any); // might be creating duplicates // shouldn't be any}

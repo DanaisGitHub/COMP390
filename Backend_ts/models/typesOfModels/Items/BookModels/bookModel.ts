@@ -27,59 +27,6 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         super(BookItem)
     }
 
-    public async getFullBookDetailsForBookID(bookID: number, options?: { ownerID: number, rating: number }): Promise<any> {
-        try {
-            const [result, metadata] = await this.model.sequelize!.query(`	SELECT 
-            b.id AS book_id,
-            b.series,
-            b.book,
-            b.description,
-            b.numPages,
-            b.publication,
-            b.rating,
-            b.numOfVoters,
-            GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
-            GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') AS formats,
-            GROUP_CONCAT(DISTINCT g.name SEPARATOR ', ') AS genres
-        FROM 
-            BookItems b
-        LEFT JOIN BookAuthors ba ON b.id = ba.bookId
-        LEFT JOIN Authors a ON ba.authorId = a.id
-        LEFT JOIN BookFormats bf ON b.id = bf.bookId
-        LEFT JOIN Formats f ON bf.formatId = f.id
-        LEFT JOIN BookGenres bg ON b.id = bg.bookId
-        LEFT JOIN Genres g ON bg.genreId = g.id
-        WHERE b.id = ${bookID}`);
-            const fullBook: FullBookDetails = result[0] as FullBookDetails;
-
-            return fullBook;
-        } catch (err: any) {
-            console.log(err as Error)
-            if (err instanceof NotFoundError) {
-                throw err;
-            }
-            throw new DatabaseError("getFullBookDetailsForBookID()" + err.message);
-        }
-    }
-
-
-    public async findAllBooksForIDs(bookIDs: number[]): Promise<BookItem[]> {
-        try {
-            let books: BookItem[] = [];
-            for (let id in bookIDs) {
-                const { err, result: book } = await this.baseFindOne({ where: { id }, rejectOnEmpty: false });
-                if (!book) {
-                    throw new NotFoundError("Book not found")
-                }
-                books.push(book);
-            }
-            return books;
-        } catch (err) {
-            console.log(err)
-            throw new DatabaseError("findAllBooksForIDs()" + err);
-        }
-    }
-
     private async fullTextSearch(minRating: number, maxPrice: number, searchQuery: string | undefined): Promise<ProductPreviewType[]> {
         try {
 
@@ -149,7 +96,110 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
         }
     }
 
+    public async addAllBookItems(): Promise<void> {
+        try {
+            await CSVtoSQLBook.run();
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("addBookItem()" + err);
+        }
+    }
 
+    public async addBookItem(book: BookItemType): Promise<StdReturn<BookItem>> {
+        try {
+            book.publication = undefined;
+
+            const { err, result } = await this.baseCreate(book);
+            return { err, result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("addBookItem()" + err);
+        }
+    }
+
+    public async findAllBooksForIDs(bookIDs: number[]): Promise<BookItem[]> {
+        try {
+            let books: BookItem[] = [];
+            for (let id in bookIDs) {
+                const { err, result: book } = await this.baseFindOne({ where: { id }, rejectOnEmpty: false });
+                if (!book) {
+                    throw new NotFoundError("Book not found")
+                }
+                books.push(book);
+            }
+            return books;
+        } catch (err) {
+            console.log(err)
+            throw new DatabaseError("findAllBooksForIDs()" + err);
+        }
+    }
+
+    public async getAllAuthorsForBookID(bookID: number): Promise<StdReturn<number[]>> {
+        try {
+            const bookAuthorTable = new BookAuthorModel();
+            const { err, result } = await bookAuthorTable.getAllBookAttributesForSpecficBook(bookID);
+            if (err) {
+                throw new DatabaseError("getBookAuthors()" + err);
+            }
+            return { err, result: result.map((author: any) => author as number) }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("getBookAuthors()" + err);
+        }
+    }
+
+    public async getAllGenresForBookID(bookID: number): Promise<StdReturn<number[]>> {
+        try {
+            const bookGenreTable = new BookGenreModel();
+            const { err, result } = await bookGenreTable.getAllBookAttributesForSpecficBook(bookID);
+            if (err) {
+                throw new DatabaseError("getBookGenres()" + err);
+            }
+            return { err, result: result.map((genre) => genre as number) }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("getBookGenres()" + err);
+        }
+    }
+
+    public async getFullBookDetailsForBookID(bookID: number, options?: { ownerID: number, rating: number }): Promise<any> {
+        try {
+            const [result, metadata] = await this.model.sequelize!.query(`	SELECT 
+            b.id AS book_id,
+            b.series,
+            b.book,
+            b.description,
+            b.numPages,
+            b.publication,
+            b.rating,
+            b.numOfVoters,
+            GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
+            GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') AS formats,
+            GROUP_CONCAT(DISTINCT g.name SEPARATOR ', ') AS genres
+        FROM 
+            BookItems b
+        LEFT JOIN BookAuthors ba ON b.id = ba.bookId
+        LEFT JOIN Authors a ON ba.authorId = a.id
+        LEFT JOIN BookFormats bf ON b.id = bf.bookId
+        LEFT JOIN Formats f ON bf.formatId = f.id
+        LEFT JOIN BookGenres bg ON b.id = bg.bookId
+        LEFT JOIN Genres g ON bg.genreId = g.id
+        WHERE b.id = ${bookID}`);
+            const fullBook: FullBookDetails = result[0] as FullBookDetails;
+
+            return fullBook;
+        } catch (err: any) {
+            console.log(err as Error)
+            if (err instanceof NotFoundError) {
+                throw err;
+            }
+            throw new DatabaseError("getFullBookDetailsForBookID()" + err.message);
+        }
+    }
 
     public async getRankedBooksWithinRadiusAndSearchQuery(options: {
         lat: number,
@@ -199,101 +249,9 @@ export class BookItemModel extends BaseModel<BookItem> { // BookItem should real
             }
         }
     }
-
-    public async getAllAuthorsForBookID(bookID: number): Promise<StdReturn<number[]>> {
-        try {
-            const bookAuthorTable = new BookAuthorModel();
-            const { err, result } = await bookAuthorTable.getAllBookAttributesForSpecficBook(bookID);
-            if (err) {
-                throw new DatabaseError("getBookAuthors()" + err);
-            }
-            return { err, result: result.map((author: any) => author as number) }
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("getBookAuthors()" + err);
-        }
-    }
-
-    public async getAllGenresForBookID(bookID: number): Promise<StdReturn<number[]>> {
-        try {
-            const bookGenreTable = new BookGenreModel();
-            const { err, result } = await bookGenreTable.getAllBookAttributesForSpecficBook(bookID);
-            if (err) {
-                throw new DatabaseError("getBookGenres()" + err);
-            }
-            return { err, result: result.map((genre) => genre as number) }
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("getBookGenres()" + err);
-        }
-    }
-
-    public async addBookItem(book: BookItemType): Promise<StdReturn<BookItem>> {
-        try {
-            book.publication = undefined;
-
-            const { err, result } = await this.baseCreate(book);
-            return { err, result }
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("addBookItem()" + err);
-        }
-    }
-
-    public async addAllBookItems(): Promise<void> {
-        try {
-            await CSVtoSQLBook.run();
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("addBookItem()" + err);
-        }
-    }
-
-
 }
 
 export class BookPreferenceModel extends BaseModel<BookPreference> {
-    public constructor() {
-        super(BookPreference)
-    }
-
-    public async createEmptyBookPreference(userID: number): Promise<StdReturn<BookPreference>> {
-        try {
-            const newBookPreference: BookPreferenceType = { userID };
-            const { err, result } = await this.baseCreate(newBookPreference);
-            return { err, result }
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("addBookPreference()" + err);
-        }
-    }
-
-    public async createBookPreference(bookPref: BookPreferenceType): Promise<StdReturn<BookPreference>> {
-        try {
-            const newBookPreference: BookPreferenceType = bookPref;
-            const { err, result } = await this.baseCreate(newBookPreference);
-            return { err, result }
-        }
-        catch (err) {
-            console.log(err)
-            throw new DatabaseError("addBookPreference()" + err);
-        }
-    }
-
-    public updateBookPreference = async (newBookPreference: BookPreferenceType, userID: number): Promise<void> => {
-        try {
-            await this.baseUpdate(newBookPreference, { where: { userID } })
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in updateBookPreference" + err)
-        }
-    }
-
     public createRandomBookPreference = async (userID: number): Promise<void> => { //TODO: Actually link 
         try {
             let authorPreference: Set<number> = new Set<number>();
@@ -337,7 +295,6 @@ export class BookPreferenceModel extends BaseModel<BookPreference> {
             throw new Error("Error in createRandomBookPreference")
         }
     }
-
     public getBookPreference = async (userID: number): Promise<StdReturn<BookPreference>> => {
         try {
             const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true });
@@ -347,52 +304,46 @@ export class BookPreferenceModel extends BaseModel<BookPreference> {
             throw new Error("Error in getBookPreference")
         }
     }
+    public updateBookPreference = async (newBookPreference: BookPreferenceType, userID: number): Promise<void> => {
+        try {
+            await this.baseUpdate(newBookPreference, { where: { userID } })
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in updateBookPreference" + err)
+        }
+    }
+
+    public constructor() {
+        super(BookPreference)
+    }
+
+    public async createBookPreference(bookPref: BookPreferenceType): Promise<StdReturn<BookPreference>> {
+        try {
+            const newBookPreference: BookPreferenceType = bookPref;
+            const { err, result } = await this.baseCreate(newBookPreference);
+            return { err, result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("addBookPreference()" + err);
+        }
+    }
+
+    public async createEmptyBookPreference(userID: number): Promise<StdReturn<BookPreference>> {
+        try {
+            const newBookPreference: BookPreferenceType = { userID };
+            const { err, result } = await this.baseCreate(newBookPreference);
+            return { err, result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new DatabaseError("addBookPreference()" + err);
+        }
+    }
 }
 
 
 export class UserBookRatingModels extends BaseModel<UserBookRating> {
-
-    public constructor() {
-        super(UserBookRating)
-    }
-
-    public async createUserRating(userRating: UserBookRatingType): Promise<StdReturn<UserBookRating>> {
-        try {
-            const { err, result } = await this.baseCreate(userRating);
-            return { err, result }
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in createUserRating")
-        }
-    }
-
-    public async getUserRating(userID: number, bookID: number): Promise<StdReturn<UserBookRating>> {
-        try {
-            const { err, result } = await this.baseFindOne({ where: { userID, bookID }, rejectOnEmpty: true })
-            return { err, result }
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in getUserRating")
-        }
-    }
-
-    public async updateUserRating(userRating: UserBookRatingType, userID: number, bookID: number): Promise<void> {
-        try {
-            await this.baseUpdate(userRating, { where: { userID, bookID } })
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in updateUserRating")
-        }
-    }
-
-    public async deleteUserRating(userID: number, bookID: number): Promise<void> {
-        try {
-            await this.baseDestroy({ where: { userID, bookID } })
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in deleteUserRating")
-        }
-    }
     /**
      * NEEDS TESTING 
      * 
@@ -426,6 +377,47 @@ export class UserBookRatingModels extends BaseModel<UserBookRating> {
         }
     }
 
+    public constructor() {
+        super(UserBookRating)
+    }
+
+    public async createUserRating(userRating: UserBookRatingType): Promise<StdReturn<UserBookRating>> {
+        try {
+            const { err, result } = await this.baseCreate(userRating);
+            return { err, result }
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in createUserRating")
+        }
+    }
+
+    public async deleteUserRating(userID: number, bookID: number): Promise<void> {
+        try {
+            await this.baseDestroy({ where: { userID, bookID } })
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in deleteUserRating")
+        }
+    }
+
+    public async getUserRating(userID: number, bookID: number): Promise<StdReturn<UserBookRating>> {
+        try {
+            const { err, result } = await this.baseFindOne({ where: { userID, bookID }, rejectOnEmpty: true })
+            return { err, result }
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in getUserRating")
+        }
+    }
+
+    public async updateUserRating(userRating: UserBookRatingType, userID: number, bookID: number): Promise<void> {
+        try {
+            await this.baseUpdate(userRating, { where: { userID, bookID } })
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in updateUserRating")
+        }
+    }
 
     // public async normaliseAllRatings = async (userID: number): Promise<void> => {
     //     const bookModel = new BookItemModel()

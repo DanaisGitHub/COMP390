@@ -6,11 +6,11 @@ import { DatabaseError, NotFoundError } from "../../../../../utils/other/customE
 
 
 export class BookGenreModel extends BaseBookAttributesModel<BookGenre> {
+    private genreTable = new GenreModel();
+
     public constructor() {
         super(BookGenre)
     }
-
-    private genreTable = new GenreModel();
 
     public async addBookGenreLink(bookName: string, genreName: string): Promise<void> { //TODO: abstract to baseModel
         try {

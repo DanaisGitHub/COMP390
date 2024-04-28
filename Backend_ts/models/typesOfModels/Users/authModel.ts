@@ -12,7 +12,42 @@ import { NotFoundError } from "../../../utils/other/customError";
 
 // pre-processing & storage goes in here
 export class AuthModel extends UserModel {
+    private createHash = async (rawPassword: string): Promise<StdReturn> => {
+        try {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(rawPassword, salt)
+            return { err: null, result: hashedPassword }
+        }
+        catch (err) {
+            console.log(err);
+            throw new Error("Error when hashing password")
+        }
 
+    }
+    public comparePasswords = async (rawPassword: string, hashedPassword: string): Promise<StdReturn> => {
+        try {
+            const result = await bcrypt.compare(rawPassword, hashedPassword)
+            return { err: null, result: result }
+        }
+        catch (err) {
+            console.log(err)
+            throw new Error("Couldn't compare passwords")
+        }
+    }
+    public findUserByEmail = async (userEmail: string, rejectOnEmpty = false): Promise<User> => { // don't need this if you have above
+        try {
+            const { err, result: user } = await this.baseFindOne({
+                where: { userEmail },
+                rejectOnEmpty
+            })
+            return user
+
+        } catch (err: any) {
+            console.error(err)
+            throw new Error(`authModel findUserByEmai catch err ----> ${err.message}}`)
+
+        }
+    }
     public isAlreadyAUserObj = async (primaryKey: number): Promise<StdReturn> => {
         try {
             const { err, result } = await this.findByPkey(primaryKey)
@@ -34,34 +69,7 @@ export class AuthModel extends UserModel {
     }
 
   
-    // not specified which user just all Users
-
-    public signUp = async (userDetails: TempUserType): Promise<StdReturn<User | null>> => {
-        // check to see if already exists
-        // check data is correct (should use validator software)
-        try {
-
-
-            let user = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
-            if (user !== null) {
-                //user does exists
-                console.log("User " + userDetails.userEmail + " Exsits");
-                return { err: "User '" + userDetails.userEmail + "' Exsits", result: null }
-            }
-            const salt = await bcrypt.genSalt(10)
-            userDetails.password = await bcrypt.hash(userDetails.password, salt);
-
-            const { err, result } = await this.baseCreate(userDetails)
-
-            return { err: null, result: result }
-        } catch (err) {
-            console.log(err)
-            throw new Error("AuthModel signUp() -----> " + err)
-        }
-    }
-
-
-
+    
     public login = async (obj: { userEmail: string, rawPassword: string }): Promise<StdReturn<User | null>> => {
         try {
             const { userEmail, rawPassword } = obj;
@@ -87,48 +95,31 @@ export class AuthModel extends UserModel {
             throw new Error("Login error")
         }
     }
+// not specified which user just all Users
 
-
-
-    public findUserByEmail = async (userEmail: string, rejectOnEmpty = false): Promise<User> => { // don't need this if you have above
+    public signUp = async (userDetails: TempUserType): Promise<StdReturn<User | null>> => {
+        // check to see if already exists
+        // check data is correct (should use validator software)
         try {
-            const { err, result: user } = await this.baseFindOne({
-                where: { userEmail },
-                rejectOnEmpty
-            })
-            return user
 
-        } catch (err: any) {
-            console.error(err)
-            throw new Error(`authModel findUserByEmai catch err ----> ${err.message}}`)
 
-        }
-    }
+            let user = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
+            if (user !== null) {
+                //user does exists
+                console.log("User " + userDetails.userEmail + " Exsits");
+                return { err: "User '" + userDetails.userEmail + "' Exsits", result: null }
+            }
+            const salt = await bcrypt.genSalt(10)
+            userDetails.password = await bcrypt.hash(userDetails.password, salt);
 
-    private createHash = async (rawPassword: string): Promise<StdReturn> => {
-        try {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(rawPassword, salt)
-            return { err: null, result: hashedPassword }
-        }
-        catch (err) {
-            console.log(err);
-            throw new Error("Error when hashing password")
-        }
+            const { err, result } = await this.baseCreate(userDetails)
 
-    }
-
-    public comparePasswords = async (rawPassword: string, hashedPassword: string): Promise<StdReturn> => {
-        try {
-            const result = await bcrypt.compare(rawPassword, hashedPassword)
             return { err: null, result: result }
-        }
-        catch (err) {
+        } catch (err) {
             console.log(err)
-            throw new Error("Couldn't compare passwords")
+            throw new Error("AuthModel signUp() -----> " + err)
         }
     }
-
     // 
     // public isRefreshTokenSame = async (obj: { id: string, refreshToken: string }): Promise<StdReturn> => {
     //     try {

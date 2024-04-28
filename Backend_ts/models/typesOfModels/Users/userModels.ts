@@ -16,10 +16,6 @@ import bcrypt from 'bcrypt'
 
 
 export class UserPreferenceModel extends BaseModel<UserPreference> {
-    constructor() {
-        super(UserPreference);
-    }
-
     public createEmptyUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
         try {
             const { err, result } = await this.baseCreate({ userID })
@@ -29,7 +25,6 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
             throw new Error("Error in createUserPreference")
         }
     }
-
     public createRandomUserPreference = async (userID: number): Promise<void> => {
         try {
             const { min: distanceMin, max: distanceMax } = randomRange(0, 100)
@@ -54,7 +49,15 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
             throw new Error("Error in createRandomUserPreference")
         }
     }
-
+    public getUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
+        try {
+            const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true })
+            return { err, result }
+        } catch (err) {
+            console.log(err)
+            throw new Error("Error in getUserPreference")
+        }
+    }
     public updateUserPreference = async (newUserPreference: UserPreferenceType, userID: number): Promise<void> => {
         try {
             await this.baseUpdate(newUserPreference, { where: { userID } })
@@ -64,14 +67,8 @@ export class UserPreferenceModel extends BaseModel<UserPreference> {
         }
     }
 
-    public getUserPreference = async (userID: number): Promise<StdReturn<UserPreference>> => {
-        try {
-            const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true })
-            return { err, result }
-        } catch (err) {
-            console.log(err)
-            throw new Error("Error in getUserPreference")
-        }
+    constructor() {
+        super(UserPreference);
     }
 }
 

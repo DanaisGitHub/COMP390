@@ -43,21 +43,6 @@ interface ItemModelI extends Model<UserItemType>, UserItemType {
 
 
 export class UserItemModel extends BaseModel<UserItem> {
-
-    public constructor() {
-        super(UserItem)
-    }
-
-    public async querySearchItems(query: string): Promise<StdReturn> {
-        let searchTerm: string = `
-        SELECT * FROM items 
-        WHERE MATCH(book, description)
-        AGAINST('${query}' IN BOOLEAN MODE);`// what the hell is boolean mode
-        const [result, metadata] = await sequelize.query(searchTerm, { type: QueryTypes.RAW }) // where are you getting sequelize from (Should you use custom query)
-        return { err: null, result: [result, metadata] }
-
-    }
-
     public static async makeItemsFullTextSearchable(): Promise<[unknown[], unknown]> {
         try {
             const bookTable = await sequelize.query("ALTER TABLE bookItems ADD FULLTEXT (book, description)", { type: QueryTypes.RAW })
@@ -67,6 +52,10 @@ export class UserItemModel extends BaseModel<UserItem> {
             console.log(err)
             throw new DatabaseError(" makeItemsFullTextSearchable() " + err);
         }
+    }
+
+    public constructor() {
+        super(UserItem)
     }
 
     public async addNewItem(itemDetails: UserItemType): Promise<UserItem> {
@@ -92,6 +81,21 @@ export class UserItemModel extends BaseModel<UserItem> {
         }
     }
 
+    public async checkIfEnoughQuantity(options: { ownerID: number, itemID: number, quantity: number }): Promise<boolean> {
+        try {
+            const { ownerID, itemID, quantity } = options
+            const { err, result: userItemObj } = await this.find({ where: { ownerID, itemID }, rejectOnEmpty: true })
+            if (userItemObj.quantity < quantity) return false;
+            userItemObj.quantity -= quantity
+            await userItemObj.save()
+            if (userItemObj.quantity === 0) await userItemObj.destroy()
+            return true;
+        } catch (err: any) {
+            console.error(err)
+            throw new DatabaseError(`Error in checkIfEnoughQuantity ${err}`)
+        }
+    }
+
     public async createNewRandomItems(quant:number): Promise<void> {
         try {
             const bookModel = new BookItemModel()
@@ -111,19 +115,14 @@ export class UserItemModel extends BaseModel<UserItem> {
         }
     }
 
-    public async checkIfEnoughQuantity(options: { ownerID: number, itemID: number, quantity: number }): Promise<boolean> {
-        try {
-            const { ownerID, itemID, quantity } = options
-            const { err, result: userItemObj } = await this.find({ where: { ownerID, itemID }, rejectOnEmpty: true })
-            if (userItemObj.quantity < quantity) return false;
-            userItemObj.quantity -= quantity
-            await userItemObj.save()
-            if (userItemObj.quantity === 0) await userItemObj.destroy()
-            return true;
-        } catch (err: any) {
-            console.error(err)
-            throw new DatabaseError(`Error in checkIfEnoughQuantity ${err}`)
-        }
+    public async querySearchItems(query: string): Promise<StdReturn> {
+        let searchTerm: string = `
+        SELECT * FROM items 
+        WHERE MATCH(book, description)
+        AGAINST('${query}' IN BOOLEAN MODE);`// what the hell is boolean mode
+        const [result, metadata] = await sequelize.query(searchTerm, { type: QueryTypes.RAW }) // where are you getting sequelize from (Should you use custom query)
+        return { err: null, result: [result, metadata] }
+
     }
 }
 
