@@ -405,7 +405,7 @@ DBSetupListener.createUsers = async (num) => {
 };
 DBSetupListener.createUserItems = async () => {
     const userItemModel = new UserItemModel_1.UserItemModel();
-    await userItemModel.createNewRandomItems(400);
+    await userItemModel.createNewRandomItems(100);
 };
 DBSetupListener.dropTables1 = async () => {
     if (dropDB && !dropBook) { // Dropping all tables except books
@@ -420,7 +420,7 @@ DBSetupListener.dropTables2 = async () => {
             await DBSetupListener.addBookAndLinks();
         }
         // BOOKS have to be init before Users
-        await DBSetupListener.createUsers(400);
+        await DBSetupListener.createUsers(10);
     }
 };
 DBSetupListener.runBeforeDBInit = async () => {

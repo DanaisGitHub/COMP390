@@ -11,6 +11,40 @@ const customError_1 = require("../../../utils/other/customError");
 class AuthModel extends userModels_1.UserModel {
     constructor() {
         super(...arguments);
+        this.createHash = async (rawPassword) => {
+            try {
+                const salt = await bcrypt_1.default.genSalt(10);
+                const hashedPassword = await bcrypt_1.default.hash(rawPassword, salt);
+                return { err: null, result: hashedPassword };
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error when hashing password");
+            }
+        };
+        this.comparePasswords = async (rawPassword, hashedPassword) => {
+            try {
+                const result = await bcrypt_1.default.compare(rawPassword, hashedPassword);
+                return { err: null, result: result };
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Couldn't compare passwords");
+            }
+        };
+        this.findUserByEmail = async (userEmail, rejectOnEmpty = false) => {
+            try {
+                const { err, result: user } = await this.baseFindOne({
+                    where: { userEmail },
+                    rejectOnEmpty
+                });
+                return user;
+            }
+            catch (err) {
+                console.error(err);
+                throw new Error(`authModel findUserByEmai catch err ----> ${err.message}}`);
+            }
+        };
         this.isAlreadyAUserObj = async (primaryKey) => {
             try {
                 const { err, result } = await this.findByPkey(primaryKey);
@@ -28,27 +62,6 @@ class AuthModel extends userModels_1.UserModel {
             catch (err) {
                 console.error(err);
                 throw new Error(`Problem when trying to find user ) ${err}}`);
-            }
-        };
-        // not specified which user just all Users
-        this.signUp = async (userDetails) => {
-            // check to see if already exists
-            // check data is correct (should use validator software)
-            try {
-                let user = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
-                if (user !== null) {
-                    //user does exists
-                    console.log("User " + userDetails.userEmail + " Exsits");
-                    return { err: "User '" + userDetails.userEmail + "' Exsits", result: null };
-                }
-                const salt = await bcrypt_1.default.genSalt(10);
-                userDetails.password = await bcrypt_1.default.hash(userDetails.password, salt);
-                const { err, result } = await this.baseCreate(userDetails);
-                return { err: null, result: result };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("AuthModel signUp() -----> " + err);
             }
         };
         this.login = async (obj) => {
@@ -75,38 +88,25 @@ class AuthModel extends userModels_1.UserModel {
                 throw new Error("Login error");
             }
         };
-        this.findUserByEmail = async (userEmail, rejectOnEmpty = false) => {
+        // not specified which user just all Users
+        this.signUp = async (userDetails) => {
+            // check to see if already exists
+            // check data is correct (should use validator software)
             try {
-                const { err, result: user } = await this.baseFindOne({
-                    where: { userEmail },
-                    rejectOnEmpty
-                });
-                return user;
-            }
-            catch (err) {
-                console.error(err);
-                throw new Error(`authModel findUserByEmai catch err ----> ${err.message}}`);
-            }
-        };
-        this.createHash = async (rawPassword) => {
-            try {
+                let user = await this.findUserByEmail(userDetails.userEmail); // 2 db searches when we could do 1
+                if (user !== null) {
+                    //user does exists
+                    console.log("User " + userDetails.userEmail + " Exsits");
+                    return { err: "User '" + userDetails.userEmail + "' Exsits", result: null };
+                }
                 const salt = await bcrypt_1.default.genSalt(10);
-                const hashedPassword = await bcrypt_1.default.hash(rawPassword, salt);
-                return { err: null, result: hashedPassword };
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Error when hashing password");
-            }
-        };
-        this.comparePasswords = async (rawPassword, hashedPassword) => {
-            try {
-                const result = await bcrypt_1.default.compare(rawPassword, hashedPassword);
+                userDetails.password = await bcrypt_1.default.hash(userDetails.password, salt);
+                const { err, result } = await this.baseCreate(userDetails);
                 return { err: null, result: result };
             }
             catch (err) {
                 console.log(err);
-                throw new Error("Couldn't compare passwords");
+                throw new Error("AuthModel signUp() -----> " + err);
             }
         };
         // 

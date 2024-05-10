@@ -270,9 +270,10 @@ class BaseModel {
     async baseBookLink(bookName, linkName, linkTable, bookTable) {
         try {
             let book, linkRes;
-            const jsonName = (linkTable.constructor.name === "GenreModel" ? "genre"
+            // get the attribute name based on linkTable type
+            const attributeName = (linkTable.constructor.name === "GenreModel" ? "genre"
                 : linkTable.constructor.name === "FormatModel" ? "format" : "author") + "ID";
-            // searching for book
+            // searching for book exsits
             try {
                 book = await bookTable.find({
                     where: { book: bookName },
@@ -282,7 +283,7 @@ class BaseModel {
             catch (err) {
                 throw new customError_1.NotFoundError("Book not found in 'baseBookLink' ");
             }
-            // seraching for attribute
+            // seraching for attribute exsits
             try {
                 linkRes = await linkTable.find({
                     where: { name: linkName },
@@ -297,7 +298,7 @@ class BaseModel {
             }
             let createObject = {
                 bookID: book.result.id,
-                [jsonName]: linkRes.result.id
+                [attributeName]: linkRes.result.id
             };
             await this.model.create(createObject); // might be creating duplicates // shouldn't be any}
         }

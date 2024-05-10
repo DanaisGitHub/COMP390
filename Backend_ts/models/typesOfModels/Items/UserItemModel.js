@@ -18,17 +18,6 @@ const userModels_1 = require("../Users/userModels");
 //     findMany: <T extends Model<any, any> = Models>(options: NonNullFindOptions<T>) => Promise<StdReturn<T>>; // I know return on this so could make it more specific
 // }
 class UserItemModel extends baseModel_1.BaseModel {
-    constructor() {
-        super(modelSetUp_1.UserItem);
-    }
-    async querySearchItems(query) {
-        let searchTerm = `
-        SELECT * FROM items 
-        WHERE MATCH(book, description)
-        AGAINST('${query}' IN BOOLEAN MODE);`; // what the hell is boolean mode
-        const [result, metadata] = await modelSetUp_1.sequelize.query(searchTerm, { type: sequelize_1.QueryTypes.RAW }); // where are you getting sequelize from (Should you use custom query)
-        return { err: null, result: [result, metadata] };
-    }
     static async makeItemsFullTextSearchable() {
         try {
             const bookTable = await modelSetUp_1.sequelize.query("ALTER TABLE bookItems ADD FULLTEXT (book, description)", { type: sequelize_1.QueryTypes.RAW });
@@ -38,6 +27,9 @@ class UserItemModel extends baseModel_1.BaseModel {
             console.log(err);
             throw new customError_1.DatabaseError(" makeItemsFullTextSearchable() " + err);
         }
+    }
+    constructor() {
+        super(modelSetUp_1.UserItem);
     }
     async addNewItem(itemDetails) {
         try {
@@ -62,22 +54,6 @@ class UserItemModel extends baseModel_1.BaseModel {
             throw new customError_1.DatabaseError("Error in addRandomItem");
         }
     }
-    async createNewRandomItems(quant) {
-        try {
-            const bookModel = new bookModel_1.BookItemModel();
-            const usersModel = new userModels_1.UserModel();
-            let i = 0;
-            for (; i < quant; i++) { //10 items
-                const book = await bookModel.getRandom({});
-                const user = await usersModel.getRandom({});
-                const newUserItem = await this.addRandomItem({ ownerID: user.dataValues.id, itemID: book.dataValues.id });
-            }
-        }
-        catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("Error in createNewRandomItems");
-        }
-    }
     async checkIfEnoughQuantity(options) {
         try {
             const { ownerID, itemID, quantity } = options;
@@ -94,6 +70,30 @@ class UserItemModel extends baseModel_1.BaseModel {
             console.error(err);
             throw new customError_1.DatabaseError(`Error in checkIfEnoughQuantity ${err}`);
         }
+    }
+    async createNewRandomItems(quant) {
+        try {
+            const bookModel = new bookModel_1.BookItemModel();
+            const usersModel = new userModels_1.UserModel();
+            let i = 0;
+            for (; i < quant; i++) { //10 items
+                const book = await bookModel.getRandom({});
+                const user = await usersModel.getRandom({});
+                const newUserItem = await this.addRandomItem({ ownerID: user.dataValues.id, itemID: book.dataValues.id });
+            }
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("Error in createNewRandomItems");
+        }
+    }
+    async querySearchItems(query) {
+        let searchTerm = `
+        SELECT * FROM items 
+        WHERE MATCH(book, description)
+        AGAINST('${query}' IN BOOLEAN MODE);`; // what the hell is boolean mode
+        const [result, metadata] = await modelSetUp_1.sequelize.query(searchTerm, { type: sequelize_1.QueryTypes.RAW }); // where are you getting sequelize from (Should you use custom query)
+        return { err: null, result: [result, metadata] };
     }
 }
 exports.UserItemModel = UserItemModel;

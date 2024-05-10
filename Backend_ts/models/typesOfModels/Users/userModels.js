@@ -50,15 +50,6 @@ class UserPreferenceModel extends baseModel_1.BaseModel {
                 throw new Error("Error in createRandomUserPreference");
             }
         };
-        this.updateUserPreference = async (newUserPreference, userID) => {
-            try {
-                await this.baseUpdate(newUserPreference, { where: { userID } });
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Error in updateUserPreference" + err);
-            }
-        };
         this.getUserPreference = async (userID) => {
             try {
                 const { err, result } = await this.baseFindOne({ where: { userID }, rejectOnEmpty: true });
@@ -67,6 +58,15 @@ class UserPreferenceModel extends baseModel_1.BaseModel {
             catch (err) {
                 console.log(err);
                 throw new Error("Error in getUserPreference");
+            }
+        };
+        this.updateUserPreference = async (newUserPreference, userID) => {
+            try {
+                await this.baseUpdate(newUserPreference, { where: { userID } });
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in updateUserPreference" + err);
             }
         };
     }

@@ -45,16 +45,6 @@ class RentalModel extends baseModel_1.BaseModel {
             throw new Error("Error in addOrderWithItems" + err.message);
         }
     }
-    async getAllRentalDetails(orderNumber) {
-        try {
-            const result = await this.baseFindOneNotTyped({ where: { orderNumber }, include: [modelSetUp_1.RentalsDetail], rejectOnEmpty: false });
-            return result;
-        }
-        catch (err) {
-            console.error(err);
-            throw new Error("Error in getAllRentalDetails ---->" + err.message);
-        }
-    }
     async checkIfUserItemDatesClash(options) {
         try {
             const { ownerID, itemID, startDate, endDate } = options;
@@ -87,6 +77,16 @@ class RentalModel extends baseModel_1.BaseModel {
         catch (err) {
             console.error(err);
             throw new Error("Error in checkIfUserItemDatesClash ---->" + err.message);
+        }
+    }
+    async getAllRentalDetails(orderNumber) {
+        try {
+            const result = await this.baseFindOneNotTyped({ where: { orderNumber }, include: [modelSetUp_1.RentalsDetail], rejectOnEmpty: false });
+            return result;
+        }
+        catch (err) {
+            console.error(err);
+            throw new Error("Error in getAllRentalDetails ---->" + err.message);
         }
     }
 }
