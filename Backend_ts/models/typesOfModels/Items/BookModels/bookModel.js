@@ -19,57 +19,6 @@ class BookItemModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.BookItem);
     }
-    async getFullBookDetailsForBookID(bookID, options) {
-        try {
-            const [result, metadata] = await this.model.sequelize.query(`	SELECT 
-            b.id AS book_id,
-            b.series,
-            b.book,
-            b.description,
-            b.numPages,
-            b.publication,
-            b.rating,
-            b.numOfVoters,
-            GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
-            GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') AS formats,
-            GROUP_CONCAT(DISTINCT g.name SEPARATOR ', ') AS genres
-        FROM 
-            BookItems b
-        LEFT JOIN BookAuthors ba ON b.id = ba.bookId
-        LEFT JOIN Authors a ON ba.authorId = a.id
-        LEFT JOIN BookFormats bf ON b.id = bf.bookId
-        LEFT JOIN Formats f ON bf.formatId = f.id
-        LEFT JOIN BookGenres bg ON b.id = bg.bookId
-        LEFT JOIN Genres g ON bg.genreId = g.id
-        WHERE b.id = ${bookID}`);
-            const fullBook = result[0];
-            return fullBook;
-        }
-        catch (err) {
-            console.log(err);
-            if (err instanceof customError_1.NotFoundError) {
-                throw err;
-            }
-            throw new customError_1.DatabaseError("getFullBookDetailsForBookID()" + err.message);
-        }
-    }
-    async findAllBooksForIDs(bookIDs) {
-        try {
-            let books = [];
-            for (let id in bookIDs) {
-                const { err, result: book } = await this.baseFindOne({ where: { id }, rejectOnEmpty: false });
-                if (!book) {
-                    throw new customError_1.NotFoundError("Book not found");
-                }
-                books.push(book);
-            }
-            return books;
-        }
-        catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("findAllBooksForIDs()" + err);
-        }
-    }
     async fullTextSearch(minRating, maxPrice, searchQuery) {
         try {
             console.log("searchQuery: ", searchQuery);
@@ -134,6 +83,105 @@ class BookItemModel extends baseModel_1.BaseModel {
             throw new customError_1.DatabaseError("fullTextSearch()" + err.message);
         }
     }
+    async addAllBookItems() {
+        try {
+            await CSVtoSQL_1.CSVtoSQLBook.run();
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("addBookItem()" + err);
+        }
+    }
+    async addBookItem(book) {
+        try {
+            book.publication = undefined;
+            const { err, result } = await this.baseCreate(book);
+            return { err, result };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("addBookItem()" + err);
+        }
+    }
+    async findAllBooksForIDs(bookIDs) {
+        try {
+            let books = [];
+            for (let id in bookIDs) {
+                const { err, result: book } = await this.baseFindOne({ where: { id }, rejectOnEmpty: false });
+                if (!book) {
+                    throw new customError_1.NotFoundError("Book not found");
+                }
+                books.push(book);
+            }
+            return books;
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("findAllBooksForIDs()" + err);
+        }
+    }
+    async getAllAuthorsForBookID(bookID) {
+        try {
+            const bookAuthorTable = new AuthorModels_1.BookAuthorModel();
+            const { err, result } = await bookAuthorTable.getAllBookAttributesForSpecficBook(bookID);
+            if (err) {
+                throw new customError_1.DatabaseError("getBookAuthors()" + err);
+            }
+            return { err, result: result.map((author) => author) };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("getBookAuthors()" + err);
+        }
+    }
+    async getAllGenresForBookID(bookID) {
+        try {
+            const bookGenreTable = new GenreModels_1.BookGenreModel();
+            const { err, result } = await bookGenreTable.getAllBookAttributesForSpecficBook(bookID);
+            if (err) {
+                throw new customError_1.DatabaseError("getBookGenres()" + err);
+            }
+            return { err, result: result.map((genre) => genre) };
+        }
+        catch (err) {
+            console.log(err);
+            throw new customError_1.DatabaseError("getBookGenres()" + err);
+        }
+    }
+    async getFullBookDetailsForBookID(bookID, options) {
+        try {
+            const [result, metadata] = await this.model.sequelize.query(`	SELECT 
+            b.id AS book_id,
+            b.series,
+            b.book,
+            b.description,
+            b.numPages,
+            b.publication,
+            b.rating,
+            b.numOfVoters,
+            GROUP_CONCAT(DISTINCT a.name SEPARATOR ', ') AS authors,
+            GROUP_CONCAT(DISTINCT f.name SEPARATOR ', ') AS formats,
+            GROUP_CONCAT(DISTINCT g.name SEPARATOR ', ') AS genres
+        FROM 
+            BookItems b
+        LEFT JOIN BookAuthors ba ON b.id = ba.bookId
+        LEFT JOIN Authors a ON ba.authorId = a.id
+        LEFT JOIN BookFormats bf ON b.id = bf.bookId
+        LEFT JOIN Formats f ON bf.formatId = f.id
+        LEFT JOIN BookGenres bg ON b.id = bg.bookId
+        LEFT JOIN Genres g ON bg.genreId = g.id
+        WHERE b.id = ${bookID}`);
+            const fullBook = result[0];
+            return fullBook;
+        }
+        catch (err) {
+            console.log(err);
+            if (err instanceof customError_1.NotFoundError) {
+                throw err;
+            }
+            throw new customError_1.DatabaseError("getFullBookDetailsForBookID()" + err.message);
+        }
+    }
     async getRankedBooksWithinRadiusAndSearchQuery(options) {
         try {
             let rankedBooks = [];
@@ -171,68 +219,11 @@ class BookItemModel extends baseModel_1.BaseModel {
             }
         }
     }
-    async getAllAuthorsForBookID(bookID) {
-        try {
-            const bookAuthorTable = new AuthorModels_1.BookAuthorModel();
-            const { err, result } = await bookAuthorTable.getAllBookAttributesForSpecficBook(bookID);
-            if (err) {
-                throw new customError_1.DatabaseError("getBookAuthors()" + err);
-            }
-            return { err, result: result.map((author) => author) };
-        }
-        catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("getBookAuthors()" + err);
-        }
-    }
-    async getAllGenresForBookID(bookID) {
-        try {
-            const bookGenreTable = new GenreModels_1.BookGenreModel();
-            const { err, result } = await bookGenreTable.getAllBookAttributesForSpecficBook(bookID);
-            if (err) {
-                throw new customError_1.DatabaseError("getBookGenres()" + err);
-            }
-            return { err, result: result.map((genre) => genre) };
-        }
-        catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("getBookGenres()" + err);
-        }
-    }
-    async addBookItem(book) {
-        try {
-            book.publication = undefined;
-            const { err, result } = await this.baseCreate(book);
-            return { err, result };
-        }
-        catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("addBookItem()" + err);
-        }
-    }
-    async addAllBookItems() {
-        try {
-            await CSVtoSQL_1.CSVtoSQLBook.run();
-        }
-        catch (err) {
-            console.log(err);
-            throw new customError_1.DatabaseError("addBookItem()" + err);
-        }
-    }
 }
 exports.BookItemModel = BookItemModel;
 class BookPreferenceModel extends baseModel_1.BaseModel {
     constructor() {
         super(modelSetUp_1.BookPreference);
-        this.updateBookPreference = async (newBookPreference, userID) => {
-            try {
-                await this.baseUpdate(newBookPreference, { where: { userID } });
-            }
-            catch (err) {
-                console.log(err);
-                throw new Error("Error in updateBookPreference" + err);
-            }
-        };
         this.createRandomBookPreference = async (userID) => {
             try {
                 let authorPreference = new Set();
@@ -282,10 +273,19 @@ class BookPreferenceModel extends baseModel_1.BaseModel {
                 throw new Error("Error in getBookPreference");
             }
         };
+        this.updateBookPreference = async (newBookPreference, userID) => {
+            try {
+                await this.baseUpdate(newBookPreference, { where: { userID } });
+            }
+            catch (err) {
+                console.log(err);
+                throw new Error("Error in updateBookPreference" + err);
+            }
+        };
     }
-    async createEmptyBookPreference(userID) {
+    async createBookPreference(bookPref) {
         try {
-            const newBookPreference = { userID };
+            const newBookPreference = bookPref;
             const { err, result } = await this.baseCreate(newBookPreference);
             return { err, result };
         }
@@ -294,9 +294,9 @@ class BookPreferenceModel extends baseModel_1.BaseModel {
             throw new customError_1.DatabaseError("addBookPreference()" + err);
         }
     }
-    async createBookPreference(bookPref) {
+    async createEmptyBookPreference(userID) {
         try {
-            const newBookPreference = bookPref;
+            const newBookPreference = { userID };
             const { err, result } = await this.baseCreate(newBookPreference);
             return { err, result };
         }
@@ -354,6 +354,15 @@ class UserBookRatingModels extends baseModel_1.BaseModel {
             throw new Error("Error in createUserRating");
         }
     }
+    async deleteUserRating(userID, bookID) {
+        try {
+            await this.baseDestroy({ where: { userID, bookID } });
+        }
+        catch (err) {
+            console.log(err);
+            throw new Error("Error in deleteUserRating");
+        }
+    }
     async getUserRating(userID, bookID) {
         try {
             const { err, result } = await this.baseFindOne({ where: { userID, bookID }, rejectOnEmpty: true });
@@ -371,15 +380,6 @@ class UserBookRatingModels extends baseModel_1.BaseModel {
         catch (err) {
             console.log(err);
             throw new Error("Error in updateUserRating");
-        }
-    }
-    async deleteUserRating(userID, bookID) {
-        try {
-            await this.baseDestroy({ where: { userID, bookID } });
-        }
-        catch (err) {
-            console.log(err);
-            throw new Error("Error in deleteUserRating");
         }
     }
     // public async normaliseAllRatings = async (userID: number): Promise<void> => {
